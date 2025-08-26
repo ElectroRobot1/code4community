@@ -195,7 +195,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-3 mb-8 group">
             <div className="relative">
-              <Image src="/logo.png" alt="StudyHub Logo" width={40} height={40} className="w-10 h-10 transition-transform duration-200 group-hover:scale-110" />
+              <Image src="/logo.svg" alt="StudyHub Logo" width={40} height={40} className="w-10 h-10 transition-transform duration-200 group-hover:scale-110" />
             </div>
             <span className="text-2xl font-bold text-foreground">StudyHub</span>
           </Link>
@@ -270,7 +270,7 @@ export default function SignupPage() {
                 </div>
               ) : (
                 <>
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" className="w-6 h-6" />
+                  <Image src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" width={24} height={24} className="w-6 h-6" />
                   Continue with Google
                 </>
               )}
