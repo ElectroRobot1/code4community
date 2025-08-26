@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from "firebase/auth";
 import { auth, provider } from "@/firebase";
@@ -50,17 +49,6 @@ export default function SignupPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-3 mb-8 group">
-            <div className="relative">
-              <Image
-                src="/logo.svg"
-                alt="StudyHub Logo"
-                width={40}
-                height={40}
-                className="w-10 h-10 transition-transform duration-200 group-hover:scale-110"
-              />
-            </div>
-            <span className="text-2xl font-bold text-foreground">StudyHub</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
           <p className="text-muted-foreground">Join StudyHub to get started</p>
