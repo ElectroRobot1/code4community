@@ -137,7 +137,7 @@ export default function MathLabPage() {
   // Check for student requests
   useEffect(() => {
     if (displayUser?.mathLabRole === 'student') {
-      const checkStudentRequest = async () => {
+      const checkStudentRequest = () => {
         try {
           const q = query(
             collection(firestore, "tutoringRequests"),
@@ -175,12 +175,15 @@ export default function MathLabPage() {
           return unsubscribe;
         } catch (error) {
           console.error("Error checking student request:", error);
+          return () => {}; // Return empty cleanup function on error
         }
       };
       
       const unsubscribe = checkStudentRequest();
       return () => {
-        if (unsubscribe) unsubscribe();
+        if (unsubscribe && typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
       };
     }
   }, [displayUser?.mathLabRole, user?.uid, cachedUser?.uid]);
