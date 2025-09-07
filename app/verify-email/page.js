@@ -226,7 +226,7 @@ export default function VerifyEmailPage() {
                   {countdown}
                 </div>
                 <p className="text-sm text-gray-500">
-                  This page will close in {countdown} second{countdown !== 1 ? &apos;s&apos; : &apos;&apos;}
+                  This page will close in {countdown} second{countdown !== 1 ? 's' : ''}
                 </p>
               </div>
             )}
