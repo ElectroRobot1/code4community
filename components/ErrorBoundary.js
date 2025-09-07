@@ -27,7 +27,7 @@ class ErrorBoundary extends Component {
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Something went wrong</h1>
             <p className="text-muted-foreground mb-6">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+              We&apos;re sorry, but something unexpected happened. Please try refreshing the page.
             </p>
             <div className="space-y-3">
               <button

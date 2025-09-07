@@ -227,7 +227,7 @@ export default function MathLabPage() {
         if (unsubscribe) unsubscribe();
       };
     }
-  }, [displayUser?.mathLabRole, user?.uid, cachedUser?.uid]);
+  }, [displayUser?.mathLabRole, user?.uid, cachedUser?.uid, fetchPendingRequests]);
 
 
   // Session timer effect
