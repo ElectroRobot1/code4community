@@ -184,6 +184,56 @@ export default function MathLabPage() {
   // Use cached user if available, fallback to real userData - memoized for performance
   const displayUser = useMemo(() => userData || cachedUser, [userData, cachedUser]);
 
+  // Function to fetch pending requests for tutors
+  // Optimized fetchPendingRequests with intelligent caching
+  const fetchPendingRequests = useCallback(() => {
+    if (displayUser?.mathLabRole !== 'tutor') {
+      return () => {}; // Return empty cleanup function
+    }
+    
+    const timing = CachePerformance.startTiming('fetchPendingRequests');
+    
+    // Try to load from cache first, but always refresh for real-time data
+    const cachedRequests = MathLabCache.getRequests();
+    if (cachedRequests && cachedRequests.length >= 0) {
+      setPendingRequests(cachedRequests);
+      setIsLoadingRequests(false);
+    } else {
+      setIsLoadingRequests(true);
+    }
+    
+    // Always fetch fresh data for real-time updates
+    setIsLoadingRequests(true);
+    
+    try {
+      const q = query(
+        collection(firestore, "tutoringRequests"),
+        where("status", "==", "pending")
+      );
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const requests = [];
+        snapshot.forEach((doc) => {
+          requests.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Cache the requests
+        MathLabCache.setRequests(requests);
+        setPendingRequests(requests);
+        setIsLoadingRequests(false);
+        
+        CachePerformance.endTiming(timing);
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+      setIsLoadingRequests(false);
+      CachePerformance.endTiming(timing);
+      return () => {}; // Return empty cleanup function on error
+    }
+  }, [displayUser?.mathLabRole]);
+
   // Redirect to login if not authenticated (use cached user if available)
   useEffect(() => {
     if (!user && !cachedUser) {
@@ -351,55 +401,6 @@ export default function MathLabPage() {
     }
   };
 
-  // Function to fetch pending requests for tutors
-  // Optimized fetchPendingRequests with intelligent caching
-  const fetchPendingRequests = useCallback(() => {
-    if (displayUser?.mathLabRole !== 'tutor') {
-      return () => {}; // Return empty cleanup function
-    }
-    
-    const timing = CachePerformance.startTiming('fetchPendingRequests');
-    
-    // Try to load from cache first, but always refresh for real-time data
-    const cachedRequests = MathLabCache.getRequests();
-    if (cachedRequests && cachedRequests.length >= 0) {
-      setPendingRequests(cachedRequests);
-      setIsLoadingRequests(false);
-    } else {
-      setIsLoadingRequests(true);
-    }
-    
-    // Always fetch fresh data for real-time updates
-    setIsLoadingRequests(true);
-    
-    try {
-      const q = query(
-        collection(firestore, "tutoringRequests"),
-        where("status", "==", "pending")
-      );
-      
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const requests = [];
-        snapshot.forEach((doc) => {
-          requests.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Cache the requests
-        MathLabCache.setRequests(requests);
-        setPendingRequests(requests);
-        setIsLoadingRequests(false);
-        
-        CachePerformance.endTiming(timing);
-      });
-
-      return unsubscribe;
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-      setIsLoadingRequests(false);
-      CachePerformance.endTiming(timing);
-      return () => {}; // Return empty cleanup function on error
-    }
-  }, [displayUser?.mathLabRole]);
 
   // Helper function to format time
   const formatTime = (seconds) => {
