@@ -2,46 +2,8 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { generateCSPHeader } from "@/utils/security";
 
-// Security headers configuration
-export async function headers() {
-  return [
-    {
-      source: '/(.*)',
-      headers: [
-        {
-          key: 'Content-Security-Policy',
-          value: generateCSPHeader(),
-        },
-        {
-          key: 'X-Frame-Options',
-          value: 'SAMEORIGIN',
-        },
-        {
-          key: 'X-Content-Type-Options',
-          value: 'nosniff',
-        },
-        {
-          key: 'Referrer-Policy',
-          value: 'strict-origin-when-cross-origin',
-        },
-        {
-          key: 'Permissions-Policy',
-          value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
-        },
-        {
-          key: 'X-XSS-Protection',
-          value: '1; mode=block',
-        },
-        {
-          key: 'Strict-Transport-Security',
-          value: 'max-age=31536000; includeSubDomains; preload',
-        },
-      ],
-    },
-  ];
-}
+// Security headers are configured in next.config.mjs
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
