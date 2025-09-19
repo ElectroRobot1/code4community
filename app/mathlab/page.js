@@ -572,7 +572,7 @@ export default function MathLabPage() {
     }
   };
 
-  const handleRoleSelection = async () => {
+  const handleRoleSelection = useCallback(async () => {
     // Automatically set role to 'student' since that's the only option
     const selectedRole = 'student';
     
@@ -631,7 +631,14 @@ export default function MathLabPage() {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [cachedUser, user?.uid]);
+
+  // Auto-set role to student if not set and continue to main page
+  useEffect(() => {
+    if (showRoleSelection && displayUser) {
+      handleRoleSelection();
+    }
+  }, [showRoleSelection, displayUser, handleRoleSelection]);
 
   // Don't show loading state - use cached data immediately
   if (!displayUser) {
@@ -895,13 +902,6 @@ export default function MathLabPage() {
       </div>
     );
   }
-
-  // Auto-set role to student if not set and continue to main page
-  useEffect(() => {
-    if (showRoleSelection && displayUser) {
-      handleRoleSelection();
-    }
-  }, [showRoleSelection, displayUser]);
 
   return (
     <div className="min-h-screen bg-background">

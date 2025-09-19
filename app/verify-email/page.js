@@ -566,7 +566,7 @@ function VerifyEmailContent() {
             {status === "pending" && (
               <div className="space-y-3">
                 <div className="text-sm text-gray-600 mb-4">
-                  We've sent a verification email to <strong>{user?.email}</strong>. 
+                  We&apos;ve sent a verification email to <strong>{user?.email}</strong>. 
                   Please check your inbox and click the verification link to continue.
                 </div>
                 <button
