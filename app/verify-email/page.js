@@ -98,6 +98,14 @@ function VerifyEmailContent() {
         // Force refresh the auth state to update emailVerified status
         if (auth.currentUser) {
           await auth.currentUser.reload();
+          console.log('User reloaded, emailVerified:', auth.currentUser.emailVerified);
+        }
+        
+        // Also trigger a custom event for immediate detection
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('emailVerified', { 
+            detail: { verified: true, userId: auth.currentUser?.uid } 
+          }));
         }
 
       } catch (error) {
@@ -162,15 +170,6 @@ function VerifyEmailContent() {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownInterval);
-          // Try to close the current tab (will work if opened in popup/new tab)
-          try {
-            window.close();
-          } catch (e) {
-            // If can't close (e.g., not in popup), redirect instead
-            const redirectTo = searchParams.get('redirectTo');
-            const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
-            router.push(redirectUrl);
-          }
           
           // Send message to parent window to redirect and sign in
           if (window.opener) {
@@ -178,6 +177,20 @@ function VerifyEmailContent() {
               type: 'EMAIL_VERIFIED', 
               action: 'redirect_and_signin' 
             }, window.location.origin);
+            // Try to close the popup
+            try {
+              window.close();
+            } catch (e) {
+              // If can't close, redirect instead
+              const redirectTo = searchParams.get('redirectTo');
+              const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
+              router.push(redirectUrl);
+            }
+          } else {
+            // Not in popup, redirect directly
+            const redirectTo = searchParams.get('redirectTo');
+            const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
+            router.push(redirectUrl);
           }
           return 0;
         }
@@ -316,7 +329,19 @@ function VerifyEmailContent() {
             {/* Action Buttons */}
             {status === "success" && (
               <div className="space-y-3">
-                {/* Page will auto-close after countdown */}
+                <button
+                  onClick={() => {
+                    const redirectTo = searchParams.get('redirectTo');
+                    const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
+                    router.push(redirectUrl);
+                  }}
+                  className="w-full bg-primary text-white py-3 px-4 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Continue to Dashboard
+                </button>
+                <p className="text-xs text-gray-500 text-center">
+                  Or wait for automatic redirect in {countdown} seconds
+                </p>
               </div>
             )}
 

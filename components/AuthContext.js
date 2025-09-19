@@ -117,8 +117,10 @@ export function AuthProvider({ children }) {
     const handleEmailVerification = () => {
       const verificationStatus = localStorage.getItem('emailVerificationStatus');
       if (verificationStatus === 'verified' && auth.currentUser) {
+        console.log('AuthContext: Detected email verification, reloading user...');
         // Force reload the user to get updated emailVerified status
         auth.currentUser.reload().then(() => {
+          console.log('AuthContext: User reloaded, emailVerified:', auth.currentUser.emailVerified);
           // Clear the verification status
           localStorage.removeItem('emailVerificationStatus');
         }).catch((error) => {
@@ -127,13 +129,30 @@ export function AuthProvider({ children }) {
       }
     };
 
+    const handleEmailVerifiedEvent = (event) => {
+      console.log('AuthContext: Received emailVerified event:', event.detail);
+      if (auth.currentUser) {
+        auth.currentUser.reload().then(() => {
+          console.log('AuthContext: User reloaded after event, emailVerified:', auth.currentUser.emailVerified);
+        }).catch((error) => {
+          console.error('Error reloading user after email verification event:', error);
+        });
+      }
+    };
+
     // Check immediately
     handleEmailVerification();
+    
+    // Listen for custom email verification events
+    window.addEventListener('emailVerified', handleEmailVerifiedEvent);
     
     // Set up interval to check for verification status
     const interval = setInterval(handleEmailVerification, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('emailVerified', handleEmailVerifiedEvent);
+    };
   }, []);
 
   // Listen for role change events to force refresh

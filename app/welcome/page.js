@@ -68,18 +68,29 @@ export default function Welcome() {
       if (event.origin !== window.location.origin) return;
       
       if (event.data.type === 'EMAIL_VERIFIED' && event.data.action === 'redirect_and_signin') {
+        console.log('Received EMAIL_VERIFIED message, reloading...');
         // Force refresh the authentication state
         window.location.reload();
       }
     };
 
+    const handleEmailVerifiedEvent = (event) => {
+      console.log('Received emailVerified custom event:', event.detail);
+      // Force refresh the authentication state
+      window.location.reload();
+    };
+
     // Listen for messages from the verification page
     window.addEventListener('message', handleMessage);
+    
+    // Listen for custom email verification events
+    window.addEventListener('emailVerified', handleEmailVerifiedEvent);
     
     // Also check localStorage for email verification status
     const checkEmailVerification = () => {
       const verificationStatus = localStorage.getItem('emailVerificationStatus');
       if (verificationStatus === 'verified') {
+        console.log('Found emailVerificationStatus in localStorage, reloading...');
         localStorage.removeItem('emailVerificationStatus');
         // Force refresh the authentication state to get updated emailVerified status
         window.location.reload();
@@ -92,6 +103,7 @@ export default function Welcome() {
 
     return () => {
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('emailVerified', handleEmailVerifiedEvent);
       clearInterval(interval);
     };
   }, []);
