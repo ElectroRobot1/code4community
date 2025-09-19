@@ -1,0 +1,211 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for authentication and validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidEmail(email) {
+      return email is string && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    function isValidRole(role) {
+      return role in ['student', 'teacher', 'admin'];
+    }
+    
+    function isValidMathLabRole(role) {
+      return role in ['', 'tutor', 'student'];
+    }
+    
+    function isValidCourse(course) {
+      return course in ['Algebra 1', 'Algebra 2', 'Algebra 2 Trig', 'Functions', 'Trig with Adv Alg', 'Geometry'];
+    }
+    
+    function isValidRequestStatus(status) {
+      return status in ['pending', 'accepted', 'completed', 'cancelled'];
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'admin'];
+    }
+    
+    function isStudent() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['student', 'teacher', 'admin'];
+    }
+    
+    // Users collection - Contains user profile data
+    match /users/{userId} {
+      // Allow read access to own user document
+      allow read: if isAuthenticated() && isOwner(userId);
+      
+      // Allow create: Only during signup process
+      allow create: if isAuthenticated() && 
+                      isOwner(userId) &&
+                      isEmailVerified() &&
+                      // Validate required fields
+                      request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'createdAt', 'updatedAt']) &&
+                      // Validate field types and values
+                      request.resource.data.email is string &&
+                      isValidEmail(request.resource.data.email) &&
+                      request.resource.data.displayName is string &&
+                      request.resource.data.displayName.size() > 0 &&
+                      request.resource.data.displayName.size() <= 100 &&
+                      request.resource.data.role is string &&
+                      isValidRole(request.resource.data.role) &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.updatedAt is timestamp &&
+                      // Ensure user can only set their own email
+                      request.resource.data.email == request.auth.token.email &&
+                      // Prevent role escalation during signup
+                      request.resource.data.role == 'student';
+      
+      // Allow update: Only own document with restrictions
+      allow update: if isAuthenticated() && 
+                      isOwner(userId) &&
+                      isEmailVerified() &&
+                      // Prevent changing critical fields
+                      request.resource.data.email == resource.data.email &&
+                      request.resource.data.uid == resource.data.uid &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      // Validate updated fields
+                      request.resource.data.displayName is string &&
+                      request.resource.data.displayName.size() > 0 &&
+                      request.resource.data.displayName.size() <= 100 &&
+                      request.resource.data.role is string &&
+                      isValidRole(request.resource.data.role) &&
+                      request.resource.data.updatedAt is timestamp &&
+                      // Only allow role changes by admins or prevent role escalation
+                      (isAdmin() || request.resource.data.role == resource.data.role) &&
+                      // Validate optional fields if present
+                      (!('mathLabRole' in request.resource.data) || 
+                       (request.resource.data.mathLabRole is string && 
+                        isValidMathLabRole(request.resource.data.mathLabRole))) &&
+                      (!('photoURL' in request.resource.data) || 
+                       (request.resource.data.photoURL is string && 
+                        request.resource.data.photoURL.size() <= 500));
+      
+      // Allow delete: Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // TutoringRequests collection - Contains math lab tutoring requests
+    match /tutoringRequests/{requestId} {
+      // Allow read: Students can read their own requests, tutors can read pending requests
+      allow read: if isAuthenticated() && 
+                    isEmailVerified() && (
+                      // Students can read their own requests
+                      (isStudent() && resource.data.studentId == request.auth.uid) ||
+                      // Tutors can read pending requests
+                      (isTeacher() && resource.data.status == 'pending') ||
+                      // Admins can read all requests
+                      isAdmin()
+                    );
+      
+      // Allow create: Only students can create requests
+      allow create: if isAuthenticated() && 
+                      isEmailVerified() && 
+                      isStudent() &&
+                      // Validate required fields
+                      request.resource.data.keys().hasAll(['studentId', 'studentName', 'course', 'description', 'status', 'createdAt', 'updatedAt']) &&
+                      // Validate field types and values
+                      request.resource.data.studentId is string &&
+                      request.resource.data.studentId == request.auth.uid &&
+                      request.resource.data.studentName is string &&
+                      request.resource.data.studentName.size() > 0 &&
+                      request.resource.data.studentName.size() <= 100 &&
+                      request.resource.data.course is string &&
+                      isValidCourse(request.resource.data.course) &&
+                      request.resource.data.description is string &&
+                      request.resource.data.description.size() > 0 &&
+                      request.resource.data.description.size() <= 1000 &&
+                      request.resource.data.status is string &&
+                      request.resource.data.status == 'pending' &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.updatedAt is timestamp &&
+                      // Validate optional fields if present
+                      (!('tutorId' in request.resource.data) || 
+                       (request.resource.data.tutorId is string && 
+                        request.resource.data.tutorId.size() > 0)) &&
+                      (!('tutorName' in request.resource.data) || 
+                       (request.resource.data.tutorName is string && 
+                        request.resource.data.tutorName.size() <= 100)) &&
+                      (!('acceptedAt' in request.resource.data) || 
+                       (request.resource.data.acceptedAt is timestamp)) &&
+                      (!('completedAt' in request.resource.data) || 
+                       (request.resource.data.completedAt is timestamp));
+      
+      // Allow update: Students can update their own pending requests, tutors can accept/complete
+      allow update: if isAuthenticated() && 
+                      isEmailVerified() && (
+                        // Students can only update their own pending requests
+                        (isStudent() && 
+                         resource.data.studentId == request.auth.uid && 
+                         resource.data.status == 'pending' &&
+                         // Only allow updating description and course
+                         request.resource.data.studentId == resource.data.studentId &&
+                         request.resource.data.status == resource.data.status &&
+                         request.resource.data.createdAt == resource.data.createdAt &&
+                         request.resource.data.updatedAt is timestamp) ||
+                        // Tutors can accept pending requests
+                        (isTeacher() && 
+                         resource.data.status == 'pending' &&
+                         request.resource.data.status == 'accepted' &&
+                         request.resource.data.tutorId == request.auth.uid &&
+                         request.resource.data.acceptedAt is timestamp &&
+                         request.resource.data.updatedAt is timestamp) ||
+                        // Tutors can complete accepted requests they're assigned to
+                        (isTeacher() && 
+                         resource.data.status == 'accepted' &&
+                         resource.data.tutorId == request.auth.uid &&
+                         request.resource.data.status == 'completed' &&
+                         request.resource.data.completedAt is timestamp &&
+                         request.resource.data.updatedAt is timestamp) ||
+                        // Students can cancel their own requests
+                        (isStudent() && 
+                         resource.data.studentId == request.auth.uid &&
+                         request.resource.data.status == 'cancelled' &&
+                         request.resource.data.updatedAt is timestamp) ||
+                        // Admins can update any request
+                        isAdmin()
+                      );
+      
+      // Allow delete: Students can delete their own pending requests, admins can delete any,
+      // and teachers can delete old pending requests (for cleanup)
+      allow delete: if isAuthenticated() && 
+                      isEmailVerified() && (
+                        (isStudent() && 
+                         resource.data.studentId == request.auth.uid && 
+                         resource.data.status == 'pending') ||
+                        // Allow teachers to delete old pending requests for cleanup
+                        (isTeacher() && resource.data.status == 'pending') ||
+                        isAdmin()
+                      );
+    }
+    
+    // Deny all other collections and documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

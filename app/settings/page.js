@@ -9,7 +9,7 @@ import { SettingsCache, UserCache, MathLabCache, CachePerformance, CacheInvalida
 import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
 
 export default function SettingsPage() {
-  const { user, userData } = useAuth();
+  const { user, userData, isEmailVerified } = useAuth();
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
   const [mathLabRole, setMathLabRole] = useState("");
@@ -57,6 +57,13 @@ export default function SettingsPage() {
       router.push('/login');
     }
   }, [user, cachedUser, router]);
+
+  // Redirect to email verification if email is not verified
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
 
   const handleMathLabRoleUpdate = async () => {
     if (!mathLabRole) {

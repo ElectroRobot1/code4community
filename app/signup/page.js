@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -24,12 +25,12 @@ export default function SignupPage() {
   const router = useRouter();
   const { user, userData, loading: authLoading } = useAuth();
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not during signup process)
   useEffect(() => {
-    if (!authLoading && user && userData) {
+    if (!authLoading && user && userData && !loading && !isSigningUp) {
       router.push("/mathlab");
     }
-  }, [user, userData, authLoading, router]);
+  }, [user, userData, authLoading, loading, isSigningUp, router]);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,6 +95,7 @@ export default function SignupPage() {
     }
     
     setLoading(true);
+    setIsSigningUp(true);
     
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -119,11 +121,8 @@ export default function SignupPage() {
         console.error("Email verification error:", verificationError);
       }
       
-      // Sign out the user so they must verify email before accessing the app
-      await auth.signOut();
-      
-      // Redirect to check email page
-      router.push("/check-email?email=" + encodeURIComponent(user.email));
+      // Redirect to email verification page (user stays signed in)
+      router.push("/verify-email?email=" + encodeURIComponent(user.email));
     } catch (err) {
       console.error("Email signup error", err);
       if (err.code === "auth/email-already-in-use") {
@@ -137,12 +136,14 @@ export default function SignupPage() {
       }
     } finally {
       setLoading(false);
+      setIsSigningUp(false);
     }
   };
 
   const handleGoogleSignup = async () => {
     setError(null);
     setLoading(true);
+    setIsSigningUp(true);
     
     try {
       const result = await signInWithPopup(auth, provider);
@@ -195,6 +196,7 @@ export default function SignupPage() {
       }
     } finally {
       setLoading(false);
+      setIsSigningUp(false);
     }
   };
 

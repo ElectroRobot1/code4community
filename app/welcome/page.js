@@ -8,7 +8,7 @@ import { AppCardSkeleton } from "../../components/SkeletonLoader";
 import { UserCache, CachePerformance } from "@/utils/cache";
 
 export default function Welcome() {
-  const { userData } = useAuth();
+  const { userData, isEmailVerified } = useAuth();
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,8 +46,20 @@ export default function Welcome() {
       setIsLoading(false);
       
       CachePerformance.endTiming(timing);
+    } else {
+      // Clear cached user when userData is null (user signed out)
+      setCachedUser(null);
+      setIsLoading(false);
     }
   }, [userData]);
+
+  // Check email verification status and redirect if needed
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      // User is signed in but email is not verified, redirect to verification page
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
 
   // Listen for email verification completion from popup/verification page
   useEffect(() => {
@@ -69,7 +81,7 @@ export default function Welcome() {
       const verificationStatus = localStorage.getItem('emailVerificationStatus');
       if (verificationStatus === 'verified') {
         localStorage.removeItem('emailVerificationStatus');
-        // Force refresh the authentication state
+        // Force refresh the authentication state to get updated emailVerified status
         window.location.reload();
       }
     };
@@ -83,6 +95,21 @@ export default function Welcome() {
       clearInterval(interval);
     };
   }, []);
+
+  // Handle redirect after successful email verification
+  useEffect(() => {
+    if (userData && isEmailVerified) {
+      // User is verified, check if they came from a specific page
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirectTo');
+      
+      if (redirectTo && redirectTo.startsWith('/')) {
+        // Redirect to the original destination
+        router.push(redirectTo);
+      }
+      // If no redirectTo param, stay on welcome page (default behavior)
+    }
+  }, [userData, isEmailVerified, router]);
 
   const handleMathLabClick = useCallback(() => {
     if (userData || cachedUser) {

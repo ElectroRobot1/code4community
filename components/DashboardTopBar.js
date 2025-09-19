@@ -67,7 +67,13 @@ export default function DashboardTopBar({ title = "StudyHub", onNavigation, show
       await signOut(auth);
       // Clear all caches on logout to prevent stale data
       UserCache.clearUserData();
-      router.push("/welcome");
+      
+      // If we're already on the welcome page, force a refresh to update the UI
+      if (window.location.pathname === '/welcome') {
+        window.location.reload();
+      } else {
+        router.push("/welcome");
+      }
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -106,7 +112,13 @@ export default function DashboardTopBar({ title = "StudyHub", onNavigation, show
                   height={32}
                   className="w-8 h-8"
                 />
-                <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+                <button
+                  onClick={() => router.push("/welcome")}
+                  className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                  title="Go to Home"
+                >
+                  {title}
+                </button>
               </div>
               
               {/* Home Button - Always show */}

@@ -48,11 +48,10 @@ export default function LoginPage() {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const user = result.user;
       
-      // Check if email is verified
+      // Check if email is verified - redirect to verification page instead of signing out
       if (!user.emailVerified) {
-        // Sign out the user since email is not verified
-        await auth.signOut();
-        setError("Please verify your email before signing in. Check your inbox for a verification link.");
+        // Redirect to verification page (user stays signed in)
+        router.push('/verify-email?email=' + encodeURIComponent(user.email));
         return;
       }
       

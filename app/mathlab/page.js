@@ -12,7 +12,7 @@ import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
 import Image from "next/image";
 
 export default function MathLabPage() {
-  const { user, userData } = useAuth();
+  const { user, userData, isEmailVerified } = useAuth();
   const router = useRouter();
   const [selectedCourse, setSelectedCourse] = useState("");
   const [isMatching, setIsMatching] = useState(false);
@@ -241,6 +241,13 @@ export default function MathLabPage() {
     }
   }, [user, cachedUser, router]);
 
+  // Redirect to email verification if email is not verified
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
+
   // Fetch pending requests if user is a tutor
   useEffect(() => {
     if (displayUser?.mathLabRole === 'tutor') {
@@ -416,6 +423,11 @@ export default function MathLabPage() {
 
   // Function to clean up old/expired requests (for future history system)
   const cleanupOldRequests = useCallback(async () => {
+    // Only allow teachers and admins to run cleanup
+    if (!displayUser || !['teacher', 'admin'].includes(displayUser.role)) {
+      return;
+    }
+    
     try {
       const now = new Date();
       const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
@@ -447,7 +459,7 @@ export default function MathLabPage() {
     } catch (error) {
       console.error("Error cleaning up old requests:", error);
     }
-  }, []);
+  }, [displayUser]);
 
   // Cleanup old requests periodically
   useEffect(() => {

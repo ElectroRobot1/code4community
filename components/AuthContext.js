@@ -112,6 +112,30 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [fetchUserData]);
 
+  // Listen for email verification completion
+  useEffect(() => {
+    const handleEmailVerification = () => {
+      const verificationStatus = localStorage.getItem('emailVerificationStatus');
+      if (verificationStatus === 'verified' && auth.currentUser) {
+        // Force reload the user to get updated emailVerified status
+        auth.currentUser.reload().then(() => {
+          // Clear the verification status
+          localStorage.removeItem('emailVerificationStatus');
+        }).catch((error) => {
+          console.error('Error reloading user after email verification:', error);
+        });
+      }
+    };
+
+    // Check immediately
+    handleEmailVerification();
+    
+    // Set up interval to check for verification status
+    const interval = setInterval(handleEmailVerification, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Listen for role change events to force refresh
   useEffect(() => {
     const handleRoleChange = async (event) => {
@@ -150,7 +174,8 @@ export function AuthProvider({ children }) {
     loading,
     getRedirectUrl,
     refreshUserData,
-    lastFetchTime
+    lastFetchTime,
+    isEmailVerified: user?.emailVerified || false
   }), [user, userData, loading, refreshUserData, lastFetchTime]);
 
   return (
