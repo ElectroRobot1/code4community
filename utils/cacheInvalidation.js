@@ -3,13 +3,25 @@
  * Prevents stale data issues across the application
  */
 
-import { UserCache, MathLabCache, CacheManager } from './cache';
+import { UserCache, MathLabCache, CacheManager, CACHE_CONFIG } from './cache';
 
 // Cache invalidation strategies
 export class CacheInvalidationManager {
   constructor() {
     this.invalidationListeners = new Map();
     this.setupGlobalInvalidation();
+  }
+
+  // Read raw cache entry metadata (timestamp/ttl) directly
+  getRawEntry(cacheKey) {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (_e) {
+      return null;
+    }
   }
 
   // Setup global invalidation listeners
@@ -22,8 +34,8 @@ export class CacheInvalidationManager {
 
   // Handle storage events for cross-tab cache invalidation
   handleStorageEvent(event) {
-    if (event.key && event.key.startsWith('brhs_cache_')) {
-      const cacheKey = event.key.replace('brhs_cache_', '');
+    if (event.key && event.key.startsWith('brhs_')) {
+      const cacheKey = event.key;
       
       // Notify listeners about cache invalidation
       if (this.invalidationListeners.has(cacheKey)) {
@@ -66,16 +78,16 @@ export class CacheInvalidationManager {
 
   // Invalidate user-related caches
   invalidateUserCaches(reason = 'user_update') {
-    this.invalidateCache('user_data', reason);
-    this.invalidateCache('user_preferences', reason);
-    this.invalidateCache('mathlab_requests', reason);
-    this.invalidateCache('mathlab_sessions', reason);
+    this.invalidateCache(CACHE_CONFIG.USER_DATA, reason);
+    this.invalidateCache(CACHE_CONFIG.USER_PREFERENCES, reason);
+    this.invalidateCache(CACHE_CONFIG.MATHLAB_REQUESTS, reason);
+    this.invalidateCache(CACHE_CONFIG.MATHLAB_SESSIONS, reason);
   }
 
   // Invalidate MathLab-related caches
   invalidateMathLabCaches(reason = 'mathlab_update') {
-    this.invalidateCache('mathlab_requests', reason);
-    this.invalidateCache('mathlab_sessions', reason);
+    this.invalidateCache(CACHE_CONFIG.MATHLAB_REQUESTS, reason);
+    this.invalidateCache(CACHE_CONFIG.MATHLAB_SESSIONS, reason);
   }
 
   // Invalidate all caches
@@ -87,10 +99,10 @@ export class CacheInvalidationManager {
   invalidateOnDataChange(dataType, changeType) {
     switch (dataType) {
       case 'user_profile':
-        this.invalidateCache('user_data', `profile_${changeType}`);
+        this.invalidateCache(CACHE_CONFIG.USER_DATA, `profile_${changeType}`);
         break;
       case 'user_preferences':
-        this.invalidateCache('user_preferences', `preferences_${changeType}`);
+        this.invalidateCache(CACHE_CONFIG.USER_PREFERENCES, `preferences_${changeType}`);
         break;
       case 'mathlab_role':
         this.invalidateUserCaches(`role_${changeType}`);
@@ -112,20 +124,20 @@ export class CacheInvalidationManager {
     const staleThreshold = 5 * 60 * 1000; // 5 minutes
 
     // Check user data staleness
-    const userData = UserCache.getUserData();
-    if (userData && userData.timestamp) {
-      const age = now - userData.timestamp;
+    const userEntry = this.getRawEntry(CACHE_CONFIG.USER_DATA);
+    if (userEntry && userEntry.timestamp) {
+      const age = now - userEntry.timestamp;
       if (age > staleThreshold) {
-        this.invalidateCache('user_data', 'stale_data');
+        this.invalidateCache(CACHE_CONFIG.USER_DATA, 'stale_data');
       }
     }
 
     // Check MathLab requests staleness
-    const requests = MathLabCache.getRequests();
-    if (requests && requests.timestamp) {
-      const age = now - requests.timestamp;
+    const requestsEntry = this.getRawEntry(CACHE_CONFIG.MATHLAB_REQUESTS);
+    if (requestsEntry && requestsEntry.timestamp) {
+      const age = now - requestsEntry.timestamp;
       if (age > staleThreshold) {
-        this.invalidateCache('mathlab_requests', 'stale_data');
+        this.invalidateCache(CACHE_CONFIG.MATHLAB_REQUESTS, 'stale_data');
       }
     }
   }

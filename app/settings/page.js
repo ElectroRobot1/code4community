@@ -3,25 +3,25 @@ import { useAuth } from "../../components/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
-import { doc, updateDoc, collection, query, where, getDocs, deleteDoc, addDoc } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { SettingsCache, UserCache, MathLabCache, CachePerformance, CacheInvalidation } from "@/utils/cache";
-import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
+import { auth } from "@/firebase";
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { UserCache, CachePerformance } from "@/utils/cache";
 
 export default function SettingsPage() {
   const { user, userData, isEmailVerified } = useAuth();
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
-  const [mathLabRole, setMathLabRole] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState("");
-  
-  // Tutor management state
-  const [tutors, setTutors] = useState([]);
-  const [isLoadingTutors, setIsLoadingTutors] = useState(false);
-  const [newTutorEmail, setNewTutorEmail] = useState("");
-  const [isAddingTutor, setIsAddingTutor] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  
+  // Password change state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Optimized caching with centralized cache manager
   useEffect(() => {
@@ -30,7 +30,6 @@ export default function SettingsPage() {
     const cached = UserCache.getUserData();
     if (cached) {
       setCachedUser(cached);
-      setMathLabRole(cached.mathLabRole || "");
     }
     
     CachePerformance.endTiming(timing);
@@ -51,7 +50,6 @@ export default function SettingsPage() {
       // Update cache using centralized cache manager
       UserCache.setUserData(combinedUserData);
       setCachedUser(combinedUserData);
-      setMathLabRole(userData.mathLabRole || "");
       
       CachePerformance.endTiming(timing);
     }
@@ -60,7 +58,7 @@ export default function SettingsPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user && !cachedUser) {
-      router.push('/login');
+      router.push('/login?redirectTo=/settings');
     }
   }, [user, cachedUser, router]);
 
@@ -71,69 +69,6 @@ export default function SettingsPage() {
     }
   }, [userData, isEmailVerified, router]);
 
-  const handleMathLabRoleUpdate = async (selectedRole = mathLabRole) => {
-    if (!selectedRole) {
-      setUpdateMessage("Please select a role");
-      return;
-    }
-
-    setIsUpdating(true);
-    setUpdateMessage("");
-
-    try {
-      // Get user ID from multiple sources with proper fallback
-      const userId = user?.uid || cachedUser?.uid;
-      if (!userId) {
-        throw new Error("User ID not found. Please try refreshing the page.");
-      }
-
-      // Check if user is switching roles
-      const currentRole = cachedUser?.mathLabRole;
-      const isSwitchingToStudent = currentRole === 'tutor' && selectedRole === 'student';
-      
-      // If switching to student, clear any active tutor sessions
-      if (isSwitchingToStudent) {
-        // Clear MathLab cache to remove any tutor-related data
-        MathLabCache.clearAll();
-      }
-
-      // Update Firestore
-      await updateDoc(doc(firestore, "users", userId), {
-        mathLabRole: selectedRole,
-        updatedAt: new Date()
-      });
-
-      // Update local cache using centralized cache manager
-      const updatedUser = { ...cachedUser, mathLabRole: selectedRole };
-      UserCache.setUserData(updatedUser);
-      setCachedUser(updatedUser);
-      
-      // Invalidate related caches to prevent stale data
-      invalidateOnDataChange('mathlab_role', 'update');
-      
-      // Trigger a custom event to force AuthContext refresh
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('userRoleChanged', { 
-          detail: { newRole: selectedRole, userId } 
-        }));
-      }
-
-      // Show appropriate success message
-      if (isSwitchingToStudent) {
-        setUpdateMessage("Role updated to student. Any active tutor sessions have been cleared.");
-      } else {
-        setUpdateMessage("Math Lab role updated successfully!");
-      }
-      
-      // Clear message after 4 seconds (longer for role change message)
-      setTimeout(() => setUpdateMessage(""), 4000);
-    } catch (error) {
-      console.error("Error updating math lab role:", error);
-      setUpdateMessage(error.message || "Failed to update role. Please try again.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   // Use cached user if available, fallback to real userData + user
   const displayUser = cachedUser || (userData && user ? { ...userData, uid: user.uid, email: user.email } : null);
@@ -145,107 +80,96 @@ export default function SettingsPage() {
   // Tab configuration
   const tabs = [
     { id: "profile", label: "Profile" },
-    { id: "mathlab", label: "Math Lab" },
     { id: "preferences", label: "Preferences" },
     { id: "account", label: "Account" }
   ];
 
-  // Fetch tutors (admin only)
-  const fetchTutors = async () => {
-    if (displayUser?.role !== 'admin') return;
+
+  // Password change functionality
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
     
-    setIsLoadingTutors(true);
-    try {
-      const q = query(
-        collection(firestore, "users"),
-        where("mathLabRole", "==", "tutor")
-      );
-      
-      const snapshot = await getDocs(q);
-      const tutorsList = [];
-      snapshot.forEach((doc) => {
-        tutorsList.push({ id: doc.id, ...doc.data() });
-      });
-      
-      setTutors(tutorsList);
-    } catch (error) {
-      console.error("Error fetching tutors:", error);
-      setUpdateMessage("Failed to fetch tutors");
-    } finally {
-      setIsLoadingTutors(false);
-    }
-  };
-
-  // Add tutor (admin only)
-  const handleAddTutor = async () => {
-    if (!newTutorEmail.trim()) {
-      setUpdateMessage("Please enter an email address");
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordMessage("Please fill in all fields");
+      setPasswordSuccess(false);
       return;
     }
-
-    setIsAddingTutor(true);
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage("New passwords do not match");
+      setPasswordSuccess(false);
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setPasswordMessage("New password must be at least 6 characters long");
+      setPasswordSuccess(false);
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    setPasswordMessage("");
+    
     try {
-      // First, find the user by email
-      const q = query(
-        collection(firestore, "users"),
-        where("email", "==", newTutorEmail.trim())
-      );
+      console.log('[SettingsPage] handlePasswordChange: Starting password change process');
       
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        setUpdateMessage("User with this email not found. They must sign up first.");
-        return;
+      // Re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      console.log('[SettingsPage] handlePasswordChange: User re-authenticated successfully');
+      
+      // Update password
+      await updatePassword(user, newPassword);
+      console.log('[SettingsPage] handlePasswordChange: Password updated successfully');
+      
+      // Success
+      setPasswordMessage("Password changed successfully!");
+      setPasswordSuccess(true);
+      
+      // Clear form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      
+      // Hide form after 3 seconds
+      setTimeout(() => {
+        setShowPasswordForm(false);
+        setPasswordMessage("");
+        setPasswordSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('[SettingsPage] handlePasswordChange: Password change error', {
+        code: error.code,
+        message: error.message
+      });
+      
+      if (error.code === 'auth/wrong-password') {
+        setPasswordMessage("The current password you entered is incorrect. Please try again.");
+      } else if (error.code === 'auth/weak-password') {
+        setPasswordMessage("New password is too weak. Please choose a stronger password.");
+      } else if (error.code === 'auth/requires-recent-login') {
+        setPasswordMessage("Please sign out and sign back in, then try again.");
+      } else if (error.code === 'auth/invalid-credential') {
+        setPasswordMessage("The current password you entered is incorrect. Please try again.");
+      } else {
+        setPasswordMessage("Failed to change password. Please try again.");
       }
-
-      const userDoc = snapshot.docs[0];
-      const userData = userDoc.data();
-
-      // Update their mathLabRole to tutor
-      await updateDoc(doc(firestore, "users", userDoc.id), {
-        mathLabRole: "tutor",
-        updatedAt: new Date()
-      });
-
-      // Refresh tutors list
-      await fetchTutors();
-      setNewTutorEmail("");
-      setUpdateMessage(`Successfully added ${userData.displayName || userData.email} as a tutor`);
-    } catch (error) {
-      console.error("Error adding tutor:", error);
-      setUpdateMessage("Failed to add tutor. Please try again.");
+      setPasswordSuccess(false);
     } finally {
-      setIsAddingTutor(false);
+      setIsChangingPassword(false);
     }
   };
 
-  // Remove tutor (admin only)
-  const handleRemoveTutor = async (tutorId, tutorName) => {
-    if (!confirm(`Are you sure you want to remove ${tutorName} as a tutor?`)) {
-      return;
-    }
-
-    try {
-      // Update their mathLabRole to student
-      await updateDoc(doc(firestore, "users", tutorId), {
-        mathLabRole: "student",
-        updatedAt: new Date()
-      });
-
-      // Refresh tutors list
-      await fetchTutors();
-      setUpdateMessage(`Successfully removed ${tutorName} as a tutor`);
-    } catch (error) {
-      console.error("Error removing tutor:", error);
-      setUpdateMessage("Failed to remove tutor. Please try again.");
-    }
+  const handleClosePasswordForm = () => {
+    setShowPasswordForm(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordMessage("");
+    setPasswordSuccess(false);
   };
-
-  // Load tutors when admin accesses the page
-  useEffect(() => {
-    if (displayUser?.role === 'admin' && activeTab === 'mathlab') {
-      fetchTutors();
-    }
-  }, [displayUser?.role, activeTab]);
 
   // Render tab content
   const renderTabContent = () => {
@@ -287,151 +211,6 @@ export default function SettingsPage() {
           </div>
         );
 
-      case "mathlab":
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Math Lab Settings</h3>
-              <p className="text-muted-foreground mb-6">
-                Choose your role in the Math Lab system. This determines how you&apos;ll interact with the tutoring platform.
-              </p>
-
-              <div className="space-y-6">
-                {/* Student Role - Only Option */}
-                <div>
-                  <label className="block text-sm font-semibold mb-3 text-foreground">
-                    Math Lab Role
-                  </label>
-                  
-                  <div className="max-w-md">
-                    <div className="p-4 border-2 border-primary bg-primary/5 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-4 h-4 rounded-full border-2 border-primary bg-primary">
-                          <div className="w-2 h-2 bg-white rounded-full m-auto"></div>
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">Student</div>
-                          <div className="text-sm text-muted-foreground">
-                            Get help from tutors and access learning resources
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mt-3">
-                      Tutor roles are managed by administrators only. Contact an admin if you need tutor access.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Update Button - Only show if not already student */}
-                {displayUser?.mathLabRole !== 'student' && (
-                  <div className="pt-4">
-                    <button
-                      onClick={() => handleMathLabRoleUpdate('student')}
-                      disabled={isUpdating}
-                      className={`px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors ${
-                        !isUpdating
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                          : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isUpdating ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                          Setting up...
-                        </div>
-                      ) : (
-                        "Set as Student"
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Admin Tutor Management */}
-                {displayUser?.role === 'admin' && (
-                  <div className="border-t border-border pt-6">
-                    <h4 className="text-lg font-semibold text-foreground mb-4">Tutor Management</h4>
-                    
-                    {/* Add Tutor Section */}
-                    <div className="bg-muted/20 rounded-lg p-4 mb-6">
-                      <h5 className="font-medium text-foreground mb-3">Add New Tutor</h5>
-                      <div className="flex space-x-3">
-                        <input
-                          type="email"
-                          placeholder="Enter user's email address"
-                          value={newTutorEmail}
-                          onChange={(e) => setNewTutorEmail(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                        <button
-                          onClick={handleAddTutor}
-                          disabled={isAddingTutor || !newTutorEmail.trim()}
-                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {isAddingTutor ? "Adding..." : "Add Tutor"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Current Tutors List */}
-                    <div>
-                      <h5 className="font-medium text-foreground mb-3">Current Tutors ({tutors.length})</h5>
-                      
-                      {isLoadingTutors ? (
-                        <div className="text-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto"></div>
-                          <p className="text-muted-foreground mt-2">Loading tutors...</p>
-                        </div>
-                      ) : tutors.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <p>No tutors found. Add tutors using the form above.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {tutors.map((tutor) => (
-                            <div key={tutor.id} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <span className="text-sm font-medium text-primary">
-                                    {tutor.displayName ? tutor.displayName.charAt(0).toUpperCase() : tutor.email.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-foreground">
-                                    {tutor.displayName || tutor.email}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">{tutor.email}</p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveTutor(tutor.id, tutor.displayName || tutor.email)}
-                                className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Status Message */}
-                {updateMessage && (
-                  <div className={`p-3 rounded-lg text-sm font-medium ${
-                    updateMessage.includes("successfully") 
-                      ? "bg-green-100 text-green-800 border border-green-200" 
-                      : "bg-red-100 text-red-800 border border-red-200"
-                  }`}>
-                    {updateMessage}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
 
       case "preferences":
         return (
@@ -507,9 +286,12 @@ export default function SettingsPage() {
                         Change your account password
                       </p>
                     </div>
-                    <div className="px-3 py-1 bg-muted rounded-full text-sm text-muted-foreground">
-                      Coming Soon
-                    </div>
+                    <button
+                      onClick={() => setShowPasswordForm(true)}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      Change Password
+                    </button>
                   </div>
                 </div>
                 
@@ -596,6 +378,117 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Password Change Form Modal */}
+      {showPasswordForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-border rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-foreground">Change Password</h3>
+              <button
+                onClick={handleClosePasswordForm}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Enter current password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+
+              {passwordMessage && (
+                <div className={`p-3 rounded-lg text-sm font-medium ${
+                  passwordSuccess 
+                    ? "bg-green-100 text-green-800 border border-green-200" 
+                    : "bg-red-100 text-red-800 border border-red-200"
+                }`}>
+                  {passwordMessage}
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleClosePasswordForm}
+                  className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg font-medium hover:bg-muted/50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isChangingPassword ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                      Changing...
+                    </div>
+                  ) : (
+                    "Save"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message Overlay */}
+      {passwordSuccess && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-green-100 text-green-800 border border-green-200 rounded-lg px-6 py-3 shadow-lg">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Password changed successfully!
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

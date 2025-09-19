@@ -12,78 +12,107 @@ function CheckEmailContent() {
   
   const email = searchParams.get('email');
 
-  // Listen for email verification completion and check localStorage
+  // Listen for email verification completion and check localStorage (no polling)
   useEffect(() => {
+    console.log('[CheckEmailPage] useEffect: Setting up email verification listeners');
     let redirectTimeout = null;
-    let interval = null;
 
     const handleMessage = (event) => {
+      console.log('[CheckEmailPage] handleMessage: Received message', {
+        origin: event.origin,
+        type: event.data?.type,
+        isFromSameOrigin: event.origin === window.location.origin
+      });
+      
       if (event.origin !== window.location.origin) return;
       
       if (event.data.type === 'EMAIL_VERIFIED') {
+        console.log('[CheckEmailPage] handleMessage: Email verified message received');
         handleVerificationComplete();
       }
     };
 
-    // Check localStorage for verification status
-    const checkVerificationStatus = () => {
-      const verificationStatus = localStorage.getItem('emailVerificationStatus');
-      if (verificationStatus === 'verified') {
-        handleVerificationComplete();
+    // Local handler when storage changes (cross-tab)
+    const handleStorage = (event) => {
+      console.log('[CheckEmailPage] handleStorage: Storage event received', {
+        key: event.key,
+        newValue: event.newValue
+      });
+      
+      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
+        console.log('[CheckEmailPage] handleStorage: Email verification status change detected');
         localStorage.removeItem('emailVerificationStatus');
+        handleVerificationComplete();
       }
     };
 
     const handleVerificationComplete = () => {
+      console.log('[CheckEmailPage] handleVerificationComplete: Email verification completed');
       setIsVerified(true);
       setMessage("Email verified! Redirecting you to the dashboard...");
       
       // Redirect to welcome page after a short delay
+      console.log('[CheckEmailPage] handleVerificationComplete: Setting up redirect timeout');
       redirectTimeout = setTimeout(() => {
+        console.log('[CheckEmailPage] handleVerificationComplete: Redirecting to welcome page');
         router.push('/welcome');
       }, 2000);
     };
 
     // Handle page unload/close
     const handleBeforeUnload = () => {
+      console.log('[CheckEmailPage] handleBeforeUnload: Page unloading, cleaning up');
       // Clean up any pending redirects
       if (redirectTimeout) {
+        console.log('[CheckEmailPage] handleBeforeUnload: Clearing redirect timeout');
         clearTimeout(redirectTimeout);
       }
     };
 
-    // Handle visibility change (tab switching)
+    // Handle visibility change (tab switching) - check once
     const handleVisibilityChange = () => {
+      console.log('[CheckEmailPage] handleVisibilityChange: Visibility changed', {
+        hidden: document.hidden,
+        isVerified
+      });
+      
       if (!document.hidden && !isVerified) {
-        // If user comes back to tab, check verification status immediately
-        checkVerificationStatus();
+        console.log('[CheckEmailPage] handleVisibilityChange: Tab became visible, checking verification status');
+        const verificationStatus = localStorage.getItem('emailVerificationStatus');
+        console.log('[CheckEmailPage] handleVisibilityChange: Verification status', verificationStatus);
+        
+        if (verificationStatus === 'verified') {
+          console.log('[CheckEmailPage] handleVisibilityChange: Email verified, completing verification');
+          localStorage.removeItem('emailVerificationStatus');
+          handleVerificationComplete();
+        }
       }
     };
 
+    console.log('[CheckEmailPage] useEffect: Adding event listeners');
     window.addEventListener('message', handleMessage);
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Check every second for verification status
-    interval = setInterval(checkVerificationStatus, 1000);
+    window.addEventListener('storage', handleStorage);
     
     return () => {
+      console.log('[CheckEmailPage] useEffect: Cleaning up event listeners');
       if (redirectTimeout) {
         clearTimeout(redirectTimeout);
-      }
-      if (interval) {
-        clearInterval(interval);
       }
       window.removeEventListener('message', handleMessage);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('storage', handleStorage);
     };
   }, [router, isVerified]);
 
   const handleResendVerification = async () => {
+    console.log('[CheckEmailPage] handleResendVerification: Resend verification requested');
     setIsResending(true);
     setMessage("Please go back to the signup page and try again to resend the verification email.");
     setTimeout(() => {
+      console.log('[CheckEmailPage] handleResendVerification: Resend message timeout completed');
       setIsResending(false);
     }, 2000);
   };
@@ -148,7 +177,7 @@ function CheckEmailContent() {
                 </button>
                 
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push('/login?redirectTo=/welcome')}
                   className="w-full bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
                 >
                   Back to Login

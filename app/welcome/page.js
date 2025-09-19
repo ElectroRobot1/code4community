@@ -1,6 +1,5 @@
 "use client";
 import { useAuth } from "../../components/AuthContext";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
@@ -61,23 +60,28 @@ export default function Welcome() {
     }
   }, [userData, isEmailVerified, router]);
 
-  // Listen for email verification completion from popup/verification page
+  // Listen for email verification completion from popup/verification page (no polling)
   useEffect(() => {
     const handleMessage = (event) => {
       // Verify the origin for security
       if (event.origin !== window.location.origin) return;
       
       if (event.data.type === 'EMAIL_VERIFIED' && event.data.action === 'redirect_and_signin') {
-        console.log('Received EMAIL_VERIFIED message, reloading...');
         // Force refresh the authentication state
         window.location.reload();
       }
     };
 
     const handleEmailVerifiedEvent = (event) => {
-      console.log('Received emailVerified custom event:', event.detail);
       // Force refresh the authentication state
       window.location.reload();
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
+        localStorage.removeItem('emailVerificationStatus');
+        window.location.reload();
+      }
     };
 
     // Listen for messages from the verification page
@@ -85,26 +89,12 @@ export default function Welcome() {
     
     // Listen for custom email verification events
     window.addEventListener('emailVerified', handleEmailVerifiedEvent);
-    
-    // Also check localStorage for email verification status
-    const checkEmailVerification = () => {
-      const verificationStatus = localStorage.getItem('emailVerificationStatus');
-      if (verificationStatus === 'verified') {
-        console.log('Found emailVerificationStatus in localStorage, reloading...');
-        localStorage.removeItem('emailVerificationStatus');
-        // Force refresh the authentication state to get updated emailVerified status
-        window.location.reload();
-      }
-    };
-
-    // Check immediately and set up interval
-    checkEmailVerification();
-    const interval = setInterval(checkEmailVerification, 1000);
+    window.addEventListener('storage', handleStorage);
 
     return () => {
       window.removeEventListener('message', handleMessage);
       window.removeEventListener('emailVerified', handleEmailVerifiedEvent);
-      clearInterval(interval);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 
@@ -127,7 +117,7 @@ export default function Welcome() {
     if (userData || cachedUser) {
       router.push('/mathlab');
     } else {
-      router.push('/login');
+      router.push('/login?redirectTo=/mathlab');
     }
   }, [userData, cachedUser, router]);
 

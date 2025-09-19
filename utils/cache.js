@@ -4,7 +4,7 @@
  */
 
 // Cache configuration
-const CACHE_CONFIG = {
+export const CACHE_CONFIG = {
   USER_DATA: 'brhs_user_cache',
   USER_PREFERENCES: 'brhs_user_preferences',
   MATHLAB_REQUESTS: 'brhs_mathlab_requests',
@@ -285,37 +285,7 @@ export const SettingsCache = {
   }
 };
 
-// Cache invalidation strategies - DEPRECATED: Use cacheInvalidation.js instead
-export const CacheInvalidation = {
-  // Invalidate user-related caches
-  invalidateUserCaches() {
-    UserCache.clearUserData();
-    MathLabCache.clearAll();
-    CacheManager.remove(CACHE_CONFIG.NAVIGATION);
-  },
-
-  // Invalidate all caches
-  invalidateAll() {
-    CacheManager.clearAll();
-  },
-
-  // Smart invalidation based on data changes
-  invalidateOnUserUpdate(updateType) {
-    switch (updateType) {
-      case 'profile':
-        UserCache.clearUserData();
-        break;
-      case 'preferences':
-        CacheManager.remove(CACHE_CONFIG.USER_PREFERENCES);
-        break;
-      case 'mathlab_role':
-        MathLabCache.clearAll();
-        break;
-      default:
-        this.invalidateUserCaches();
-    }
-  }
-};
+// Cache invalidation is now handled by cacheInvalidation.js
 
 // Performance monitoring
 export const CachePerformance = {

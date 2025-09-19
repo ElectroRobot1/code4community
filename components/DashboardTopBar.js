@@ -2,13 +2,12 @@
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import { useAuth } from "./AuthContext";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { UserCache, CachePerformance } from "@/utils/cache";
 
-export default function DashboardTopBar({ title = "StudyHub", onNavigation, showNavLinks = true }) {
+export default function DashboardTopBar({ title = "BRHS Utilities", onNavigation, showNavLinks = true }) {
   const { userData } = useAuth();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -136,83 +135,7 @@ export default function DashboardTopBar({ title = "StudyHub", onNavigation, show
               {/* Navigation Links - Only show if showNavLinks is true */}
               {showNavLinks && (
                 <>
-                  {/* Admin Navigation Links */}
-                  {displayUser?.role === "admin" && (
-                    <nav className="flex items-center space-x-1">
-                      <button
-                        onClick={() => onNavigation ? onNavigation("/admin/dashboard") : router.push("/admin/dashboard")}
-                        className="nav-link"
-                      >
-                        Dashboard
-                      </button>
-                      <button
-                        onClick={() => onNavigation ? onNavigation("/admin/clubs") : router.push("/admin/clubs")}
-                        className="nav-link"
-                      >
-                        Manage Clubs
-                      </button>
-                      <button
-                        onClick={() => onNavigation ? onNavigation("/admin/school") : router.push("/admin/school")}
-                        className="nav-link"
-                      >
-                        School Settings
-                      </button>
-                    </nav>
-                  )}
-
-                  {/* Student Navigation Links */}
-                  {displayUser?.role === "student" && (
-                    <nav className="flex items-center space-x-1">
-                      <Link
-                        href="/student/dashboard"
-                        className="nav-link"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href="/student/explore-clubs"
-                        className="nav-link"
-                      >
-                        Explore Clubs
-                      </Link>
-                      <Link
-                        href="/student/clubs"
-                        className="nav-link"
-                      >
-                        My Clubs
-                      </Link>
-                    </nav>
-                  )}
-
-                  {/* Teacher Navigation Links */}
-                  {displayUser?.role === "teacher" && (
-                    <nav className="flex items-center space-x-1">
-                      <Link
-                        href="/teacher/dashboard"
-                        className="nav-link"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href="/teacher/clubs"
-                        className="nav-link"
-                      >
-                        My Clubs
-                      </Link>
-                      <Link
-                        href="/teacher/create-club"
-                        className="nav-link"
-                      >
-                        Create Club
-                      </Link>
-                      <Link
-                        href="/teacher/join-requests"
-                        className="nav-link"
-                      >
-                        Join Requests
-                      </Link>
-                    </nav>
-                  )}
+                  {/* Currently no navigation links are implemented */}
                 </>
               )}
             </div>
@@ -321,13 +244,13 @@ export default function DashboardTopBar({ title = "StudyHub", onNavigation, show
             {!displayUser && (
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push('/login?redirectTo=/welcome')}
                   className="btn-secondary px-4 py-2 text-sm font-medium"
                 >
                   Sign In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => router.push('/signup?redirectTo=/welcome')}
                   className="btn-primary px-4 py-2 text-sm font-medium"
                 >
                   Sign Up

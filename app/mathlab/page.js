@@ -7,7 +7,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { AppCardSkeleton, RequestCardSkeleton } from "../../components/SkeletonLoader";
 import { doc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
-import { MathLabCache, UserCache, CachePerformance, CacheInvalidation } from "@/utils/cache";
+import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
 import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
 import Image from "next/image";
 
@@ -237,7 +237,7 @@ export default function MathLabPage() {
   // Redirect to login if not authenticated (use cached user if available)
   useEffect(() => {
     if (!user && !cachedUser) {
-      router.push('/login');
+      router.push('/login?redirectTo=/mathlab');
     }
   }, [user, cachedUser, router]);
 
@@ -256,25 +256,26 @@ export default function MathLabPage() {
       // Also check for active sessions
       const checkActiveSessions = async () => {
         try {
+          // Avoid composite index by querying by tutorId first, then filter status client-side
           const q = query(
             collection(firestore, "tutoringRequests"),
-            where("status", "==", "accepted"),
             where("tutorId", "==", user?.uid || cachedUser?.uid)
           );
-          
           const snapshot = await getDocs(q);
           if (!snapshot.empty) {
-            const sessionDoc = snapshot.docs[0];
-            const sessionData = sessionDoc.data();
-            
-            setActiveSession({
-              requestId: sessionDoc.id,
-              studentName: sessionData.studentName,
-              studentEmail: sessionData.studentEmail,
-              course: sessionData.course,
-              startTime: sessionData.acceptedAt?.toDate() || new Date()
-            });
-            setSessionStartTime(sessionData.acceptedAt?.toDate() || new Date());
+            const accepted = snapshot.docs
+              .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+              .find(d => d.status === 'accepted');
+            if (accepted) {
+              setActiveSession({
+                requestId: accepted.id,
+                studentName: accepted.studentName,
+                studentEmail: accepted.studentEmail,
+                course: accepted.course,
+                startTime: accepted.acceptedAt?.toDate ? accepted.acceptedAt.toDate() : new Date()
+              });
+              setSessionStartTime(accepted.acceptedAt?.toDate ? accepted.acceptedAt.toDate() : new Date());
+            }
           }
         } catch (error) {
           console.error("Error checking active sessions:", error);
@@ -310,32 +311,31 @@ export default function MathLabPage() {
     if (displayUser?.mathLabRole === 'student') {
       const checkStudentRequest = () => {
         try {
+          // Avoid composite index by subscribing by studentId and filtering statuses client-side
           const q = query(
             collection(firestore, "tutoringRequests"),
-            where("studentId", "==", user?.uid || cachedUser?.uid),
-            where("status", "in", ["pending", "accepted"])
+            where("studentId", "==", user?.uid || cachedUser?.uid)
           );
-          
           const unsubscribe = onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
-              const requestDoc = snapshot.docs[0];
-              const requestData = requestDoc.data();
+              const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+              const match = docs.find(d => d.status === 'pending' || d.status === 'accepted');
               
-              if (requestData.status === 'pending') {
+              if (match && match.status === 'pending') {
                 setStudentRequest({
-                  id: requestDoc.id,
-                  course: requestData.course,
-                  status: requestData.status,
-                  createdAt: requestData.createdAt?.toDate() || new Date()
+                  id: match.id,
+                  course: match.course,
+                  status: match.status,
+                  createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
                 });
-              } else if (requestData.status === 'accepted') {
+              } else if (match && match.status === 'accepted') {
                 // Student has been matched with a tutor
                 setStudentRequest({
-                  id: requestDoc.id,
-                  course: requestData.course,
-                  status: requestData.status,
-                  tutorName: requestData.tutorName,
-                  acceptedAt: requestData.acceptedAt?.toDate() || new Date()
+                  id: match.id,
+                  course: match.course,
+                  status: match.status,
+                  tutorName: match.tutorName,
+                  acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date()
                 });
               }
             } else {
@@ -380,7 +380,10 @@ export default function MathLabPage() {
       // Create a tutoring request
       const requestData = {
         studentId: user?.uid || cachedUser?.uid,
-        studentName: displayUser?.displayName || displayUser?.firstName + ' ' + displayUser?.lastName || user?.email || 'Anonymous Student',
+        studentName: (displayUser?.displayName && displayUser.displayName.trim())
+          || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
+          || user?.email
+          || 'Anonymous Student',
         studentEmail: user?.email || cachedUser?.email,
         studentPhotoURL: user?.photoURL || displayUser?.photoURL || cachedUser?.photoURL || null,
         course: selectedCourse,
@@ -542,7 +545,10 @@ export default function MathLabPage() {
       await updateDoc(doc(firestore, "tutoringRequests", requestId), {
         status: 'accepted',
         tutorId: user?.uid || cachedUser?.uid,
-        tutorName: displayUser?.displayName || displayUser?.firstName + ' ' + displayUser?.lastName || user?.email || 'Anonymous Tutor',
+        tutorName: (displayUser?.displayName && displayUser.displayName.trim())
+          || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
+          || user?.email
+          || 'Anonymous Tutor',
         tutorEmail: user?.email || cachedUser?.email,
         acceptedAt: new Date(),
         updatedAt: new Date()
@@ -890,118 +896,12 @@ export default function MathLabPage() {
     );
   }
 
-  // Show role selection if user hasn't chosen one
-  if (showRoleSelection) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-        <DashboardTopBar 
-          title="BRHS Math Lab" 
-          showNavLinks={false}
-        />
-
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="max-w-2xl w-full">
-            {/* Header Section */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6">
-                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Welcome to BRHS Math Lab!
-              </h1>
-              
-              <p className="text-xl text-gray-600 max-w-lg mx-auto leading-relaxed">
-                Let&apos;s get you set up so you can start your math learning journey
-              </p>
-            </div>
-
-            {/* Student Role Card - Only Option */}
-            <div className="max-w-md mx-auto">
-              <div className="p-8 rounded-2xl border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20">
-                {/* Icon */}
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-6 mx-auto bg-primary text-white">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-
-                {/* Content */}
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">Student Access</h3>
-                <p className="text-gray-600 leading-relaxed mb-6 text-center">
-                  Get help with math, work with tutors, and access learning resources to improve your skills.
-                </p>
-                
-                {/* Features */}
-                <ul className="space-y-3 text-sm text-gray-500">
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Get matched with qualified tutors
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Access course-specific resources
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Track your progress
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Action Section */}
-            <div className="text-center">
-              <button
-                onClick={handleRoleSelection}
-                disabled={isUpdating}
-                className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                  !isUpdating
-                    ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30' 
-                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                {isUpdating ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3"></div>
-                    Setting up your Math Lab experience...
-                  </div>
-                ) : (
-                  <>
-                    Continue to Math Lab
-                    <svg className="w-5 h-5 ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </>
-                )}
-              </button>
-
-              {/* Help Text */}
-              <div className="mt-6 text-center">
-                <p className="text-gray-500 text-sm">
-                  You can change this later in your{" "}
-                  <button 
-                    onClick={() => router.push('/settings')}
-                    className="text-primary hover:text-primary/80 underline font-medium transition-colors"
-                  >
-                    settings
-                  </button>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Auto-set role to student if not set and continue to main page
+  useEffect(() => {
+    if (showRoleSelection && displayUser) {
+      handleRoleSelection();
+    }
+  }, [showRoleSelection, displayUser]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -1186,7 +1086,7 @@ export default function MathLabPage() {
             {/* Instructions */}
             <div className="text-center mt-6">
               <p className="text-sm text-muted-foreground">
-                Need help? Contact your math teacher or visit the main office.
+                Need help? Email brhsc4c@gmail.com for assistance.
               </p>
             </div>
           </div>

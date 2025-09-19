@@ -36,32 +36,17 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Force normal zoom level
-              if (window.devicePixelRatio !== 1) {
-              }
-              
-              // Check if browser zoom is not 100%
-              if (window.outerWidth / window.innerWidth !== 1) {
-                document.body.style.zoom = '1';
-                document.body.style.transform = 'none';
-              }
-              
-              // Force viewport to be exactly 100%
-              const viewport = document.querySelector('meta[name="viewport"]');
-              if (viewport) {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-              }
-            `,
-          }}
-        />
-      </head>
+      <head></head>
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >

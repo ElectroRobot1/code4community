@@ -31,14 +31,18 @@ export async function GET(request) {
     const cleanedPathname = parsedUrl.pathname.replace(/=[^/]*$/, '');
     const normalizedUrl = `${parsedUrl.origin}${cleanedPathname}=s${size}-c`;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const upstreamResponse = await fetch(normalizedUrl, {
       // Revalidate daily; let platforms like Vercel cache at the edge
       next: { revalidate: 86400 },
       headers: {
         'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
         'User-Agent': 'Mozilla/5.0 (compatible; BRHS-App/1.0)'
-      }
+      },
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (!upstreamResponse.ok) {
       return new Response('Upstream fetch failed', { status: upstreamResponse.status });
@@ -46,12 +50,14 @@ export async function GET(request) {
 
     const contentType = upstreamResponse.headers.get('content-type') || 'image/jpeg';
     const arrayBuffer = await upstreamResponse.arrayBuffer();
+    const contentLength = arrayBuffer.byteLength.toString();
 
     return new Response(arrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800'
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+        'Content-Length': contentLength
       }
     });
   } catch (_err) {

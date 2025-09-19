@@ -5,6 +5,7 @@ import { auth, provider, firestore } from "@/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/components/AuthContext";
+import { validateEmail, validatePassword, validateConfirmPassword, validateDisplayName } from "@/utils/validation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -27,35 +28,23 @@ export default function SignupPage() {
 
   // Redirect if already logged in (but not during signup process)
   useEffect(() => {
+    console.log('[SignupPage] useEffect: Checking redirect conditions', {
+      authLoading,
+      hasUser: !!user,
+      hasUserData: !!userData,
+      loading,
+      isSigningUp,
+      userEmail: user?.email,
+      userEmailVerified: user?.emailVerified
+    });
+    
     if (!authLoading && user && userData && !loading && !isSigningUp) {
+      console.log('[SignupPage] useEffect: User is already authenticated, redirecting to mathlab');
       router.push("/mathlab");
     }
   }, [user, userData, authLoading, loading, isSigningUp, router]);
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return "Email is required";
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  };
-
-  const validatePassword = (password) => {
-    if (!password) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters";
-    return "";
-  };
-
-  const validateConfirmPassword = (confirmPassword, password) => {
-    if (!confirmPassword) return "Please confirm your password";
-    if (confirmPassword !== password) return "Passwords do not match";
-    return "";
-  };
-
-  const validateDisplayName = (displayName) => {
-    if (!displayName) return "Full name is required";
-    if (displayName.trim().length < 2) return "Full name must be at least 2 characters";
-    return "";
-  };
+  // Validation functions are imported from utils/validation.js
 
   const validateEmailField = () => {
     const error = validateEmail(email);
@@ -83,6 +72,7 @@ export default function SignupPage() {
 
   const handleEmailSignup = async (e) => {
     e.preventDefault();
+    console.log('[SignupPage] handleEmailSignup: Starting email signup process', { email, displayName });
     setError(null);
     
     const isEmailValid = validateEmailField();
@@ -90,7 +80,15 @@ export default function SignupPage() {
     const isConfirmPasswordValid = validateConfirmPasswordField();
     const isDisplayNameValid = validateDisplayNameField();
     
+    console.log('[SignupPage] handleEmailSignup: Validation results', {
+      isEmailValid,
+      isPasswordValid,
+      isConfirmPasswordValid,
+      isDisplayNameValid
+    });
+    
     if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid || !isDisplayNameValid) {
+      console.log('[SignupPage] handleEmailSignup: Validation failed, stopping signup');
       return;
     }
     
@@ -98,8 +96,14 @@ export default function SignupPage() {
     setIsSigningUp(true);
     
     try {
+      console.log('[SignupPage] handleEmailSignup: Attempting createUserWithEmailAndPassword');
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
+      console.log('[SignupPage] handleEmailSignup: User created successfully', {
+        uid: user.uid,
+        email: user.email,
+        emailVerified: user.emailVerified
+      });
       
       // Check if email is admin email (you can hardcode this later)
       const adminEmails = [
@@ -109,62 +113,92 @@ export default function SignupPage() {
       ];
       
       const isAdmin = adminEmails.includes(user.email?.toLowerCase());
+      console.log('[SignupPage] handleEmailSignup: Admin check', { isAdmin, email: user.email });
       
       // Create user document in Firestore with appropriate role
-      await setDoc(doc(firestore, "users", user.uid), {
+      const userData = {
         email: user.email,
         displayName: displayName.trim(),
         photoURL: "",
         role: isAdmin ? "admin" : "student", // Admin or default student role
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      console.log('[SignupPage] handleEmailSignup: Creating user document in Firestore', userData);
+      await setDoc(doc(firestore, "users", user.uid), userData);
+      console.log('[SignupPage] handleEmailSignup: User document created successfully');
       
       // Send email verification
       try {
+        console.log('[SignupPage] handleEmailSignup: Sending email verification');
         await sendEmailVerification(user, {
           url: `${window.location.origin}/verify-email`,
           handleCodeInApp: false
         });
+        console.log('[SignupPage] handleEmailSignup: Email verification sent successfully');
       } catch (verificationError) {
-        console.error("Email verification error:", verificationError);
+        console.error("[SignupPage] handleEmailSignup: Email verification error", {
+          error: verificationError.message,
+          code: verificationError.code
+        });
       }
       
       // Redirect to email verification page (user stays signed in)
+      console.log('[SignupPage] handleEmailSignup: Redirecting to email verification page');
       router.push("/verify-email?email=" + encodeURIComponent(user.email));
     } catch (err) {
-      console.error("Email signup error", err);
+      console.error("[SignupPage] handleEmailSignup: Email signup error", {
+        code: err.code,
+        message: err.message,
+        email
+      });
       if (err.code === "auth/email-already-in-use") {
+        console.log('[SignupPage] handleEmailSignup: Email already in use');
         setError("An account with this email already exists. Please sign in with Google instead, or use a different email address.");
       } else if (err.code === "auth/invalid-email") {
+        console.log('[SignupPage] handleEmailSignup: Invalid email format');
         setError("Please enter a valid email address.");
       } else if (err.code === "auth/weak-password") {
+        console.log('[SignupPage] handleEmailSignup: Weak password');
         setError("Password is too weak. Please choose a stronger password.");
       } else {
+        console.log('[SignupPage] handleEmailSignup: Unknown signup error', err.code);
         setError("Signup failed. Please try again.");
       }
     } finally {
+      console.log('[SignupPage] handleEmailSignup: Signup process completed, setting loading to false');
       setLoading(false);
       setIsSigningUp(false);
     }
   };
 
   const handleGoogleSignup = async () => {
+    console.log('[SignupPage] handleGoogleSignup: Starting Google signup process');
     setError(null);
     setLoading(true);
     setIsSigningUp(true);
     
     try {
+      console.log('[SignupPage] handleGoogleSignup: Attempting signInWithPopup');
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      console.log('[SignupPage] handleGoogleSignup: Google signup successful', {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL
+      });
       
       // Check if user exists in our database
+      console.log('[SignupPage] handleGoogleSignup: Checking if user exists in Firestore');
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {
+        console.log('[SignupPage] handleGoogleSignup: User does not exist, creating new account');
         // User doesn't exist, create account automatically
         try {
-          await setDoc(doc(firestore, "users", user.uid), {
+          const userData = {
             email: user.email,
             displayName: user.displayName || "",
             photoURL: user.photoURL || "",
@@ -172,38 +206,57 @@ export default function SignupPage() {
             mathLabRole: "", // Empty math lab role - user will choose later
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
-          });
+          };
+          
+          console.log('[SignupPage] handleGoogleSignup: Creating user document in Firestore', userData);
+          await setDoc(doc(firestore, "users", user.uid), userData);
+          console.log('[SignupPage] handleGoogleSignup: User document created successfully');
         } catch (createError) {
-          console.error("Error creating user account:", createError);
+          console.error("[SignupPage] handleGoogleSignup: Error creating user account", {
+            error: createError.message,
+            code: createError.code,
+            uid: user.uid
+          });
           setError("Failed to create account. Please try again.");
           setLoading(false);
           return;
         }
       } else {
+        console.log('[SignupPage] handleGoogleSignup: User exists, syncing data');
         // User exists, sync photoURL from Firebase Auth with Firestore
         const userData = userDoc.data();
         if (user.photoURL && userData.photoURL !== user.photoURL) {
+          console.log('[SignupPage] handleGoogleSignup: Updating photoURL in Firestore');
           try {
             await updateDoc(doc(firestore, "users", user.uid), {
               photoURL: user.photoURL
             });
+            console.log('[SignupPage] handleGoogleSignup: PhotoURL updated successfully');
           } catch (error) {
-            console.error("Error updating photoURL:", error);
+            console.error("[SignupPage] handleGoogleSignup: Error updating photoURL", error);
           }
         }
       }
       
+      console.log('[SignupPage] handleGoogleSignup: Google signup completed, redirect will be handled by useEffect');
       // Redirect to math lab page (handled by useEffect)
     } catch (err) {
-      console.error("Google signup error", err);
+      console.error("[SignupPage] handleGoogleSignup: Google signup error", {
+        code: err.code,
+        message: err.message
+      });
       if (err.code === "auth/popup-closed-by-user") {
+        console.log('[SignupPage] handleGoogleSignup: Popup closed by user');
         setError("Sign up was cancelled. Please try again.");
       } else if (err.code === "auth/popup-blocked") {
+        console.log('[SignupPage] handleGoogleSignup: Popup blocked');
         setError("Pop-up was blocked. Please allow pop-ups for this site and try again.");
       } else {
+        console.log('[SignupPage] handleGoogleSignup: Unknown Google signup error', err.code);
         setError("Google sign up failed. Please try again.");
       }
     } finally {
+      console.log('[SignupPage] handleGoogleSignup: Google signup process completed, setting loading to false');
       setLoading(false);
       setIsSigningUp(false);
     }
@@ -217,18 +270,18 @@ export default function SignupPage() {
             <div className="relative">
               <Image
                 src="/spartan.png"
-                alt="StudyHub Logo"
+                alt="BRHS Utilities Logo"
                 width={40}
                 height={40}
                 className="w-10 h-10 transition-transform duration-200 group-hover:scale-110"
               />
             </div>
             <span className="text-2xl font-bold text-foreground">
-              StudyHub
+              BRHS Utilities
             </span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
-          <p className="text-muted-foreground">Join StudyHub to get started</p>
+          <p className="text-muted-foreground">Join BRHS Utilities to get started</p>
         </div>
 
         <div className="card-elevated p-8">
