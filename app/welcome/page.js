@@ -7,28 +7,41 @@ import { AppCardSkeleton } from "../../components/SkeletonLoader";
 import { UserCache, CachePerformance } from "@/utils/cache";
 
 export default function Welcome() {
-  const { userData, isEmailVerified } = useAuth();
+  const authContext = useAuth();
+  const { userData, isEmailVerified, loading: authLoading } = authContext;
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  
+  console.log('[WelcomePage] AuthContext received:', {
+    hasUserData: !!userData,
+    isEmailVerified,
+    authLoading,
+    fullContext: authContext
+  });
 
   // Optimized caching with performance monitoring
   useEffect(() => {
+    console.log('[WelcomePage] Starting initial load effect');
     const timing = CachePerformance.startTiming('loadWelcomeCachedUser');
     
     const cached = UserCache.getUserData();
+    console.log('[WelcomePage] Cached user data:', cached ? 'found' : 'not found');
     if (cached) {
       setCachedUser(cached);
     }
     setIsLoading(false);
+    console.log('[WelcomePage] Initial load complete, setting loading to false');
     
     CachePerformance.endTiming(timing);
   }, []);
 
   // Optimized cache update with stale data detection
   useEffect(() => {
+    console.log('[WelcomePage] UserData effect triggered, userData:', userData ? 'present' : 'null');
     if (userData) {
+      console.log('[WelcomePage] UserData present, checking cache staleness');
       const timing = CachePerformance.startTiming('updateWelcomeCache');
       
       // Check if cached data is stale
@@ -37,18 +50,24 @@ export default function Welcome() {
                      (cached.updatedAt && userData.updatedAt && 
                       new Date(cached.updatedAt) < new Date(userData.updatedAt));
       
+      console.log('[WelcomePage] Cache staleness check:', { isStale, cachedUid: cached?.uid, userDataUid: userData.uid });
+      
       if (isStale) {
+        console.log('[WelcomePage] Cache is stale, updating with fresh data');
         UserCache.setUserData(userData);
         setCachedUser(userData);
       }
       
       setIsLoading(false);
+      console.log('[WelcomePage] UserData processing complete, setting loading to false');
       
       CachePerformance.endTiming(timing);
     } else {
+      console.log('[WelcomePage] No userData, clearing cached user');
       // Clear cached user when userData is null (user signed out)
       setCachedUser(null);
       setIsLoading(false);
+      console.log('[WelcomePage] UserData cleared, setting loading to false');
     }
   }, [userData]);
 
@@ -151,6 +170,7 @@ export default function Welcome() {
   );
 
   // Show loading state
+  console.log('[WelcomePage] Render check - isLoading:', isLoading, 'userData:', userData ? 'present' : 'null', 'cachedUser:', cachedUser ? 'present' : 'null');
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">

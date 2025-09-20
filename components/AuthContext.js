@@ -119,7 +119,8 @@ export function AuthProvider({ children }) {
         hasUser: !!currentUser,
         uid: currentUser?.uid,
         email: currentUser?.email,
-        emailVerified: currentUser?.emailVerified
+        emailVerified: currentUser?.emailVerified,
+        loading: loading
       });
       
       try {
@@ -168,7 +169,9 @@ export function AuthProvider({ children }) {
         }
       } finally {
         console.log('[AuthContext] Auth state change complete, setting loading to false');
+        console.log('[AuthContext] Final state - user:', !!currentUser, 'userData:', !!userData, 'loading will be set to false');
         setLoading(false);
+        console.log('[AuthContext] Loading set to false');
       }
     });
 
@@ -303,15 +306,24 @@ export function AuthProvider({ children }) {
   };
 
   // Memoized context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    userData,
-    loading,
-    getRedirectUrl,
-    refreshUserData,
-    lastFetchTime,
-    isEmailVerified: user?.emailVerified || false
-  }), [user, userData, loading, refreshUserData, lastFetchTime]);
+  const contextValue = useMemo(() => {
+    const value = {
+      user,
+      userData,
+      loading,
+      getRedirectUrl,
+      refreshUserData,
+      lastFetchTime,
+      isEmailVerified: user?.emailVerified || false
+    };
+    console.log('[AuthContext] Context value updated:', {
+      hasUser: !!value.user,
+      hasUserData: !!value.userData,
+      loading: value.loading,
+      isEmailVerified: value.isEmailVerified
+    });
+    return value;
+  }, [user, userData, loading, refreshUserData, lastFetchTime]);
 
   return (
     <AuthContext.Provider value={contextValue}>
