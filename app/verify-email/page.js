@@ -18,30 +18,21 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
 
   const resendVerificationEmail = async () => {
-    console.log('[VerifyEmailPage] resendVerificationEmail: Starting resend process', {
-      hasUser: !!auth.currentUser,
-      resendCooldown,
-      userEmail: auth.currentUser?.email
-    });
     
     if (!auth.currentUser || resendCooldown > 0) {
-      console.log('[VerifyEmailPage] resendVerificationEmail: Cannot resend - no user or cooldown active');
       return;
     }
     
     setIsResending(true);
     try {
-      console.log('[VerifyEmailPage] resendVerificationEmail: Sending verification email');
       await sendEmailVerification(auth.currentUser, {
         url: `${window.location.origin}/verify-email`,
         handleCodeInApp: false
       });
-      console.log('[VerifyEmailPage] resendVerificationEmail: Verification email sent successfully');
       setMessage("Verification email sent! Please check your inbox.");
       
       // Start 30-second cooldown
       setResendCooldown(30);
-      console.log('[VerifyEmailPage] resendVerificationEmail: Started 30-second cooldown');
     } catch (error) {
       console.error("[VerifyEmailPage] resendVerificationEmail: Error resending verification email", {
         error: error.message,
@@ -49,18 +40,15 @@ function VerifyEmailContent() {
       });
       setMessage("Failed to resend verification email. Please try again.");
     } finally {
-      console.log('[VerifyEmailPage] resendVerificationEmail: Resend process completed');
       setIsResending(false);
     }
   };
 
   useEffect(() => {
     const handleEmailVerification = async () => {
-      console.log('[VerifyEmailPage] handleEmailVerification: Starting email verification process');
       
       // Prevent multiple verification attempts
       if (hasAttemptedVerification.current) {
-        console.log('[VerifyEmailPage] handleEmailVerification: Verification already attempted, skipping');
         return;
       }
 
@@ -69,27 +57,17 @@ function VerifyEmailContent() {
         const mode = searchParams.get('mode');
         const email = searchParams.get('email');
 
-        console.log('[VerifyEmailPage] handleEmailVerification: URL parameters', {
-          oobCode: oobCode ? 'present' : 'missing',
-          mode,
-          email,
-          hasUser: !!auth.currentUser,
-          userEmailVerified: auth.currentUser?.emailVerified
-        });
 
         // Check if user is already verified
         if (auth.currentUser && auth.currentUser.emailVerified) {
-          console.log('[VerifyEmailPage] handleEmailVerification: User email already verified');
           setStatus("success");
           setMessage("Your email is already verified! Redirecting you to the dashboard...");
           
           // Set verification status for cross-tab communication
           localStorage.setItem('emailVerificationStatus', 'verified');
-          console.log('[VerifyEmailPage] handleEmailVerification: Set emailVerificationStatus in localStorage');
           
           // Trigger custom event
           if (typeof window !== 'undefined') {
-            console.log('[VerifyEmailPage] handleEmailVerification: Dispatching emailVerified event');
             window.dispatchEvent(new CustomEvent('emailVerified', { 
               detail: { verified: true, userId: auth.currentUser?.uid } 
             }));
@@ -99,7 +77,6 @@ function VerifyEmailContent() {
             // Check for redirectTo parameter
             const redirectTo = searchParams.get('redirectTo');
             const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
-            console.log('[VerifyEmailPage] handleEmailVerification: Redirecting to', redirectUrl);
             router.push(redirectUrl);
           }, 2000);
           return;
@@ -107,22 +84,18 @@ function VerifyEmailContent() {
 
         // Handle password reset mode - redirect to reset password page
         if (mode === 'resetPassword') {
-          console.log('[VerifyEmailPage] handleEmailVerification: Password reset mode, redirecting to reset password page');
           router.push(`/reset-password?oobCode=${oobCode}`);
           return;
         }
 
         // If no oobCode, this is a redirect from signup - check if already verified
         if (!oobCode || mode !== 'verifyEmail') {
-          console.log('[VerifyEmailPage] handleEmailVerification: No oobCode or wrong mode, checking if already verified');
           
           // If no user is signed in, redirect to welcome (they'll be redirected to login if needed)
           if (!auth.currentUser) {
-            console.log('[VerifyEmailPage] handleEmailVerification: No user signed in, showing pending status');
             setStatus("pending");
             setMessage("Please check your email and click the verification link to continue.");
             setTimeout(() => {
-              console.log('[VerifyEmailPage] handleEmailVerification: Redirecting to welcome page');
               router.push('/welcome');
             }, 3000);
             return;
@@ -130,17 +103,14 @@ function VerifyEmailContent() {
           
           // Check if user is already verified even without oobCode
           if (auth.currentUser.emailVerified) {
-          console.log('[VerifyEmailPage] handleEmailVerification: User already verified without oobCode');
           setStatus("success");
           setMessage("Your email is already verified! This page will close automatically.");
           
           // Set verification status for cross-tab communication
           localStorage.setItem('emailVerificationStatus', 'verified');
-          console.log('[VerifyEmailPage] handleEmailVerification: Set emailVerificationStatus in localStorage');
           
           // Trigger custom event
           if (typeof window !== 'undefined') {
-            console.log('[VerifyEmailPage] handleEmailVerification: Dispatching emailVerified event');
             window.dispatchEvent(new CustomEvent('emailVerified', { 
               detail: { verified: true, userId: auth.currentUser?.uid } 
             }));
@@ -148,11 +118,9 @@ function VerifyEmailContent() {
           
           // Close the page instead of redirecting
           setTimeout(() => {
-            console.log('[VerifyEmailPage] handleEmailVerification: Closing verification page');
             try {
               window.close();
             } catch (error) {
-              console.log('[VerifyEmailPage] handleEmailVerification: Could not close window, redirecting to welcome instead');
               const redirectTo = searchParams.get('redirectTo');
               const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
               router.push(redirectUrl);
@@ -161,7 +129,6 @@ function VerifyEmailContent() {
             return;
           }
           
-          console.log('[VerifyEmailPage] handleEmailVerification: User signed in but not verified, showing pending status');
           setStatus("pending");
           setMessage("Please check your email and click the verification link to continue.");
           setUser(auth.currentUser);
@@ -170,63 +137,45 @@ function VerifyEmailContent() {
 
         // Mark that we've attempted verification
         hasAttemptedVerification.current = true;
-        console.log('[VerifyEmailPage] handleEmailVerification: Marked verification attempt as started');
 
         // Decode the oobCode if it's URL encoded
         const decodedOobCode = oobCode ? decodeURIComponent(oobCode) : oobCode;
-        console.log('[VerifyEmailPage] handleEmailVerification: Decoded oobCode', {
-          original: oobCode ? 'present' : 'missing',
-          decoded: decodedOobCode ? 'present' : 'missing'
-        });
 
         // Check if the action code is valid
-        console.log('[VerifyEmailPage] handleEmailVerification: Checking action code validity');
         await checkActionCode(auth, decodedOobCode);
-        console.log('[VerifyEmailPage] handleEmailVerification: Action code is valid');
         
         // Apply the email verification (this should sign the user in automatically)
-        console.log('[VerifyEmailPage] handleEmailVerification: Applying action code');
         await applyActionCode(auth, decodedOobCode);
-        console.log('[VerifyEmailPage] handleEmailVerification: Action code applied successfully');
         
         // Wait a moment for auth state to update
-        console.log('[VerifyEmailPage] handleEmailVerification: Waiting for auth state to update');
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Force refresh the auth state to update emailVerified status
         if (auth.currentUser) {
-          console.log('[VerifyEmailPage] handleEmailVerification: Reloading user to get updated emailVerified status');
           await auth.currentUser.reload();
-          console.log('[VerifyEmailPage] handleEmailVerification: User reloaded, emailVerified:', auth.currentUser.emailVerified);
         }
         
         setStatus("success");
         setMessage("Email verified successfully! This page will close automatically.");
-        console.log('[VerifyEmailPage] handleEmailVerification: Email verification completed successfully');
         
         // Notify parent window and other tabs immediately
         localStorage.setItem('emailVerificationStatus', 'verified');
-        console.log('[VerifyEmailPage] handleEmailVerification: Set emailVerificationStatus in localStorage');
         
         if (typeof window !== 'undefined') {
-          console.log('[VerifyEmailPage] handleEmailVerification: Dispatching emailVerified event');
           window.dispatchEvent(new CustomEvent('emailVerified', { 
             detail: { verified: true, userId: auth.currentUser?.uid } 
           }));
           // Also try to notify parent window if this is a popup
           if (window.opener) {
-            console.log('[VerifyEmailPage] handleEmailVerification: Notifying parent window');
             window.opener.postMessage({ type: 'EMAIL_VERIFIED', action: 'redirect_and_signin' }, window.location.origin);
           }
         }
 
         // Close the page immediately instead of redirecting
         setTimeout(() => {
-          console.log('[VerifyEmailPage] handleEmailVerification: Closing verification page');
           try {
             window.close();
           } catch (error) {
-            console.log('[VerifyEmailPage] handleEmailVerification: Could not close window, redirecting to welcome instead');
             const redirectTo = searchParams.get('redirectTo');
             const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
             router.push(redirectUrl);
@@ -242,31 +191,24 @@ function VerifyEmailContent() {
         });
         
         if (error.code === 'auth/expired-action-code') {
-          console.log('[VerifyEmailPage] handleEmailVerification: Action code expired');
           setStatus("expired");
           setMessage("This verification link has expired. Please request a new one.");
         } else if (error.code === 'auth/invalid-action-code') {
-          console.log('[VerifyEmailPage] handleEmailVerification: Invalid action code, checking if user is already verified');
           // Check if user is already verified despite the invalid code
           // First reload the user to get the latest verification status
           if (auth.currentUser) {
             try {
-              console.log('[VerifyEmailPage] handleEmailVerification: Reloading user after invalid action code');
               await auth.currentUser.reload();
-              console.log('[VerifyEmailPage] handleEmailVerification: User reloaded, emailVerified:', auth.currentUser.emailVerified);
               
               if (auth.currentUser.emailVerified) {
-                console.log('[VerifyEmailPage] handleEmailVerification: User is already verified despite invalid code');
                 setStatus("success");
                 setMessage("Your email is already verified! This page will close automatically.");
                 
                 // Set verification status for cross-tab communication
                 localStorage.setItem('emailVerificationStatus', 'verified');
-                console.log('[VerifyEmailPage] handleEmailVerification: Set emailVerificationStatus in localStorage');
                 
                 // Trigger custom event
                 if (typeof window !== 'undefined') {
-                  console.log('[VerifyEmailPage] handleEmailVerification: Dispatching emailVerified event');
                   window.dispatchEvent(new CustomEvent('emailVerified', { 
                     detail: { verified: true, userId: auth.currentUser?.uid } 
                   }));
@@ -274,18 +216,15 @@ function VerifyEmailContent() {
 
                 // Close the page instead of redirecting
                 setTimeout(() => {
-                  console.log('[VerifyEmailPage] handleEmailVerification: Closing verification page');
                   try {
                     window.close();
                   } catch (error) {
-                    console.log('[VerifyEmailPage] handleEmailVerification: Could not close window, redirecting to welcome instead');
                     const redirectTo = searchParams.get('redirectTo');
                     const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
                     router.push(redirectUrl);
                   }
                 }, 2000);
               } else {
-                console.log('[VerifyEmailPage] handleEmailVerification: User not verified, showing error');
                 setStatus("error");
                 setMessage("Invalid verification link. The link may be malformed or already used. Please try signing up again to get a new verification email.");
               }
@@ -295,16 +234,13 @@ function VerifyEmailContent() {
               setMessage("Invalid verification link. The link may be malformed or already used. Please try signing up again to get a new verification email.");
             }
           } else {
-            console.log('[VerifyEmailPage] handleEmailVerification: No current user, showing error');
             setStatus("error");
             setMessage("Invalid verification link. The link may be malformed or already used. Please try signing up again to get a new verification email.");
           }
         } else if (error.code === 'auth/user-disabled') {
-          console.log('[VerifyEmailPage] handleEmailVerification: User account disabled');
           setStatus("error");
           setMessage("This account has been disabled. Please contact brhsc4c@gmail.com for assistance.");
         } else {
-          console.log('[VerifyEmailPage] handleEmailVerification: Unknown verification error', error.code);
           setStatus("error");
           setMessage(`Verification failed: ${error.message}. Please try signing up again.`);
         }
@@ -352,17 +288,14 @@ function VerifyEmailContent() {
   useEffect(() => {
     const checkVerificationStatus = () => {
       if (auth.currentUser && auth.currentUser.emailVerified && status === "pending") {
-        console.log('[VerifyEmailPage] checkVerificationStatus: User became verified, updating status');
         setStatus("success");
         setMessage("Your email is now verified! This page will close automatically.");
         
         // Set verification status for cross-tab communication
         localStorage.setItem('emailVerificationStatus', 'verified');
-        console.log('[VerifyEmailPage] checkVerificationStatus: Set emailVerificationStatus in localStorage');
         
         // Trigger custom event
         if (typeof window !== 'undefined') {
-          console.log('[VerifyEmailPage] checkVerificationStatus: Dispatching emailVerified event');
           window.dispatchEvent(new CustomEvent('emailVerified', { 
             detail: { verified: true, userId: auth.currentUser?.uid } 
           }));
@@ -370,11 +303,9 @@ function VerifyEmailContent() {
         
         // Close the page instead of redirecting
         setTimeout(() => {
-          console.log('[VerifyEmailPage] checkVerificationStatus: Closing verification page');
           try {
             window.close();
           } catch (error) {
-            console.log('[VerifyEmailPage] checkVerificationStatus: Could not close window, redirecting to welcome instead');
             const redirectTo = searchParams.get('redirectTo');
             const redirectUrl = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/welcome';
             router.push(redirectUrl);
@@ -384,7 +315,6 @@ function VerifyEmailContent() {
     };
 
     const handleEmailVerifiedEvent = () => {
-      console.log('[VerifyEmailPage] handleEmailVerifiedEvent: Email verified event received');
       if (status === "pending") {
         checkVerificationStatus();
       }
@@ -424,11 +354,9 @@ function VerifyEmailContent() {
             }
           }
           // Try to close the window
-          console.log('[VerifyEmailPage] countdown: Closing verification page');
           try {
             window.close();
           } catch (error) {
-            console.log('[VerifyEmailPage] countdown: Could not close window, redirecting to welcome instead');
             try {
               router.push('/welcome');
             } catch (navError) {

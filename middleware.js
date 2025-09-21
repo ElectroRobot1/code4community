@@ -49,33 +49,10 @@ export function middleware(request) {
   const burstRequests = requests.filter(timestamp => timestamp > now - burstWindowMs);
   const suspiciousRequests = requests.filter(timestamp => timestamp > now - suspiciousWindowMs);
 
-  // Debug logging for rate limiting
-  console.log('[Middleware] Rate limit check:', {
-    rateLimitKey: rateLimitKey,
-    totalRequests: requests.length,
-    validRequests: validRequests.length,
-    burstRequests: burstRequests.length,
-    suspiciousRequests: suspiciousRequests.length,
-    limits: {
-      maxRequests: maxRequests,
-      maxBurstRequests: maxBurstRequests,
-      maxSuspiciousRequests: maxSuspiciousRequests
-    },
-    timeWindows: {
-      windowMs: windowMs,
-      burstWindowMs: burstWindowMs,
-      suspiciousWindowMs: suspiciousWindowMs
-    }
-  });
+  // Rate limiting check
   
   // Check burst protection
   if (burstRequests.length >= maxBurstRequests) {
-    console.log('[Middleware] BURST LIMIT HIT:', {
-      burstRequests: burstRequests.length,
-      maxBurstRequests: maxBurstRequests,
-      rateLimitKey: rateLimitKey,
-      url: request.url
-    });
     return new Response('Too many requests in short time', { 
       status: 429,
       headers: {
@@ -89,12 +66,6 @@ export function middleware(request) {
   
   // Check suspicious activity
   if (suspiciousRequests.length >= maxSuspiciousRequests) {
-    console.log('[Middleware] SUSPICIOUS ACTIVITY LIMIT HIT:', {
-      suspiciousRequests: suspiciousRequests.length,
-      maxSuspiciousRequests: maxSuspiciousRequests,
-      rateLimitKey: rateLimitKey,
-      url: request.url
-    });
     return new Response('Suspicious activity detected', { 
       status: 429,
       headers: {
@@ -108,12 +79,6 @@ export function middleware(request) {
   
   // Check general rate limit
   if (validRequests.length >= maxRequests) {
-    console.log('[Middleware] GENERAL RATE LIMIT HIT:', {
-      validRequests: validRequests.length,
-      maxRequests: maxRequests,
-      rateLimitKey: rateLimitKey,
-      url: request.url
-    });
     return new Response('Too many requests', { 
       status: 429,
       headers: {
@@ -129,12 +94,6 @@ export function middleware(request) {
   rateLimitData.set(rateLimitKey, validRequests);
   
   // Debug logging for successful request
-  console.log('[Middleware] Request allowed:', {
-    rateLimitKey: rateLimitKey,
-    newRequestCount: validRequests.length,
-    remainingRequests: maxRequests - validRequests.length,
-    url: request.url
-  });
   
   // Add rate limit headers to response
   response.headers.set('X-RateLimit-Limit', maxRequests.toString());

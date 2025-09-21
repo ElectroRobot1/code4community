@@ -26,28 +26,17 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    console.log('[LoginPage] useEffect: Checking redirect conditions', {
-      authLoading,
-      hasUser: !!user,
-      hasUserData: !!userData,
-      isRedirecting,
-      userEmail: user?.email,
-      userEmailVerified: user?.emailVerified
-    });
     
     if (!authLoading && user && userData && !isRedirecting) {
-      console.log('[LoginPage] useEffect: User is authenticated, preparing redirect');
       setIsRedirecting(true);
       
       const go = async () => {
         try {
-          console.log('[LoginPage] useEffect: Refreshing user data before redirect');
           await refreshUserData();
         } catch (error) {
           console.error('[LoginPage] useEffect: Error refreshing user data', error);
         }
         const redirectTo = getRedirectUrl();
-        console.log('[LoginPage] useEffect: Redirecting to', redirectTo || "/mathlab");
         try {
           router.push(redirectTo || "/mathlab");
         } catch (error) {
@@ -62,7 +51,6 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('[LoginPage] handleLogin: Starting email/password login attempt', { email });
     setError(null);
     setLoading(true);
     
@@ -89,24 +77,16 @@ export default function LoginPage() {
     }
     
     try {
-      console.log('[LoginPage] handleLogin: Attempting signInWithEmailAndPassword');
       const result = await signInWithEmailAndPassword(auth, sanitizedEmail, password);
       const user = result.user;
-      console.log('[LoginPage] handleLogin: Login successful', {
-        uid: user.uid,
-        email: user.email,
-        emailVerified: user.emailVerified
-      });
       
       // Check if email is verified - redirect to verification page instead of signing out
       if (!user.emailVerified) {
-        console.log('[LoginPage] handleLogin: Email not verified, redirecting to verification page');
         // Redirect to verification page (user stays signed in)
         router.push('/verify-email?email=' + encodeURIComponent(user.email));
         return;
       }
       
-      console.log('[LoginPage] handleLogin: Email verified, redirect will be handled by useEffect');
       // Redirect will be handled by useEffect above
     } catch (error) {
       logError(error, { type: 'login', email: sanitizedEmail });
@@ -114,7 +94,6 @@ export default function LoginPage() {
       const errorResponse = handleAuthError(error);
       setError(errorResponse.error);
     } finally {
-      console.log('[LoginPage] handleLogin: Login attempt completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -135,7 +114,6 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      console.log('[LoginPage] handleForgotPassword: Sending password reset email to', forgotPasswordEmail);
       
       // Configure action code settings for password reset
       const actionCodeSettings = {
@@ -168,32 +146,21 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    console.log('[LoginPage] handleGoogleLogin: Starting Google login attempt');
     setError(null);
     setLoading(true);
     
     try {
-      console.log('[LoginPage] handleGoogleLogin: Attempting signInWithPopup');
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      console.log('[LoginPage] handleGoogleLogin: Google login successful', {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL
-      });
       
       // Check if user exists in our database
-      console.log('[LoginPage] handleGoogleLogin: Checking if user exists in Firestore');
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {
-        console.log('[LoginPage] handleGoogleLogin: User does not exist, creating new account');
         // User doesn't exist, create account automatically
         try {
           // Check if email is admin email
           const isAdmin = isAdminEmail(user.email);
-          console.log('[LoginPage] handleGoogleLogin: Admin check', { isAdmin, email: user.email });
           
           const userData = {
             email: user.email,
@@ -205,17 +172,13 @@ export default function LoginPage() {
             updatedAt: new Date()
           };
           
-          console.log('[LoginPage] handleGoogleLogin: Creating user document in Firestore', userData);
           await setDoc(doc(firestore, "users", user.uid), userData);
-          console.log('[LoginPage] handleGoogleLogin: User document created successfully');
           
           // Refresh user data to ensure it's loaded
-          console.log('[LoginPage] handleGoogleLogin: Refreshing user data');
           await refreshUserData();
           
           // Cache user data for immediate availability after redirect
           const cachedUserData = { ...userData, uid: user.uid };
-          console.log('[LoginPage] handleGoogleLogin: Caching user data', cachedUserData);
           UserCache.setUserData(cachedUserData);
         } catch (createError) {
           console.error("[LoginPage] handleGoogleLogin: Error creating user account", {
@@ -228,7 +191,6 @@ export default function LoginPage() {
           return;
         }
       } else {
-        console.log('[LoginPage] handleGoogleLogin: User exists, syncing data');
         // Sync photoURL from Firebase Auth with Firestore
         const userData = userDoc.data();
         
@@ -237,41 +199,34 @@ export default function LoginPage() {
         const needsRoleUpdate = isAdmin && userData.role !== 'admin';
         
         if (needsRoleUpdate) {
-          console.log('[LoginPage] handleGoogleLogin: Updating user role to admin');
           try {
             await updateDoc(doc(firestore, "users", user.uid), {
               role: 'admin',
               updatedAt: new Date()
             });
             userData.role = 'admin'; // Update local data
-            console.log('[LoginPage] handleGoogleLogin: Role updated to admin successfully');
           } catch (error) {
             console.error("[LoginPage] handleGoogleLogin: Error updating role", error);
           }
         }
         
         if (user.photoURL && userData.photoURL !== user.photoURL) {
-          console.log('[LoginPage] handleGoogleLogin: Updating photoURL in Firestore');
           try {
             await updateDoc(doc(firestore, "users", user.uid), {
               photoURL: user.photoURL
             });
-            console.log('[LoginPage] handleGoogleLogin: PhotoURL updated successfully');
           } catch (error) {
             console.error("[LoginPage] handleGoogleLogin: Error updating photoURL", error);
           }
         }
         
         // Cache user data for immediate availability after redirect
-        console.log('[LoginPage] handleGoogleLogin: Caching existing user data');
         UserCache.setUserData(userData);
       }
       
       // Add a small delay to ensure AuthContext is updated before redirecting
-      console.log('[LoginPage] handleGoogleLogin: Preparing redirect after delay');
       setTimeout(() => {
         const redirectTo = getRedirectUrl();
-        console.log('[LoginPage] handleGoogleLogin: Redirecting to', redirectTo || "/mathlab");
         if (redirectTo) {
           router.push(redirectTo);
         } else {
@@ -284,17 +239,13 @@ export default function LoginPage() {
         message: error.message
       });
       if (error.code === "auth/popup-closed-by-user") {
-        console.log('[LoginPage] handleGoogleLogin: Popup closed by user');
         setError("Sign in was cancelled. Please try again.");
       } else if (error.code === "auth/popup-blocked") {
-        console.log('[LoginPage] handleGoogleLogin: Popup blocked');
         setError("Pop-up was blocked. Please allow pop-ups for this site and try again.");
       } else {
-        console.log('[LoginPage] handleGoogleLogin: Unknown Google login error', error.code);
         setError("Google login failed. Please try again.");
       }
     } finally {
-      console.log('[LoginPage] handleGoogleLogin: Google login attempt completed, setting loading to false');
       setLoading(false);
     }
   };

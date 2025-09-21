@@ -120,16 +120,13 @@ export default function SettingsPage() {
     setPasswordMessage("");
     
     try {
-      console.log('[SettingsPage] handlePasswordChange: Starting password change process');
       
       // Re-authenticate user with current password
       const credential = EmailAuthProvider.credential(user.email, sanitizedCurrentPassword);
       await reauthenticateWithCredential(user, credential);
-      console.log('[SettingsPage] handlePasswordChange: User re-authenticated successfully');
       
       // Update password
       await updatePassword(user, sanitizedNewPassword);
-      console.log('[SettingsPage] handlePasswordChange: Password updated successfully');
       
       // Success
       setPasswordMessage("Password changed successfully!");
