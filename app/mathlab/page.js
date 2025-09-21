@@ -579,6 +579,9 @@ export default function MathLabPage() {
       // Clear cache to reflect the changes
       MathLabCache.clearAll();
       invalidateOnDataChange('tutoring_session', 'ended');
+      
+      // Also clear session history cache since we added a new completed session
+      MathLabCache.setSessions([]); // Clear session history cache
 
       // Set session end data for session over screen
       setSessionEndData({
@@ -1241,7 +1244,7 @@ export default function MathLabPage() {
                   </button>
                   
                   <p className="text-sm text-gray-500 mt-4">
-                    Click "Start Session" when you're ready to begin tutoring
+                    Click &quot;Start Session&quot; when you&apos;re ready to begin tutoring
                   </p>
                 </>
               )}

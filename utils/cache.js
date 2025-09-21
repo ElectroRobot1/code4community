@@ -254,7 +254,7 @@ export const MathLabCache = {
   },
 
   setSessions(sessions) {
-    return CacheManager.set(CACHE_CONFIG.MATHLAB_SESSIONS, sessions, CACHE_CONFIG.DEFAULT_TTL);
+    return CacheManager.set(CACHE_CONFIG.MATHLAB_SESSIONS, sessions, CACHE_CONFIG.STATIC_DATA_TTL); // Use longer TTL for session history
   },
 
   getSessions() {

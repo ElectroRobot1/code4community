@@ -18,6 +18,7 @@ export default function MathLabHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, student, tutor
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Available courses - memoized for performance
   const courses = useMemo(() => [
@@ -77,18 +78,24 @@ export default function MathLabHistoryPage() {
   }, [userData, isEmailVerified, router]);
 
   // Fetch session history
-  const fetchSessionHistory = useCallback(async () => {
+  const fetchSessionHistory = useCallback(async (forceRefresh = false) => {
     if (!cachedUser && !userData) return;
     
     const timing = CachePerformance.startTiming('fetchSessionHistory');
     setIsLoading(true);
     setError(null);
     
+    // If force refresh, clear cache first
+    if (forceRefresh) {
+      MathLabCache.setSessions([]);
+      setIsRefreshing(true);
+    }
+    
     try {
       const userId = user?.uid || cachedUser?.uid;
-      const userRole = userData?.mathLabRole || cachedUser?.mathLabRole;
+      const userRole = userData?.mathLabRole || cachedUser?.mathLabRole || 'student';
       
-      if (!userId || !userRole) {
+      if (!userId) {
         throw new Error("User information not available");
       }
 
@@ -97,8 +104,9 @@ export default function MathLabHistoryPage() {
       if (cachedHistory && cachedHistory.length > 0) {
         setSessionHistory(cachedHistory);
         setIsLoading(false);
+        return; // Exit early if we have cached data
       }
-
+      
       // Query completed sessions from Firestore
       // Use a simpler query to avoid composite index requirements
       const sessionsQuery = query(
@@ -112,17 +120,26 @@ export default function MathLabHistoryPage() {
       
       snapshot.forEach((doc) => {
         const data = doc.data();
-        sessions.push({
+        const session = {
           id: doc.id,
           ...data,
-          completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : new Date(data.completedAt)
-        });
+          completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt ? new Date(data.completedAt) : new Date()),
+          startTime: data.startTime?.toDate ? data.startTime.toDate() : (data.startTime ? new Date(data.startTime) : new Date()),
+          endTime: data.endTime?.toDate ? data.endTime.toDate() : (data.endTime ? new Date(data.endTime) : new Date())
+        };
+        
+        // Debug logging to help identify date issues
+        if (!(session.completedAt instanceof Date)) {
+          console.warn('Invalid completedAt date for session:', session.id, session.completedAt);
+        }
+        
+        sessions.push(session);
       });
 
       // Sort by completedAt in descending order (most recent first)
       sessions.sort((a, b) => b.completedAt - a.completedAt);
 
-      // Cache the results
+      // Cache the results with longer TTL for session history
       MathLabCache.setSessions(sessions);
       setSessionHistory(sessions);
       
@@ -139,6 +156,7 @@ export default function MathLabHistoryPage() {
       }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
       CachePerformance.endTiming(timing);
     }
   }, [user, userData, cachedUser]);
@@ -149,6 +167,16 @@ export default function MathLabHistoryPage() {
       fetchSessionHistory();
     }
   }, [fetchSessionHistory, userData, cachedUser]);
+
+  // Reset filter if student tries to select tutor filter
+  useEffect(() => {
+    const displayUser = userData || cachedUser;
+    const isTutor = displayUser?.mathLabRole === 'tutor';
+    
+    if (!isTutor && filter === 'tutor') {
+      setFilter('all');
+    }
+  }, [userData, cachedUser, filter]);
 
   // Filter sessions based on current filter
   const filteredSessions = useMemo(() => {
@@ -218,14 +246,25 @@ export default function MathLabHistoryPage() {
               </p>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="mb-6">
+            {/* Filter Tabs and Refresh Button */}
+            <div className="mb-6 flex items-center justify-between">
               <div className="flex space-x-1 bg-muted/30 p-1 rounded-lg w-fit">
-                {[
-                  { id: "all", label: "All Sessions" },
-                  { id: "student", label: "As Student" },
-                  { id: "tutor", label: "As Tutor" }
-                ].map((tab) => (
+                {(() => {
+                  const displayUser = userData || cachedUser;
+                  const isTutor = displayUser?.mathLabRole === 'tutor';
+                  
+                  const filterOptions = [
+                    { id: "all", label: "All Sessions" },
+                    { id: "student", label: "As Student" }
+                  ];
+                  
+                  // Only add tutor filter if user is a tutor
+                  if (isTutor) {
+                    filterOptions.push({ id: "tutor", label: "As Tutor" });
+                  }
+                  
+                  return filterOptions;
+                })().map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setFilter(tab.id)}
@@ -239,6 +278,23 @@ export default function MathLabHistoryPage() {
                   </button>
                 ))}
               </div>
+              
+              {/* Refresh Button */}
+              <button
+                onClick={() => fetchSessionHistory(true)}
+                disabled={isRefreshing}
+                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg 
+                  className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
             </div>
 
             {/* Content */}
@@ -302,7 +358,7 @@ export default function MathLabHistoryPage() {
                           {formatDuration(session.startTime, session.endTime)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {session.completedAt?.toLocaleDateString()}
+                          {session.completedAt instanceof Date ? session.completedAt.toLocaleDateString() : 'Unknown date'}
                         </div>
                       </div>
                     </div>
@@ -313,7 +369,7 @@ export default function MathLabHistoryPage() {
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          {session.completedAt?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {session.completedAt instanceof Date ? session.completedAt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown time'}
                         </span>
                         <span className="flex items-center">
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

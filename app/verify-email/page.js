@@ -105,6 +105,13 @@ function VerifyEmailContent() {
           return;
         }
 
+        // Handle password reset mode - redirect to reset password page
+        if (mode === 'resetPassword') {
+          console.log('[VerifyEmailPage] handleEmailVerification: Password reset mode, redirecting to reset password page');
+          router.push(`/reset-password?oobCode=${oobCode}`);
+          return;
+        }
+
         // If no oobCode, this is a redirect from signup - check if already verified
         if (!oobCode || mode !== 'verifyEmail') {
           console.log('[VerifyEmailPage] handleEmailVerification: No oobCode or wrong mode, checking if already verified');

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { auth, provider, firestore, fetchSignInMethodsForEmail } from "@/firebase";
 import { UserCache, CachePerformance } from "@/utils/cache";
@@ -18,6 +18,9 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const router = useRouter();
   const { user, userData, loading: authLoading, getRedirectUrl, refreshUserData } = useAuth();
 
@@ -113,6 +116,54 @@ export default function LoginPage() {
     } finally {
       console.log('[LoginPage] handleLogin: Login attempt completed, setting loading to false');
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    const emailError = validateEmail(forgotPasswordEmail);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setError(null);
+
+    try {
+      console.log('[LoginPage] handleForgotPassword: Sending password reset email to', forgotPasswordEmail);
+      
+      // Configure action code settings for password reset
+      const actionCodeSettings = {
+        url: `${window.location.origin}/reset-password`,
+        handleCodeInApp: false,
+      };
+      
+      await sendPasswordResetEmail(auth, forgotPasswordEmail, actionCodeSettings);
+      
+      setError(`Password reset email sent to ${forgotPasswordEmail}. Please check your inbox and follow the instructions to reset your password.`);
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    } catch (error) {
+      console.error('[LoginPage] handleForgotPassword: Error sending password reset email', error);
+      
+      let errorMessage = "Failed to send password reset email. Please try again.";
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email address.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many password reset attempts. Please try again later.";
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setForgotPasswordLoading(false);
     }
   };
 
@@ -306,98 +357,169 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold mb-3 text-foreground">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                className="input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold mb-3 text-foreground">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full text-base py-4">
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                  Signing In...
+          {!showForgotPassword ? (
+            <>
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold mb-3 text-foreground">
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    className="input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
                 </div>
-              ) : (
-                <>
-                  Sign In
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </button>
-          </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-background px-4 text-muted-foreground font-medium">Or continue with</span>
-            </div>
-          </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-semibold mb-3 text-foreground">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    className="input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full btn-outline flex items-center justify-center gap-3 py-4 text-base"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent mr-2"></div>
-                Signing In...
+                <button type="submit" disabled={loading} className="btn-primary w-full text-base py-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                      Signing In...
+                    </div>
+                  ) : (
+                    <>
+                      Sign In
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-primary hover:text-primary/80 font-medium transition-colors duration-200"
+                  disabled={loading}
+                >
+                  Forgot your password?
+                </button>
               </div>
-            ) : (
-              <>
-                <Image
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                  alt="Google logo"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6"
-                />
-                Continue with Google
-              </>
-            )}
-          </button>
 
-          <div className="text-center mt-8">
-            <p className="text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-primary hover:text-primary/80 font-semibold transition-colors duration-200">
-                Sign up
-              </Link>
-            </p>
-          </div>
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-background px-4 text-muted-foreground font-medium">Or continue with</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full btn-outline flex items-center justify-center gap-3 py-4 text-base"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent mr-2"></div>
+                    Signing In...
+                  </div>
+                ) : (
+                  <>
+                    <Image
+                      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                      alt="Google logo"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6"
+                    />
+                    Continue with Google
+                  </>
+                )}
+              </button>
+
+              <div className="text-center mt-8">
+                <p className="text-muted-foreground">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/signup" className="text-primary hover:text-primary/80 font-semibold transition-colors duration-200">
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">Reset Password</h2>
+                <p className="text-muted-foreground">
+                  Enter your email address and we&apos;ll send you a link to reset your password.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="forgot-email" className="block text-sm font-semibold mb-3 text-foreground">
+                  Email address
+                </label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="input"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  required
+                  disabled={forgotPasswordLoading}
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={forgotPasswordLoading || !forgotPasswordEmail.trim()}
+                  className="btn-primary flex-1 text-base py-4"
+                >
+                  {forgotPasswordLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                      Sending...
+                    </div>
+                  ) : (
+                    'Send Reset Email'
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotPasswordEmail("");
+                    setError(null);
+                  }}
+                  disabled={forgotPasswordLoading}
+                  className="btn-outline flex-1 text-base py-4"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
