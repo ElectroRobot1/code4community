@@ -39,6 +39,6 @@ keys.js
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# typescript (not used in this project)
+# *.tsbuildinfo
+# next-env.d.ts
