@@ -33,7 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# keys file (DO NOT COMMIT)
+# keys file (DO NOT COMMIT - SECRET)
 keys.js
 
 # vercel

@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-import { recaptchaSiteKey } from "./keys.js";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyANRvFxmAayPX_4EERpCFIOFNZJTzFG1eE",
@@ -19,6 +18,7 @@ const provider = new GoogleAuthProvider();
 
 // Initialize App Check for maximum security (development and production)
 if (typeof window !== 'undefined') {
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6Ldu3tArAAAAAB5KYoNrqzGeLFjCeWnYKzNBzyt0";
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(recaptchaSiteKey),
     isTokenAutoRefreshEnabled: true

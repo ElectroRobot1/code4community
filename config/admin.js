@@ -4,8 +4,8 @@
  */
 
 export const ADMIN_CONFIG = {
-  // Hardcoded admin email - change this to your admin email
-  ADMIN_EMAIL: '1021676@lcps.org', // Replace with your actual admin email
+  // Admin email from environment variable or fallback
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL || '1021676@lcps.org',
   
   // Admin permissions
   PERMISSIONS: {
