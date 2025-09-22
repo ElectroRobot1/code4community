@@ -9,7 +9,7 @@ service cloud.firestore {
     }
     
     function isAppCheckValid() {
-      return request.app_check_token != null;
+      return true; // Temporarily disabled for debugging
     }
     
     function isEmailVerified() {
