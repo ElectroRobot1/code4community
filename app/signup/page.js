@@ -92,15 +92,12 @@ export default function SignupPage() {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
       
-      // Check if email is admin email
-      const isAdmin = isAdminEmail(user.email);
-      
-      // Create user document in Firestore with appropriate role
+      // Always create user with default student role; admin elevation happens via update paths
       const userData = {
         email: user.email,
         displayName: displayName.trim(),
         photoURL: "",
-        role: isAdmin ? "admin" : "student", // Admin or default student role
+        role: "student",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };

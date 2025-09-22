@@ -159,14 +159,11 @@ export default function LoginPage() {
       if (!userDoc.exists()) {
         // User doesn't exist, create account automatically
         try {
-          // Check if email is admin email
-          const isAdmin = isAdminEmail(user.email);
-          
           const userData = {
             email: user.email,
             displayName: user.displayName || "",
             photoURL: user.photoURL || "",
-            role: isAdmin ? "admin" : "student", // Admin or default student role
+            role: "student", // Default role; admin elevation handled by update path
             mathLabRole: "", // Empty math lab role - user will choose later
             createdAt: new Date(),
             updatedAt: new Date()
