@@ -17,8 +17,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// Initialize App Check for production security
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+// Initialize App Check for maximum security (development and production)
+if (typeof window !== 'undefined') {
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(recaptchaSiteKey),
     isTokenAutoRefreshEnabled: true
