@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { validateFileUpload } from '@/utils/validation';
+import { withAppCheck } from '@/utils/appCheck';
 
-export async function POST(request) {
+async function uploadHandler(request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file');
@@ -62,3 +63,6 @@ export async function POST(request) {
     );
   }
 }
+
+// Export the handler wrapped with App Check validation
+export const POST = withAppCheck(uploadHandler);

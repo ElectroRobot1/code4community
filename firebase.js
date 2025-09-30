@@ -26,5 +26,5 @@ provider.setCustomParameters({
 
 const firestore = getFirestore(app);
 
-export { auth, provider, firestore, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail };
+export { auth, provider, firestore, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail, app };
 export default app;

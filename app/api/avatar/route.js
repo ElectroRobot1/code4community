@@ -1,4 +1,6 @@
-export async function GET(request) {
+import { withAppCheck } from '@/utils/appCheck';
+
+async function avatarHandler(request) {
   try {
     // Rate limiting check
     const ip = request.headers.get('x-forwarded-for') || 
@@ -98,5 +100,8 @@ export async function GET(request) {
     return new Response('Server error', { status: 500 });
   }
 }
+
+// Export the handler wrapped with App Check validation
+export const GET = withAppCheck(avatarHandler);
 
 
