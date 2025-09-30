@@ -40,6 +40,20 @@ export function AuthProvider({ children }) {
       // Fetch from Firestore
       console.log('Making Firestore request for user:', currentUser.uid);
       const firestore = getFirestoreInstance();
+      
+      // Debug: Check if App Check token is available before making request
+      if (window.firebaseAppCheck) {
+        try {
+          const token = await window.firebaseAppCheck.getToken();
+          console.log('App Check token before Firestore request:', token ? 'Available' : 'Not available');
+          if (token) {
+            console.log('Token length before request:', token.token.length);
+          }
+        } catch (error) {
+          console.error('Error getting App Check token before Firestore request:', error);
+        }
+      }
+      
       const docRef = doc(firestore, "users", currentUser.uid);
       const docSnap = await getDoc(docRef);
       console.log('Firestore response received:', docSnap.exists());
