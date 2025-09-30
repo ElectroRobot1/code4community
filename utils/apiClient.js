@@ -21,8 +21,10 @@ export async function getAppCheckToken() {
         // Wait a bit for App Check to initialize
         await new Promise(resolve => setTimeout(resolve, attempt * 200));
         
-        // Try to get the token directly
-        const token = await getToken(app, true); // true = force refresh
+        // Try to get the token directly using the App Check instance
+        const { getAppCheck } = await import('firebase/app-check');
+        const appCheck = getAppCheck(app);
+        const token = await getToken(appCheck, true); // true = force refresh
         console.log('App Check token obtained:', token ? 'Yes' : 'No');
         
         if (token && token.token) {
