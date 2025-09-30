@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firest
 import { useAuth } from "@/components/AuthContext";
 import { validateEmail, validatePassword, validateConfirmPassword, validateDisplayName, sanitizeInput } from "@/utils/validation";
 import { isAdminEmail } from "@/config/admin";
+import { waitForAppCheck } from "@/utils/waitForAppCheck";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -89,6 +90,9 @@ export default function SignupPage() {
     setIsSigningUp(true);
     
     try {
+      // Wait for App Check to be ready before creating user
+      await waitForAppCheck();
+      
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
       
@@ -146,6 +150,9 @@ export default function SignupPage() {
     setIsSigningUp(true);
     
     try {
+      // Wait for App Check to be ready before proceeding
+      await waitForAppCheck();
+      
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       

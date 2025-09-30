@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { firebaseConfig, recaptchaSiteKey } from "./keys.js";
 
@@ -26,20 +26,30 @@ if (typeof window !== 'undefined') {
     // Store appCheck globally for debugging
     window.firebaseAppCheck = appCheck;
     
-    // Test token generation after a delay
-    setTimeout(async () => {
+    // Wait for App Check to be fully ready before allowing Firestore operations
+    const waitForAppCheck = async () => {
       try {
         const { getToken } = await import('firebase/app-check');
         const token = await getToken(appCheck, false);
-        console.log('Test token generation successful:', token ? 'Yes' : 'No');
+        console.log('App Check token ready:', token ? 'Yes' : 'No');
         
-        // Configure Firestore App Check
-        const { configureFirestoreAppCheck } = await import('./utils/firestoreAppCheck.js');
-        await configureFirestoreAppCheck();
+        if (token && token.token) {
+          console.log('Firebase App Check is fully ready for Firestore operations');
+          // Signal that App Check is ready
+          window.firebaseAppCheckReady = true;
+          window.dispatchEvent(new CustomEvent('firebaseAppCheckReady'));
+        } else {
+          console.error('App Check token not available');
+        }
       } catch (error) {
-        console.error('Test token generation failed:', error);
+        console.error('App Check token generation failed:', error);
+        // Retry after a delay
+        setTimeout(waitForAppCheck, 2000);
       }
-    }, 1000);
+    };
+    
+    // Start the App Check readiness check
+    setTimeout(waitForAppCheck, 1000);
     
   } catch (error) {
     console.error('Failed to initialize Firebase App Check:', error);

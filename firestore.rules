@@ -9,9 +9,7 @@ service cloud.firestore {
     }
     
     function isAppCheckValid() {
-      // Temporarily disabled until client-side Firestore App Check tokens are implemented
-      // TODO: Re-enable when client sends App Check tokens with Firestore requests
-      return true;
+      return request.app_check != null && request.app_check.valid == true;
     }
     
     function isEmailVerified() {

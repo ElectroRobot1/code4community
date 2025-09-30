@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "@/firebase";
 import { UserCache, CachePerformance } from "@/utils/cache";
+import { waitForAppCheck } from "@/utils/waitForAppCheck";
 
 const AuthContext = createContext({ user: null, userData: null, loading: true });
 
@@ -22,6 +23,9 @@ export function AuthProvider({ children }) {
     const timing = CachePerformance.startTiming('fetchUserData');
     
     try {
+      // Wait for App Check to be ready before making Firestore requests
+      await waitForAppCheck();
+      
       // Check cache first unless force refresh
       if (!forceRefresh) {
         const cachedData = UserCache.getUserData();
