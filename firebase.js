@@ -70,7 +70,7 @@ provider.setCustomParameters({
 let firestore = null;
 
 // Create Firestore instance after App Check is ready
-const initializeFirestore = () => {
+const initializeFirestore = async () => {
   if (!firestore) {
     // Create Firestore instance - it should automatically use App Check tokens
     // when the App Check instance is available on the same Firebase app
@@ -81,9 +81,10 @@ const initializeFirestore = () => {
     if (window.firebaseAppCheck) {
       console.log('App Check instance is available for Firestore');
       
-      // Test token generation
-      import('firebase/app-check').then(({ getToken }) => {
-        getToken(window.firebaseAppCheck).then((token) => {
+      // Test token generation using the same method as apiClient.js
+      try {
+        const { getToken } = await import('firebase/app-check');
+        getToken(window.firebaseAppCheck, true).then((token) => {
           console.log('App Check token test for Firestore:', token ? 'Success' : 'Failed');
           if (token) {
             console.log('Token length:', token.token.length);
@@ -91,7 +92,9 @@ const initializeFirestore = () => {
         }).catch((error) => {
           console.error('App Check token test failed:', error);
         });
-      });
+      } catch (error) {
+        console.error('Error importing getToken:', error);
+      }
     } else {
       console.warn('App Check instance not available for Firestore');
     }

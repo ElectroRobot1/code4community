@@ -39,13 +39,13 @@ export function AuthProvider({ children }) {
 
       // Fetch from Firestore
       console.log('Making Firestore request for user:', currentUser.uid);
-      const firestore = getFirestoreInstance();
+      const firestore = await getFirestoreInstance();
       
       // Debug: Check if App Check token is available before making request
       if (window.firebaseAppCheck) {
         try {
           const { getToken } = await import('firebase/app-check');
-          const token = await getToken(window.firebaseAppCheck);
+          const token = await getToken(window.firebaseAppCheck, true); // true = force refresh, same as apiClient.js
           console.log('App Check token before Firestore request:', token ? 'Available' : 'Not available');
           if (token) {
             console.log('Token length before request:', token.token.length);

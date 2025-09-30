@@ -106,7 +106,7 @@ export default function SignupPage() {
         updatedAt: serverTimestamp()
       };
       
-      const firestore = getFirestoreInstance();
+        const firestore = await getFirestoreInstance();
       await setDoc(doc(firestore, "users", user.uid), userData);
       
       // Send email verification
@@ -158,7 +158,7 @@ export default function SignupPage() {
       const user = result.user;
       
       // Check if user exists in our database
-      const firestore = getFirestoreInstance();
+        const firestore = await getFirestoreInstance();
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {

@@ -154,7 +154,7 @@ export default function LoginPage() {
       const user = result.user;
       
       // Check if user exists in our database
-      const firestore = getFirestoreInstance();
+      const firestore = await getFirestoreInstance();
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {
