@@ -36,8 +36,9 @@ if (typeof window !== 'undefined') {
         
         if (token && token.token) {
           console.log('Firebase App Check is fully ready for Firestore operations');
+          console.log('App Check token available for Firestore:', token.token.substring(0, 20) + '...');
           // Initialize Firestore now that App Check is ready
-          initializeFirestore();
+          await initializeFirestore();
           window.firebaseAppCheckReady = true;
           window.dispatchEvent(new CustomEvent('firebaseAppCheckReady'));
         } else {
@@ -84,16 +85,15 @@ const initializeFirestore = async () => {
       // Test token generation using the same method as apiClient.js
       try {
         const { getToken } = await import('firebase/app-check');
-        getToken(window.firebaseAppCheck, true).then((token) => {
-          console.log('App Check token test for Firestore:', token ? 'Success' : 'Failed');
-          if (token) {
-            console.log('Token length:', token.token.length);
-          }
-        }).catch((error) => {
-          console.error('App Check token test failed:', error);
-        });
+        const token = await getToken(window.firebaseAppCheck, true);
+        console.log('App Check token test for Firestore:', token ? 'Success' : 'Failed');
+        if (token) {
+          console.log('Token length:', token.token.length);
+          console.log('App Check token will be automatically attached to Firestore requests');
+          console.log('Firestore is now ready with App Check token:', token.token.substring(0, 20) + '...');
+        }
       } catch (error) {
-        console.error('Error importing getToken:', error);
+        console.error('Error getting App Check token for Firestore:', error);
       }
     } else {
       console.warn('App Check instance not available for Firestore');
