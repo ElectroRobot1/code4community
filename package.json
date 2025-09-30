@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_ENV=development next dev",
+    "dev:prod": "NODE_ENV=production next dev",
     "build": "next build",
+    "build:dev": "NODE_ENV=development next build",
     "start": "next start",
     "lint": "eslint"
   },

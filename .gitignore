@@ -34,7 +34,7 @@ yarn-error.log*
 .env*
 
 # keys file (DO NOT COMMIT - SECRET)
-keys.js
+keys.dev.js
 
 # vercel
 .vercel
