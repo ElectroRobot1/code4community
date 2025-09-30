@@ -12,10 +12,19 @@ export async function getAppCheckToken() {
       return null; // Server-side, no App Check token needed
     }
     
+    // Check if App Check is available
+    if (!window.firebase || !window.firebase.appCheck) {
+      console.warn('Firebase App Check not available');
+      return null;
+    }
+    
     const token = await getToken(app, false); // false = don't force refresh
-    return token.token;
+    console.log('App Check token obtained:', token ? 'Yes' : 'No');
+    return token ? token.token : null;
   } catch (error) {
     console.error('Failed to get App Check token:', error);
+    // For development, we might want to continue without App Check
+    // In production, you should handle this more strictly
     return null;
   }
 }
@@ -40,6 +49,9 @@ export async function apiRequest(url, options = {}) {
     // Add App Check token if available
     if (appCheckToken) {
       headers['X-Firebase-AppCheck'] = appCheckToken;
+      console.log('Making API request with App Check token');
+    } else {
+      console.warn('Making API request without App Check token - this may fail in production');
     }
     
     // Make the request
