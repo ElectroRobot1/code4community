@@ -24,6 +24,9 @@ if (typeof window !== 'undefined') {
     console.log('Firebase App Check initialized successfully');
     window.firebaseAppCheck = appCheck;
     
+    // Ensure Firestore uses this App Check instance
+    // Firestore will automatically use App Check tokens when the instance is available
+    
     // Wait for App Check to be fully ready before allowing Firestore operations
     const waitForAppCheck = async () => {
       try {
@@ -61,6 +64,7 @@ provider.setCustomParameters({
   access_type: 'offline'
 });
 
+// Initialize Firestore - it will automatically use App Check tokens when available
 const firestore = getFirestore(app);
 
 export { auth, provider, firestore, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail, app };
