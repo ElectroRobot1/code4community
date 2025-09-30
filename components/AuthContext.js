@@ -2,9 +2,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, getFirestoreInstance } from "@/firebase";
+import { auth, firestore } from "@/firebase";
 import { UserCache, CachePerformance } from "@/utils/cache";
-import { waitForAppCheck } from "@/utils/waitForAppCheck";
 
 const AuthContext = createContext({ user: null, userData: null, loading: true });
 
@@ -24,7 +23,6 @@ export function AuthProvider({ children }) {
     
     try {
       // Wait for App Check to be ready before making Firestore requests
-      await waitForAppCheck();
       console.log('App Check is ready, proceeding with Firestore request');
       
       // Check cache first unless force refresh
@@ -39,31 +37,9 @@ export function AuthProvider({ children }) {
 
       // Fetch from Firestore
       console.log('Making Firestore request for user:', currentUser.uid);
-      const firestore = await getFirestoreInstance();
-      
-      // Debug: Check if App Check token is available before making request
-      if (window.firebaseAppCheck) {
-        try {
-          const { getToken } = await import('firebase/app-check');
-          const token = await getToken(window.firebaseAppCheck, true); // true = force refresh, same as apiClient.js
-          console.log('App Check token before Firestore request:', token ? 'Available' : 'Not available');
-          if (token) {
-            console.log('Token length before request:', token.token.length);
-          }
-        } catch (error) {
-          console.error('Error getting App Check token before Firestore request:', error);
-        }
-      }
-      
       const docRef = doc(firestore, "users", currentUser.uid);
-      console.log('Making Firestore getDoc request for document:', docRef.path);
       const docSnap = await getDoc(docRef);
       console.log('Firestore response received:', docSnap.exists());
-      if (docSnap.exists()) {
-        console.log('Document data retrieved successfully');
-      } else {
-        console.log('Document does not exist');
-      }
       
       if (docSnap.exists()) {
         const data = docSnap.data();

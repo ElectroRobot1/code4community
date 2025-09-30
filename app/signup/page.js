@@ -1,13 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth, provider, getFirestoreInstance } from "@/firebase";
+import { auth, provider, firestore } from "@/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/components/AuthContext";
 import { validateEmail, validatePassword, validateConfirmPassword, validateDisplayName, sanitizeInput } from "@/utils/validation";
 import { isAdminEmail } from "@/config/admin";
-import { waitForAppCheck } from "@/utils/waitForAppCheck";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -91,7 +90,6 @@ export default function SignupPage() {
     
     try {
       // Wait for App Check to be ready before creating user
-      await waitForAppCheck();
       
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
@@ -106,7 +104,6 @@ export default function SignupPage() {
         updatedAt: serverTimestamp()
       };
       
-        const firestore = await getFirestoreInstance();
       await setDoc(doc(firestore, "users", user.uid), userData);
       
       // Send email verification
@@ -152,13 +149,11 @@ export default function SignupPage() {
     
     try {
       // Wait for App Check to be ready before proceeding
-      await waitForAppCheck();
       
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
       // Check if user exists in our database
-        const firestore = await getFirestoreInstance();
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {

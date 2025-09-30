@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import { auth, provider, getFirestoreInstance, fetchSignInMethodsForEmail } from "@/firebase";
+import { auth, provider, firestore, fetchSignInMethodsForEmail } from "@/firebase";
 import { UserCache, CachePerformance } from "@/utils/cache";
 import { useAuth } from "@/components/AuthContext";
 import { validateEmail, validatePassword, sanitizeInput } from "@/utils/validation";
@@ -154,7 +154,6 @@ export default function LoginPage() {
       const user = result.user;
       
       // Check if user exists in our database
-      const firestore = await getFirestoreInstance();
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
       if (!userDoc.exists()) {
