@@ -12,26 +12,35 @@ export async function getAppCheckToken() {
       return null; // Server-side, no App Check token needed
     }
     
-    // Wait a bit for App Check to initialize
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Check if Firebase is available
-    if (!window.firebase) {
-      console.error('Firebase not available on window object');
-      return null;
+    // Retry mechanism for token generation
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Attempt ${attempt} to get App Check token...`);
+        
+        // Wait a bit for App Check to initialize
+        await new Promise(resolve => setTimeout(resolve, attempt * 200));
+        
+        // Try to get the token directly
+        const token = await getToken(app, true); // true = force refresh
+        console.log('App Check token obtained:', token ? 'Yes' : 'No');
+        
+        if (token && token.token) {
+          console.log('Token length:', token.token.length);
+          return token.token;
+        } else {
+          console.warn(`Attempt ${attempt}: No token returned from getToken`);
+          lastError = new Error('No token returned from getToken');
+        }
+      } catch (error) {
+        console.warn(`Attempt ${attempt} failed:`, error.message);
+        lastError = error;
+      }
     }
     
-    // Try to get the token with force refresh to ensure we get a fresh one
-    const token = await getToken(app, true); // true = force refresh
-    console.log('App Check token obtained:', token ? 'Yes' : 'No');
+    console.error('All attempts failed to get App Check token');
+    throw lastError || new Error('Failed to get App Check token after 3 attempts');
     
-    if (token && token.token) {
-      console.log('Token length:', token.token.length);
-      return token.token;
-    } else {
-      console.error('No token returned from getToken');
-      return null;
-    }
   } catch (error) {
     console.error('Failed to get App Check token:', error);
     console.error('Error details:', {

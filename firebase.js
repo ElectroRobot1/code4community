@@ -14,11 +14,29 @@ const provider = new GoogleAuthProvider();
 if (typeof window !== 'undefined') {
   try {
     console.log('Initializing Firebase App Check with site key:', recaptchaSiteKey);
-    initializeAppCheck(app, {
+    
+    // Initialize App Check
+    const appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(recaptchaSiteKey),
       isTokenAutoRefreshEnabled: true
     });
+    
     console.log('Firebase App Check initialized successfully');
+    
+    // Store appCheck globally for debugging
+    window.firebaseAppCheck = appCheck;
+    
+    // Test token generation after a delay
+    setTimeout(async () => {
+      try {
+        const { getToken } = await import('firebase/app-check');
+        const token = await getToken(appCheck, false);
+        console.log('Test token generation successful:', token ? 'Yes' : 'No');
+      } catch (error) {
+        console.error('Test token generation failed:', error);
+      }
+    }, 1000);
+    
   } catch (error) {
     console.error('Failed to initialize Firebase App Check:', error);
   }
