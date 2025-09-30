@@ -1,7 +1,6 @@
 // API client utility with App Check token support
 import { getToken } from 'firebase/app-check';
 import { app } from '../firebase';
-import { trackAppCheckError, trackAppCheckSuccess, trackAppCheckPerformance } from './errorTracking';
 
 /**
  * Gets the current App Check token
