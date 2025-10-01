@@ -37,31 +37,9 @@ service cloud.firestore {
       return status in ['pending', 'accepted', 'completed', 'cancelled'];
     }
     
-    function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
     function isAdminByEmail() {
       return isAuthenticated() && 
              request.auth.token.email == '1021676@lcps.org'; // Hardcoded admin email
-    }
-    
-    function isAdminUser() {
-      return isAdmin() || isAdminByEmail();
-    }
-    
-    function isTeacher() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'admin'];
-    }
-    
-    function isStudent() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['student', 'teacher', 'admin'];
     }
     
     // Users collection - Contains user profile data
@@ -134,7 +112,7 @@ service cloud.firestore {
                       );
       
       // Allow delete: Only admins can delete users
-      allow delete: if isAdmin();
+      allow delete: if isAdminByEmail();
     }
     
     // TutoringRequests collection - Contains math lab tutoring requests
@@ -146,7 +124,7 @@ service cloud.firestore {
                       // Anyone can read pending requests
                       resource.data.status == 'pending' ||
                       // Admins can read all requests
-                      isAdmin()
+                      isAdminByEmail()
                     );
       
       // Allow create: Any authenticated user can create requests
@@ -207,7 +185,7 @@ service cloud.firestore {
                          request.resource.data.status == 'cancelled' &&
                          request.resource.data.updatedAt is timestamp) ||
                         // Admins can update any request
-                        isAdmin()
+                        isAdminByEmail()
                       );
       
       // Allow delete: Users can delete their own pending requests, or admins can delete any
@@ -216,7 +194,7 @@ service cloud.firestore {
                          resource.data.status == 'pending') ||
                         // Allow anyone to delete old pending requests for cleanup
                         (resource.data.status == 'pending') ||
-                        isAdmin()
+                        isAdminByEmail()
                       );
     }
     
@@ -229,7 +207,7 @@ service cloud.firestore {
                       // Users can read sessions they tutored
                       resource.data.tutorId == request.auth.uid ||
                       // Admins can read all sessions
-                      isAdminUser()
+                      isAdminByEmail()
                     );
       
       // Allow create: Any authenticated user can create completed sessions
@@ -264,10 +242,10 @@ service cloud.firestore {
                         isValidEmail(request.resource.data.tutorEmail)));
       
       // Allow update: Only admins can update completed sessions
-      allow update: if isAdmin();
+      allow update: if isAdminByEmail();
       
       // Allow delete: Only admins can delete completed sessions
-      allow delete: if isAdmin();
+      allow delete: if isAdminByEmail();
     }
     
     // Deny all other collections and documents
