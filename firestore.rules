@@ -83,9 +83,11 @@ service cloud.firestore {
                          isValidRole(request.resource.data.role) &&
                          request.resource.data.updatedAt is timestamp &&
                          // Only allow role changes by admins or prevent role escalation
-                         (isAdminUser() || request.resource.data.role == resource.data.role) &&
-                         // Only allow mathLabRole changes by admins or prevent role escalation
-                         (isAdminUser() || request.resource.data.mathLabRole == resource.data.mathLabRole) &&
+                         (isAdminByEmail() || request.resource.data.role == resource.data.role) &&
+                         // Allow mathLabRole changes by admins or users setting their own role
+                         (isAdminByEmail() || 
+                          (!('mathLabRole' in resource.data) && request.resource.data.mathLabRole in ['', 'tutor', 'student']) ||
+                          ('mathLabRole' in resource.data && request.resource.data.mathLabRole == resource.data.mathLabRole)) &&
                          // Validate optional fields if present
                          (!('mathLabRole' in request.resource.data) || 
                           (request.resource.data.mathLabRole is string && 
@@ -94,7 +96,7 @@ service cloud.firestore {
                           (request.resource.data.photoURL is string && 
                            request.resource.data.photoURL.size() <= 500))) ||
                         // Admin updates (can modify any user)
-                        (isAdminUser() &&
+                        (isAdminByEmail() &&
                          // Validate updated fields
                          request.resource.data.displayName is string &&
                          request.resource.data.displayName.size() > 0 &&
