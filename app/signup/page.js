@@ -110,7 +110,7 @@ export default function SignupPage() {
       try {
         await sendEmailVerification(user, {
           url: `${window.location.origin}/verify-email`,
-          handleCodeInApp: false
+          handleCodeInApp: true
         });
       } catch (verificationError) {
         console.error("[SignupPage] handleEmailSignup: Email verification error", {

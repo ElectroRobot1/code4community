@@ -27,7 +27,7 @@ function VerifyEmailContent() {
     try {
       await sendEmailVerification(auth.currentUser, {
         url: `${window.location.origin}/verify-email`,
-        handleCodeInApp: false
+        handleCodeInApp: true
       });
       setMessage("Verification email sent! Please check your inbox.");
       
