@@ -69,12 +69,8 @@ export default function LoginPage() {
       return;
     }
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      setLoading(false);
-      return;
-    }
+    // Don't validate password format on login - just try to authenticate
+    // Password format validation is only for signup
     
     try {
       const result = await signInWithEmailAndPassword(auth, sanitizedEmail, password);
