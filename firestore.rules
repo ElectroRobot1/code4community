@@ -64,8 +64,8 @@ service cloud.firestore {
                       request.resource.data.updatedAt is timestamp &&
                       // Ensure user can only set their own email
                       request.resource.data.email == request.auth.token.email &&
-                      // Prevent role escalation during signup
-                      request.resource.data.role == 'student';
+                      // Allow admin role for admin emails, otherwise default to student
+                      (isAdminByEmail() || request.resource.data.role == 'student');
       
       // Allow update: Only own document with restrictions, or admin updates
       allow update: if isAuthenticated() && (
@@ -92,22 +92,8 @@ service cloud.firestore {
                          (!('photoURL' in request.resource.data) || 
                           (request.resource.data.photoURL is string && 
                            request.resource.data.photoURL.size() <= 500))) ||
-                        // Admin updates (can modify any user)
-                        (isAdminByEmail() &&
-                         // Validate updated fields
-                         request.resource.data.displayName is string &&
-                         request.resource.data.displayName.size() > 0 &&
-                         request.resource.data.displayName.size() <= 100 &&
-                         request.resource.data.role is string &&
-                         isValidRole(request.resource.data.role) &&
-                         request.resource.data.updatedAt is timestamp &&
-                         // Validate optional fields if present
-                         (!('mathLabRole' in request.resource.data) || 
-                          (request.resource.data.mathLabRole is string && 
-                           isValidMathLabRole(request.resource.data.mathLabRole))) &&
-                         (!('photoURL' in request.resource.data) || 
-                          (request.resource.data.photoURL is string && 
-                           request.resource.data.photoURL.size() <= 500)))
+                        // Admin updates (can modify any user) - simplified
+                        isAdminByEmail()
                       );
       
       // Allow delete: Only admins can delete users
