@@ -73,7 +73,6 @@ service cloud.firestore {
                         (isOwner(userId) &&
                          // Prevent changing critical fields
                          request.resource.data.email == resource.data.email &&
-                         request.resource.data.uid == resource.data.uid &&
                          request.resource.data.createdAt == resource.data.createdAt &&
                          // Validate updated fields
                          request.resource.data.displayName is string &&
@@ -84,10 +83,8 @@ service cloud.firestore {
                          request.resource.data.updatedAt is timestamp &&
                          // Only allow role changes by admins or prevent role escalation
                          (isAdminByEmail() || request.resource.data.role == resource.data.role) &&
-                         // Allow mathLabRole changes by admins or users setting their own role
-                         (isAdminByEmail() || 
-                          (!('mathLabRole' in resource.data) && request.resource.data.mathLabRole in ['', 'tutor', 'student']) ||
-                          ('mathLabRole' in resource.data && request.resource.data.mathLabRole == resource.data.mathLabRole)) &&
+                         // Allow owners to set/update mathLabRole to any valid value
+                         true &&
                          // Validate optional fields if present
                          (!('mathLabRole' in request.resource.data) || 
                           (request.resource.data.mathLabRole is string && 

@@ -80,12 +80,7 @@ export default function LoginPage() {
       const result = await signInWithEmailAndPassword(auth, sanitizedEmail, password);
       const user = result.user;
       
-      // Check if email is verified - redirect to verification page instead of signing out
-      if (!user.emailVerified) {
-        // Redirect to verification page (user stays signed in)
-        router.push('/verify-email?email=' + encodeURIComponent(user.email));
-        return;
-      }
+      // Email/password login: allow unverified users to proceed; verification handled elsewhere
       
       // Redirect will be handled by useEffect above
     } catch (error) {
@@ -221,15 +216,9 @@ export default function LoginPage() {
         UserCache.setUserData(userData);
       }
       
-      // Add a small delay to ensure AuthContext is updated before redirecting
-      setTimeout(() => {
-        const redirectTo = getRedirectUrl();
-        if (redirectTo) {
-          router.push(redirectTo);
-        } else {
-          router.push("/mathlab");
-        }
-      }, 100);
+      // Redirect immediately; account may have been provisioned just now
+      const redirectTo = getRedirectUrl();
+      router.push(redirectTo || "/mathlab");
     } catch (error) {
       console.error("[LoginPage] handleGoogleLogin: Google login error", {
         code: error.code,

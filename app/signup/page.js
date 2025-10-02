@@ -119,8 +119,8 @@ export default function SignupPage() {
         });
       }
       
-      // Redirect to email verification page (user stays signed in)
-      router.push("/verify-email?email=" + encodeURIComponent(user.email));
+      // Redirect to dashboard; user stays signed in and can verify later
+      router.push("/mathlab");
     } catch (err) {
       console.error("[SignupPage] handleEmailSignup: Email signup error", {
         code: err.code,
@@ -194,7 +194,8 @@ export default function SignupPage() {
         }
       }
       
-      // Redirect to math lab page (handled by useEffect)
+      // Redirect to dashboard immediately
+      router.push("/mathlab");
     } catch (err) {
       console.error("[SignupPage] handleGoogleSignup: Google signup error", {
         code: err.code,
