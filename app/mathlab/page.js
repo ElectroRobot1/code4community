@@ -417,9 +417,8 @@ export default function MathLabPage() {
           || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
           || user?.email
           || 'Anonymous Student',
-        studentEmail: user?.email || cachedUser?.email,
-        studentPhotoURL: user?.photoURL || displayUser?.photoURL || cachedUser?.photoURL || null,
         course: selectedCourse,
+        description: `Help needed with ${selectedCourse}`,
         status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
