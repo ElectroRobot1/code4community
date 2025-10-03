@@ -28,6 +28,7 @@ export default function MathLabPage() {
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [sessionDuration, setSessionDuration] = useState(0);
   const [studentRequest, setStudentRequest] = useState(null);
+  const [previousStudentRequest, setPreviousStudentRequest] = useState(null);
   const [roleChangeMessage, setRoleChangeMessage] = useState("");
   const [sessionStatus, setSessionStatus] = useState(null); // 'accepted', 'started', 'ended'
   const [sessionEndData, setSessionEndData] = useState(null); // Data for session over screen
@@ -356,14 +357,15 @@ export default function MathLabPage() {
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const match = docs.find(d => d.status === 'pending' || d.status === 'accepted');
             
-            if (match && match.status === 'pending') {
-              setStudentRequest({
-                id: match.id,
-                course: match.course,
-                status: match.status,
-                createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
-              });
-            } else if (match && match.status === 'accepted') {
+              if (match && match.status === 'pending') {
+                setStudentRequest({
+                  id: match.id,
+                  course: match.course,
+                  status: match.status,
+                  createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
+                });
+                setPreviousStudentRequest(null); // Clear previous when new request found
+              } else if (match && match.status === 'accepted') {
               // Student has been matched with a tutor
               const sessionStartedAt = match.sessionStartedAt?.toDate ? match.sessionStartedAt.toDate() : (match.sessionStartedAt ? new Date(match.sessionStartedAt) : null);
               
@@ -375,6 +377,7 @@ export default function MathLabPage() {
                 acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date(),
                 sessionStartedAt: sessionStartedAt
               });
+              setPreviousStudentRequest(null); // Clear previous when new request found
               
               // Check if session has started
               if (sessionStartedAt) {
@@ -392,11 +395,16 @@ export default function MathLabPage() {
             // If we had a student request but now it's gone, the session ended
             console.log('[StudentRequest] No requests found, checking if session ended:', {
               hadStudentRequest: !!studentRequest,
+              hadPreviousRequest: !!previousStudentRequest,
               studentRequestStatus: studentRequest?.status,
-              shouldShowEndedScreen: studentRequest && studentRequest.status === 'accepted'
+              previousRequestStatus: previousStudentRequest?.status,
+              shouldShowEndedScreen: (studentRequest && studentRequest.status === 'accepted') || 
+                                   (previousStudentRequest && previousStudentRequest.status === 'accepted')
             });
             
-            if (studentRequest && studentRequest.status === 'accepted') {
+            // Check if session ended using current or previous request state
+            const requestToCheck = studentRequest || previousStudentRequest;
+            if (requestToCheck && requestToCheck.status === 'accepted') {
               // Session ended - show session ended screen
               console.log('[StudentRequest] Session ended! Showing session ended screen');
               setSessionEndData({
@@ -404,12 +412,17 @@ export default function MathLabPage() {
                             ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
                             user?.email || cachedUser?.email || 'Student',
                 studentEmail: user?.email || cachedUser?.email || '',
-                course: studentRequest.course,
-                startTime: studentRequest.sessionStartedAt || studentRequest.acceptedAt,
+                course: requestToCheck.course,
+                startTime: requestToCheck.sessionStartedAt || requestToCheck.acceptedAt,
                 endTime: new Date(),
                 duration: sessionDuration
               });
               setSessionStatus('ended');
+            }
+            
+            // Update previous request state before clearing current
+            if (studentRequest) {
+              setPreviousStudentRequest(studentRequest);
             }
             setStudentRequest(null);
           }
