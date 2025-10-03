@@ -333,95 +333,85 @@ export default function MathLabPage() {
   // Check for student requests
   useEffect(() => {
     if (displayUser?.mathLabRole === 'student') {
-      const checkStudentRequest = () => {
+      const checkStudentRequest = async () => {
         try {
-          // Avoid composite index by subscribing by studentId and filtering statuses client-side
+          console.log('[StudentRequest] Checking for student requests:', user?.uid || cachedUser?.uid);
+          
+          // Use a simple query to get student's requests
           const q = query(
             collection(firestore, "tutoringRequests"),
             where("studentId", "==", user?.uid || cachedUser?.uid)
           );
-          const unsubscribe = onSnapshot(q, (snapshot) => {
-            try {
-              if (!snapshot.empty) {
-                const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                const match = docs.find(d => d.status === 'pending' || d.status === 'accepted');
-                
-                if (match && match.status === 'pending') {
-                  setStudentRequest({
-                    id: match.id,
-                    course: match.course,
-                    status: match.status,
-                    createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
-                  });
-                } else if (match && match.status === 'accepted') {
-                  // Student has been matched with a tutor
-                  const sessionStartedAt = match.sessionStartedAt?.toDate ? match.sessionStartedAt.toDate() : (match.sessionStartedAt ? new Date(match.sessionStartedAt) : null);
-                  
-                  setStudentRequest({
-                    id: match.id,
-                    course: match.course,
-                    status: match.status,
-                    tutorName: match.tutorName,
-                    acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date(),
-                    sessionStartedAt: sessionStartedAt
-                  });
-                  
-                  // Check if session has started
-                  if (sessionStartedAt) {
-                    setSessionStatus('started');
-                    setSessionStartTime(sessionStartedAt);
-                    // Calculate current session duration
-                    const now = new Date();
-                    const duration = Math.floor((now - sessionStartedAt) / 1000);
-                    setSessionDuration(duration);
-                  } else {
-                    setSessionStatus('accepted');
-                  }
-                }
-              } else {
-                // If we had a student request but now it's gone, the session ended
-                if (studentRequest && studentRequest.status === 'accepted') {
-                  // Session ended - show session ended screen
-                  setSessionEndData({
-                    studentName: (displayUser?.displayName && displayUser.displayName.trim()) || 
-                                ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
-                                user?.email || cachedUser?.email || 'Student',
-                    studentEmail: user?.email || cachedUser?.email || '',
-                    course: studentRequest.course,
-                    startTime: studentRequest.sessionStartedAt || studentRequest.acceptedAt,
-                    endTime: new Date(),
-                    duration: sessionDuration
-                  });
-                  setSessionStatus('ended');
-                }
-                setStudentRequest(null);
-              }
-            } catch (error) {
-              console.error('[StudentRequest] Error processing snapshot:', error);
-              // Don't throw the error, just log it to prevent listener crashes
-            }
-          }, (error) => {
-            console.error('[StudentRequest] onSnapshot error:', error);
-            // Handle listener errors gracefully
-            if (error.code === 'permission-denied') {
-              console.error('[StudentRequest] Permission denied - check Firestore rules');
-            } else if (error.code === 'unavailable') {
-              console.error('[StudentRequest] Firestore unavailable');
-            }
-          });
           
-          return unsubscribe;
+          const snapshot = await getDocs(q);
+          
+          if (!snapshot.empty) {
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const match = docs.find(d => d.status === 'pending' || d.status === 'accepted');
+            
+            if (match && match.status === 'pending') {
+              setStudentRequest({
+                id: match.id,
+                course: match.course,
+                status: match.status,
+                createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
+              });
+            } else if (match && match.status === 'accepted') {
+              // Student has been matched with a tutor
+              const sessionStartedAt = match.sessionStartedAt?.toDate ? match.sessionStartedAt.toDate() : (match.sessionStartedAt ? new Date(match.sessionStartedAt) : null);
+              
+              setStudentRequest({
+                id: match.id,
+                course: match.course,
+                status: match.status,
+                tutorName: match.tutorName,
+                acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date(),
+                sessionStartedAt: sessionStartedAt
+              });
+              
+              // Check if session has started
+              if (sessionStartedAt) {
+                setSessionStatus('started');
+                setSessionStartTime(sessionStartedAt);
+                // Calculate current session duration
+                const now = new Date();
+                const duration = Math.floor((now - sessionStartedAt) / 1000);
+                setSessionDuration(duration);
+              } else {
+                setSessionStatus('accepted');
+              }
+            }
+          } else {
+            // If we had a student request but now it's gone, the session ended
+            if (studentRequest && studentRequest.status === 'accepted') {
+              // Session ended - show session ended screen
+              setSessionEndData({
+                studentName: (displayUser?.displayName && displayUser.displayName.trim()) || 
+                            ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
+                            user?.email || cachedUser?.email || 'Student',
+                studentEmail: user?.email || cachedUser?.email || '',
+                course: studentRequest.course,
+                startTime: studentRequest.sessionStartedAt || studentRequest.acceptedAt,
+                endTime: new Date(),
+                duration: sessionDuration
+              });
+              setSessionStatus('ended');
+            }
+            setStudentRequest(null);
+          }
         } catch (error) {
-          console.error("Error checking student request:", error);
-          return () => {}; // Return empty cleanup function on error
+          console.error('[StudentRequest] Error checking student request:', error);
         }
       };
       
-      const unsubscribe = checkStudentRequest();
+      // Check immediately
+      checkStudentRequest();
+      
+      // Set up polling instead of real-time listener to avoid permission issues
+      const pollInterval = setInterval(checkStudentRequest, 2000); // Check every 2 seconds
+      
       return () => {
-        if (unsubscribe && typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
+        clearInterval(pollInterval);
       };
     } else {
       // If not a student, clear any existing student request state
