@@ -417,6 +417,7 @@ export default function MathLabPage() {
           || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
           || user?.email
           || 'Anonymous Student',
+        studentEmail: user?.email || cachedUser?.email || '',
         course: selectedCourse,
         description: `Help needed with ${selectedCourse}`,
         status: 'pending',
@@ -554,13 +555,13 @@ export default function MathLabPage() {
       const completedSessionData = {
         studentId: activeSession.studentId || user?.uid || cachedUser?.uid,
         studentName: activeSession.studentName,
-        studentEmail: activeSession.studentEmail,
+        studentEmail: activeSession.studentEmail || user?.email || cachedUser?.email || '',
         tutorId: user?.uid || cachedUser?.uid,
         tutorName: (displayUser?.displayName && displayUser.displayName.trim())
           || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
           || user?.email
           || 'Anonymous Tutor',
-        tutorEmail: user?.email || cachedUser?.email,
+        tutorEmail: user?.email || cachedUser?.email || '',
         course: activeSession.course,
         startTime: sessionStartTime,
         endTime: endTime,
