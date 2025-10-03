@@ -171,7 +171,8 @@ service cloud.firestore {
       
       // Allow update: 
       // - Students can update their own pending requests
-      // - Tutors can update requests they're assigned to (accept, start session, complete)
+      // - Tutors can update pending requests (to accept them)
+      // - Tutors can update requests they're assigned to (start session, complete)
       // - Teachers/admins can update any request
       allow update: if isAuthenticated() && (
                         // Students can update their own pending requests
@@ -187,13 +188,31 @@ service cloud.firestore {
                          request.resource.data.description.size() > 0 &&
                          request.resource.data.description.size() <= 1000 &&
                          request.resource.data.updatedAt is timestamp) ||
-                        // Tutors can update requests they're assigned to
+                        // Tutors can update pending requests (to accept them)
+                        (isTutor() && 
+                         resource.data.status == 'pending' &&
+                         // Allow status change from pending to accepted
+                         request.resource.data.status == 'accepted' &&
+                         // Validate required fields for accepted status
+                         request.resource.data.studentId == resource.data.studentId &&
+                         request.resource.data.course == resource.data.course &&
+                         request.resource.data.description == resource.data.description &&
+                         request.resource.data.createdAt == resource.data.createdAt &&
+                         request.resource.data.updatedAt is timestamp &&
+                         // Validate new fields for accepted status
+                         request.resource.data.tutorId is string &&
+                         request.resource.data.tutorId == request.auth.uid &&
+                         request.resource.data.tutorName is string &&
+                         request.resource.data.tutorName.size() > 0 &&
+                         request.resource.data.tutorName.size() <= 100 &&
+                         request.resource.data.acceptedAt is timestamp) ||
+                        // Tutors can update requests they're assigned to (start session, complete)
                         (isTutor() && 
                          resource.data.tutorId == request.auth.uid &&
-                         // Allow status changes: pending -> accepted -> completed
-                         (request.resource.data.status == 'accepted' || 
-                          request.resource.data.status == 'completed') &&
-                         // Validate required fields for accepted/completed
+                         // Allow status changes: accepted -> completed, or add sessionStartedAt
+                         (request.resource.data.status == 'completed' || 
+                          ('sessionStartedAt' in request.resource.data)) &&
+                         // Validate required fields
                          request.resource.data.tutorId == resource.data.tutorId &&
                          request.resource.data.studentId == resource.data.studentId &&
                          request.resource.data.course == resource.data.course &&
