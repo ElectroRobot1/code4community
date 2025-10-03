@@ -91,6 +91,23 @@ ${routes
   .join('\n')}
 </urlset>`;
 
+  // Validate XML before returning
+  try {
+    // Basic XML validation - check for proper structure
+    if (!sitemap.includes('<?xml version="1.0" encoding="UTF-8"?>')) {
+      throw new Error('Invalid XML declaration');
+    }
+    if (!sitemap.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')) {
+      throw new Error('Invalid urlset declaration');
+    }
+    if (!sitemap.includes('</urlset>')) {
+      throw new Error('Missing closing urlset tag');
+    }
+  } catch (error) {
+    console.error('Sitemap validation error:', error);
+    return new NextResponse('Sitemap generation error', { status: 500 });
+  }
+
   return new NextResponse(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
