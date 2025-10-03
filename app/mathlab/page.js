@@ -378,6 +378,19 @@ export default function MathLabPage() {
                 }
               }
             } else {
+              // If we had a student request but now it's gone, the session ended
+              if (studentRequest && studentRequest.status === 'accepted') {
+                // Session ended - show session ended screen
+                setSessionEndData({
+                  studentName: studentRequest.tutorName || 'Tutor',
+                  studentEmail: user?.email || cachedUser?.email || '',
+                  course: studentRequest.course,
+                  startTime: studentRequest.sessionStartedAt || studentRequest.acceptedAt,
+                  endTime: new Date(),
+                  duration: sessionDuration
+                });
+                setSessionStatus('ended');
+              }
               setStudentRequest(null);
             }
           });
