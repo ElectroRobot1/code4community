@@ -345,6 +345,12 @@ export default function MathLabPage() {
           
           const snapshot = await getDocs(q);
           
+          console.log('[StudentRequest] Snapshot result:', {
+            size: snapshot.size,
+            empty: snapshot.empty,
+            docs: snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+          });
+          
           if (!snapshot.empty) {
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const match = docs.find(d => d.status === 'pending' || d.status === 'accepted');
@@ -383,8 +389,15 @@ export default function MathLabPage() {
             }
           } else {
             // If we had a student request but now it's gone, the session ended
+            console.log('[StudentRequest] No requests found, checking if session ended:', {
+              hadStudentRequest: !!studentRequest,
+              studentRequestStatus: studentRequest?.status,
+              shouldShowEndedScreen: studentRequest && studentRequest.status === 'accepted'
+            });
+            
             if (studentRequest && studentRequest.status === 'accepted') {
               // Session ended - show session ended screen
+              console.log('[StudentRequest] Session ended! Showing session ended screen');
               setSessionEndData({
                 studentName: (displayUser?.displayName && displayUser.displayName.trim()) || 
                             ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
@@ -601,8 +614,11 @@ export default function MathLabPage() {
         status: 'completed'
       };
 
+      console.log('[HandleEndSession] Creating completed session:', completedSessionData);
+
       // Add to completed sessions collection
-      await addDoc(collection(firestore, "completedSessions"), completedSessionData);
+      const docRef = await addDoc(collection(firestore, "completedSessions"), completedSessionData);
+      console.log('[HandleEndSession] Completed session created with ID:', docRef.id);
       
       // Delete the original request from the database
       await deleteDoc(doc(firestore, "tutoringRequests", activeSession.requestId));
