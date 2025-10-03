@@ -529,7 +529,19 @@ export default function MathLabPage() {
       // If not a student, clear any existing student request state
       setStudentRequest(null);
     }
-  }, [displayUser?.mathLabRole, user?.uid, cachedUser?.uid]);
+  }, [
+    displayUser?.mathLabRole, 
+    user?.uid, 
+    cachedUser?.uid,
+    user?.email,
+    cachedUser?.email,
+    displayUser?.displayName,
+    displayUser?.firstName,
+    displayUser?.lastName,
+    studentRequest,
+    previousStudentRequest,
+    sessionDuration
+  ]);
 
   // No dropdown overlay logic needed with native select
 
