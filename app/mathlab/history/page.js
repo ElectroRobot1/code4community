@@ -95,6 +95,15 @@ export default function MathLabHistoryPage() {
       const userId = user?.uid || cachedUser?.uid;
       const userRole = userData?.mathLabRole || cachedUser?.mathLabRole || 'student';
       
+      console.log('[SessionHistory] Debug info:', {
+        userId,
+        userRole,
+        userData: userData?.mathLabRole,
+        cachedUser: cachedUser?.mathLabRole,
+        userDataExists: !!userData,
+        cachedUserExists: !!cachedUser
+      });
+      
       if (!userId) {
         throw new Error("User information not available");
       }
@@ -115,11 +124,30 @@ export default function MathLabHistoryPage() {
         limit(50)
       );
 
+      console.log('[SessionHistory] Query:', {
+        collection: 'completedSessions',
+        field: userRole === 'student' ? 'studentId' : 'tutorId',
+        value: userId,
+        userRole
+      });
+
       const snapshot = await getDocs(sessionsQuery);
       const sessions = [];
       
+      console.log('[SessionHistory] Snapshot:', {
+        size: snapshot.size,
+        empty: snapshot.empty
+      });
+      
       snapshot.forEach((doc) => {
         const data = doc.data();
+        console.log('[SessionHistory] Session data:', {
+          id: doc.id,
+          studentId: data.studentId,
+          tutorId: data.tutorId,
+          studentName: data.studentName,
+          tutorName: data.tutorName
+        });
         const session = {
           id: doc.id,
           ...data,

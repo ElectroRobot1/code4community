@@ -382,7 +382,9 @@ export default function MathLabPage() {
               if (studentRequest && studentRequest.status === 'accepted') {
                 // Session ended - show session ended screen
                 setSessionEndData({
-                  studentName: studentRequest.tutorName || 'Tutor',
+                  studentName: (displayUser?.displayName && displayUser.displayName.trim()) || 
+                              ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
+                              user?.email || cachedUser?.email || 'Student',
                   studentEmail: user?.email || cachedUser?.email || '',
                   course: studentRequest.course,
                   startTime: studentRequest.sessionStartedAt || studentRequest.acceptedAt,
