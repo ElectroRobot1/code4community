@@ -281,7 +281,20 @@ export default function MathLabPage() {
                 course: accepted.course,
                 startTime: accepted.acceptedAt?.toDate ? accepted.acceptedAt.toDate() : new Date()
               });
-              setSessionStartTime(accepted.acceptedAt?.toDate ? accepted.acceptedAt.toDate() : new Date());
+              
+              // Check if session has started (has sessionStartedAt)
+              if (accepted.sessionStartedAt) {
+                const sessionStartedAt = accepted.sessionStartedAt?.toDate ? accepted.sessionStartedAt.toDate() : new Date(accepted.sessionStartedAt);
+                setSessionStartTime(sessionStartedAt);
+                setSessionStatus('started');
+                // Calculate current session duration
+                const now = new Date();
+                const duration = Math.floor((now - sessionStartedAt) / 1000);
+                setSessionDuration(duration);
+              } else {
+                setSessionStartTime(accepted.acceptedAt?.toDate ? accepted.acceptedAt.toDate() : new Date());
+                setSessionStatus('accepted');
+              }
             }
           }
         } catch (error) {

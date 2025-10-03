@@ -234,11 +234,15 @@ service cloud.firestore {
       
       // Allow delete: 
       // - Students can delete their own pending requests
+      // - Tutors can delete requests they're assigned to (when ending sessions)
       // - Teachers/admins can delete any request
       allow delete: if isAuthenticated() && (
                         // Students can delete their own pending requests
                         (resource.data.studentId == request.auth.uid && 
                          resource.data.status == 'pending') ||
+                        // Tutors can delete requests they're assigned to (when ending sessions)
+                        (isTutor() && 
+                         resource.data.tutorId == request.auth.uid) ||
                         // Teachers and admins can delete any request
                         isTeacherOrAdmin() ||
                         // Admins can delete any request
