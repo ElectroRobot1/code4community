@@ -276,6 +276,7 @@ export default function MathLabPage() {
             if (accepted) {
               setActiveSession({
                 requestId: accepted.id,
+                studentId: accepted.studentId,
                 studentName: accepted.studentName,
                 studentEmail: accepted.studentEmail,
                 course: accepted.course,
@@ -597,10 +598,10 @@ export default function MathLabPage() {
       
       // Save completed session to history
       const completedSessionData = {
-        studentId: activeSession.studentId || user?.uid || cachedUser?.uid,
+        studentId: activeSession.studentId, // Use the student ID from activeSession
         studentName: activeSession.studentName,
-        studentEmail: activeSession.studentEmail || user?.email || cachedUser?.email || '',
-        tutorId: user?.uid || cachedUser?.uid,
+        studentEmail: activeSession.studentEmail || '',
+        tutorId: user?.uid || cachedUser?.uid, // Tutor's ID
         tutorName: (displayUser?.displayName && displayUser.displayName.trim())
           || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
           || user?.email
@@ -683,6 +684,7 @@ export default function MathLabPage() {
       // Set active session for tutor (but not started yet)
       setActiveSession({
         requestId,
+        studentId: request.studentId,
         studentName: request.studentName,
         studentEmail: request.studentEmail,
         course: request.course
