@@ -178,6 +178,13 @@ export default function MathLabPage() {
     }
   }, [userData, cachedUser]);
 
+  // Set loading to false when component is ready
+  useEffect(() => {
+    if (isAuthenticated && (userData || cachedUser)) {
+      setLoading('isLoading', false);
+    }
+  }, [isAuthenticated, userData, cachedUser, setLoading]);
+
   // Use cached user if available, fallback to real userData - memoized for performance
   const displayUser = useMemo(() => userData || cachedUser, [userData, cachedUser]);
 
@@ -887,6 +894,8 @@ export default function MathLabPage() {
   }, [showRoleSelection, displayUser, handleRoleSelection]);
 
   // Show loading while authentication is loading
+  console.log('[MathLab] Loading states:', { authLoading, isLoading, isAuthenticated, user: !!user, userData: !!userData });
+  
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
