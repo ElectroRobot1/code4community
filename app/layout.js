@@ -52,6 +52,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* reCAPTCHA container for Firebase App Check */}
+        <div id="recaptcha-container" style={{ display: 'none' }}></div>
         <ErrorBoundary>
           <AuthProvider>{children}</AuthProvider>
         </ErrorBoundary>

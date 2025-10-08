@@ -4,6 +4,7 @@ import { useUserCache } from "@/hooks/useUserCache";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { handleError } from "@/utils/errorHandlingUtils";
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { doc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc } from "firebase/firestore";
@@ -23,6 +24,9 @@ export default function AdminDashboard() {
     isLoading: true,
     isAddingTutor: false
   });
+  
+  // Router for navigation
+  const router = useRouter();
   
   // Additional state
   const [tutors, setTutors] = useState([]);
