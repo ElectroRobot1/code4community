@@ -1,6 +1,9 @@
 "use client";
-import { useAuth } from "../../../components/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useUserCache } from "@/hooks/useUserCache";
+import { useLoadingState } from "@/hooks/useLoadingState";
+import { CommonOperations, getDocuments, QueryBuilder } from "@/utils/firestoreUtils";
+import { handleError, withErrorHandling } from "@/utils/errorHandlingUtils";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import DashboardTopBar from "../../../components/DashboardTopBar";
 import MathLabSidebar from "../../../components/MathLabSidebar";
@@ -11,14 +14,22 @@ import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
 import { canAccess } from "@/utils/authorization";
 
 export default function MathLabHistoryPage() {
-  const { user, userData, isEmailVerified } = useAuth();
-  const router = useRouter();
-  const [cachedUser, setCachedUser] = useState(null);
+  // Use new authentication redirect hook
+  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/mathlab/history');
+  
+  // Use new user cache hook
+  const { cachedUser, refreshCache } = useUserCache();
+  
+  // Use new loading state hook
+  const { isLoading, setLoading, withLoading, isRefreshing } = useLoadingState({
+    isLoading: true,
+    isRefreshing: false
+  });
+  
+  // Additional state
   const [sessionHistory, setSessionHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, student, tutor
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Available courses - memoized for performance
   const courses = useMemo(() => [
@@ -30,52 +41,8 @@ export default function MathLabHistoryPage() {
     "Geometry"
   ], []);
 
-  // Optimized caching with centralized cache manager
-  useEffect(() => {
-    const timing = CachePerformance.startTiming('loadHistoryCachedUser');
-    
-    const cached = UserCache.getUserData();
-    if (cached) {
-      setCachedUser(cached);
-    }
-    
-    CachePerformance.endTiming(timing);
-  }, []);
-
-  // Update cache when userData changes
-  useEffect(() => {
-    if (userData && user) {
-      const timing = CachePerformance.startTiming('updateHistoryCache');
-      
-      const combinedUserData = {
-        ...userData,
-        uid: user.uid,
-        email: user.email
-      };
-      
-      UserCache.setUserData(combinedUserData);
-      setCachedUser(combinedUserData);
-      
-      CachePerformance.endTiming(timing);
-    }
-  }, [userData, user]);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user && !cachedUser) {
-      router.push('/login?redirectTo=/mathlab/history');
-    }
-  }, [user, cachedUser, router]);
-
   // Check authorization for Math Lab access
   const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
-
-  // Redirect to email verification if email is not verified
-  useEffect(() => {
-    if (userData && !isEmailVerified) {
-      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
-    }
-  }, [userData, isEmailVerified, router]);
 
   // Fetch session history
   const fetchSessionHistory = useCallback(async (forceRefresh = false) => {

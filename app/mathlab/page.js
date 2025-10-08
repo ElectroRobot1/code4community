@@ -1,6 +1,9 @@
 "use client";
-import { useAuth } from "../../components/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useUserCache } from "@/hooks/useUserCache";
+import { useLoadingState } from "@/hooks/useLoadingState";
+import { CommonOperations, getDocuments, QueryBuilder } from "@/utils/firestoreUtils";
+import { handleError, withErrorHandling } from "@/utils/errorHandlingUtils";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import MathLabSidebar from "../../components/MathLabSidebar";
@@ -14,16 +17,26 @@ import { canAccess, canModify, isTutorOrHigher, ROLES } from "@/utils/authorizat
 import Image from "next/image";
 
 export default function MathLabPage() {
-  const { user, userData, isEmailVerified, loading } = useAuth();
-  const router = useRouter();
+  // Use new authentication redirect hook
+  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/mathlab');
+  
+  // Use new user cache hook
+  const { cachedUser, refreshCache } = useUserCache();
+  
+  // Use new loading state hook
+  const { isLoading, setLoading, withLoading, isSubmitting, isMatching, isUpdating, isLoadingRequests } = useLoadingState({
+    isLoading: true,
+    isSubmitting: false,
+    isMatching: false,
+    isUpdating: false,
+    isLoadingRequests: false
+  });
+  
+  // Additional state variables
   const [selectedCourse, setSelectedCourse] = useState("");
-  const [isMatching, setIsMatching] = useState(false);
-  const [cachedUser, setCachedUser] = useState(null);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [mathLabRole, setMathLabRole] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [sessionDuration, setSessionDuration] = useState(0);
@@ -32,8 +45,6 @@ export default function MathLabPage() {
   const [roleChangeMessage, setRoleChangeMessage] = useState("");
   const [sessionStatus, setSessionStatus] = useState(null); // 'accepted', 'started', 'ended'
   const [sessionEndData, setSessionEndData] = useState(null); // Data for session over screen
-  
-  // Use refs to avoid dependency issues
   const studentRequestRef = useRef(studentRequest);
   const previousStudentRequestRef = useRef(previousStudentRequest);
   const sessionDurationRef = useRef(sessionDuration);
@@ -158,57 +169,21 @@ export default function MathLabPage() {
 
   // No custom filtering — native select handles searching
 
-  // Optimized caching with intelligent cache management
+  // Role selection management - simplified with new cache hook
   useEffect(() => {
-    const timing = CachePerformance.startTiming('loadCachedUser');
-    
-    // Try to get cached user data immediately
-    const cached = UserCache.getUserData();
-    if (cached) {
-      setCachedUser(cached);
-      // Check role selection - always check current role
-      if (!cached.mathLabRole) {
-        setShowRoleSelection(true);
-      } else {
-        setShowRoleSelection(false);
-      }
+    const currentUser = userData || cachedUser;
+    if (currentUser) {
+      setShowRoleSelection(!currentUser.mathLabRole);
+      setMathLabRole(currentUser.mathLabRole || '');
     }
-    
-    CachePerformance.endTiming(timing);
-  }, []);
-
-  // Optimized cache update with smart invalidation
-  useEffect(() => {
-    if (userData && user) {
-      const timing = CachePerformance.startTiming('updateUserCache');
-      
-      // Combine Firebase Auth user with Firestore data
-      const combinedUserData = {
-        ...userData,
-        uid: user.uid,
-        email: user.email
-      };
-      
-      // Update cache using centralized cache manager
-      UserCache.setUserData(combinedUserData);
-      setCachedUser(combinedUserData);
-      
-      // Check role selection - always check current role
-      if (!userData.mathLabRole) {
-        setShowRoleSelection(true);
-      } else {
-        setShowRoleSelection(false);
-      }
-      
-      CachePerformance.endTiming(timing);
-    }
-  }, [userData, user]);
+  }, [userData, cachedUser]);
 
   // Use cached user if available, fallback to real userData - memoized for performance
   const displayUser = useMemo(() => userData || cachedUser, [userData, cachedUser]);
 
   // Function to fetch pending requests for tutors
   // Optimized fetchPendingRequests with intelligent caching
+  // Refactored fetchPendingRequests using new utilities
   const fetchPendingRequests = useCallback(() => {
     if (displayUser?.mathLabRole !== 'tutor') {
       return () => {}; // Return empty cleanup function
@@ -216,82 +191,76 @@ export default function MathLabPage() {
     
     const timing = CachePerformance.startTiming('fetchPendingRequests');
     
-    // Try to load from cache first, but always refresh for real-time data
+    // Try to load from cache first
     const cachedRequests = MathLabCache.getRequests();
     if (cachedRequests && cachedRequests.length >= 0) {
       setPendingRequests(cachedRequests);
-      setIsLoadingRequests(false);
+      setLoading('isLoadingRequests', false);
     } else {
-      setIsLoadingRequests(true);
+      setLoading('isLoadingRequests', true);
     }
     
-    // Always fetch fresh data for real-time updates
-    setIsLoadingRequests(true);
-    
     try {
-      const q = query(
-        collection(firestore, "tutoringRequests"),
-        where("status", "==", "pending")
-      );
-      
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const requests = [];
-        snapshot.forEach((doc) => {
-          requests.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Cache the requests
-        MathLabCache.setRequests(requests);
-        setPendingRequests(requests);
-        setIsLoadingRequests(false);
-        
-        CachePerformance.endTiming(timing);
+      const constraints = QueryBuilder.buildQuery('tutoringRequests', {
+        where: { status: 'pending' }
       });
+      
+      const unsubscribe = onSnapshot(
+        query(collection(firestore, "tutoringRequests"), ...constraints),
+        (snapshot) => {
+          const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          // Cache the requests
+          MathLabCache.setRequests(requests);
+          setPendingRequests(requests);
+          setLoading('isLoadingRequests', false);
+          
+          CachePerformance.endTiming(timing);
+        },
+        (error) => {
+          handleError(error, {
+            context: { operation: 'fetchPendingRequests', userRole: displayUser?.mathLabRole },
+            showAlert: false // Don't show alert for background operations
+          });
+          setLoading('isLoadingRequests', false);
+          CachePerformance.endTiming(timing);
+        }
+      );
 
       return unsubscribe;
     } catch (error) {
-      console.error("Error fetching requests:", error);
-      setIsLoadingRequests(false);
+      handleError(error, {
+        context: { operation: 'fetchPendingRequests', userRole: displayUser?.mathLabRole },
+        showAlert: false
+      });
+      setLoading('isLoadingRequests', false);
       CachePerformance.endTiming(timing);
       return () => {}; // Return empty cleanup function on error
     }
-  }, [displayUser?.mathLabRole]);
-
-  // Redirect to login if not authenticated (use cached user if available)
-  useEffect(() => {
-    if (!user && !cachedUser) {
-      router.push('/login?redirectTo=/mathlab');
-    }
-  }, [user, cachedUser, router]);
+  }, [displayUser?.mathLabRole, setLoading]);
 
   // Check authorization for Math Lab access
   const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
-
-  // Redirect to email verification if email is not verified
-  useEffect(() => {
-    if (userData && !isEmailVerified) {
-      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
-    }
-  }, [userData, isEmailVerified, router]);
 
   // Fetch pending requests if user is a tutor
   useEffect(() => {
     if (displayUser?.mathLabRole === 'tutor') {
       const unsubscribe = fetchPendingRequests();
       
-      // Also check for active sessions
+      // Also check for active sessions using new utilities
       const checkActiveSessions = async () => {
-        try {
-          // Avoid composite index by querying by tutorId first, then filter status client-side
-          const q = query(
-            collection(firestore, "tutoringRequests"),
-            where("tutorId", "==", user?.uid || cachedUser?.uid)
-          );
-          const snapshot = await getDocs(q);
+        const result = await withErrorHandling(async () => {
+          const constraints = QueryBuilder.buildQuery('tutoringRequests', {
+            where: { tutorId: user?.uid || cachedUser?.uid }
+          });
+          
+          const snapshot = await getDocs(query(collection(firestore, "tutoringRequests"), ...constraints));
+          
           if (!snapshot.empty) {
             const accepted = snapshot.docs
               .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
               .find(d => d.status === 'accepted');
+              
             if (accepted) {
               setActiveSession({
                 requestId: accepted.id,
@@ -317,9 +286,10 @@ export default function MathLabPage() {
               }
             }
           }
-        } catch (error) {
-          console.error("Error checking active sessions:", error);
-        }
+        }, {
+          context: { operation: 'checkActiveSessions', userId: user?.uid || cachedUser?.uid },
+          showAlert: false
+        });
       };
       
       checkActiveSessions();
@@ -433,7 +403,7 @@ export default function MathLabPage() {
                 course: requestToCheck.course,
                 startTime: requestToCheck.sessionStartedAt || requestToCheck.acceptedAt,
                 endTime: new Date(),
-                duration: sessionDurationRef.currentRef.current
+                duration: sessionDurationRef.current
               });
               setSessionStatus('ended');
             }
@@ -572,9 +542,7 @@ export default function MathLabPage() {
       return;
     }
 
-    setIsMatching(true);
-    
-    try {
+    const result = await withLoading(async () => {
       // Create a tutoring request
       const requestData = {
         studentId: user?.uid || cachedUser?.uid,
@@ -600,13 +568,18 @@ export default function MathLabPage() {
         createdAt: new Date()
       });
       
-      setIsMatching(false);
       setSelectedCourse(""); // Reset selection
-    } catch (error) {
-      console.error("Error submitting request:", error);
-      alert("Failed to submit request. Please try again.");
-      setIsMatching(false);
-    }
+      
+      return docRef;
+    }, {
+      loadingKey: 'isMatching',
+      onError: (error) => {
+        handleError(error, {
+          context: { operation: 'submitRequest', course: selectedCourse, userId: user?.uid },
+          showAlert: true
+        });
+      }
+    });
   };
 
 
@@ -730,7 +703,7 @@ export default function MathLabPage() {
         course: activeSession.course,
         startTime: sessionStartTime,
         endTime: endTime,
-        duration: sessionDurationRef.currentRef.current,
+        duration: sessionDurationRef.current,
         completedAt: endTime,
         status: 'completed'
       };
@@ -913,8 +886,8 @@ export default function MathLabPage() {
     }
   }, [showRoleSelection, displayUser, handleRoleSelection]);
 
-  // Show loading while AuthContext is loading
-  if (loading) {
+  // Show loading while authentication is loading
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner />
@@ -922,15 +895,9 @@ export default function MathLabPage() {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    router.push('/login');
+  // Redirect handled by useAuthRedirect hook
+  if (!isAuthenticated) {
     return null;
-  }
-
-  // Don't show loading state - use cached data immediately
-  if (!displayUser) {
-    return null; // Will redirect to login
   }
 
   // Show access denied if not authorized

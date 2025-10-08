@@ -1,6 +1,9 @@
 "use client";
-import { useAuth } from "../../components/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useUserCache } from "@/hooks/useUserCache";
+import { useLoadingState } from "@/hooks/useLoadingState";
+import { CommonOperations, getDocuments, addDocument, deleteDocument } from "@/utils/firestoreUtils";
+import { handleError, withErrorHandling } from "@/utils/errorHandlingUtils";
 import { useEffect, useState, useCallback } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -10,55 +13,26 @@ import { UserCache, CachePerformance } from "@/utils/cache";
 import { isAdminUser } from "@/utils/authorization";
 
 export default function AdminDashboard() {
-  const { user, userData, isEmailVerified } = useAuth();
-  const router = useRouter();
-  const [cachedUser, setCachedUser] = useState(null);
+  // Use new authentication redirect hook
+  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/admin');
+  
+  // Use new user cache hook
+  const { cachedUser, refreshCache } = useUserCache();
+  
+  // Use new loading state hook
+  const { isLoading, setLoading, withLoading, isAddingTutor } = useLoadingState({
+    isLoading: true,
+    isAddingTutor: false
+  });
+  
+  // Additional state
   const [tutors, setTutors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddTutorForm, setShowAddTutorForm] = useState(false);
   const [newTutorEmail, setNewTutorEmail] = useState("");
-  const [isAddingTutor, setIsAddingTutor] = useState(false);
 
-  // Optimized caching with centralized cache manager
-  useEffect(() => {
-    const timing = CachePerformance.startTiming('loadAdminCachedUser');
-    
-    const cached = UserCache.getUserData();
-    if (cached) {
-      setCachedUser(cached);
-    }
-    
-    CachePerformance.endTiming(timing);
-  }, []);
-
-  // Update cache when userData changes
-  useEffect(() => {
-    if (userData && user) {
-      const timing = CachePerformance.startTiming('updateAdminCache');
-      
-      const combinedUserData = {
-        ...userData,
-        uid: user.uid,
-        email: user.email
-      };
-      
-      UserCache.setUserData(combinedUserData);
-      setCachedUser(combinedUserData);
-      
-      CachePerformance.endTiming(timing);
-    }
-  }, [userData, user]);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user && !cachedUser) {
-      router.push('/login?redirectTo=/admin');
-    }
-  }, [user, cachedUser, router]);
-
-  // Check if user is admin (by role or email)
-  const isAdmin = userData && user && isAdminUser(userData.role, user.email);
+  // Check if user is admin (by role or email) - simplified with new hooks
+  const isAdmin = isAdminUser(userData || cachedUser);
 
   // Redirect if not admin
   useEffect(() => {
@@ -74,22 +48,16 @@ export default function AdminDashboard() {
     }
   }, [userData, isEmailVerified, router]);
 
-  // Fetch tutors
+  // Fetch tutors using new utilities
   const fetchTutors = useCallback(async () => {
     if (!cachedUser && !userData) return;
     
-    const timing = CachePerformance.startTiming('fetchTutors');
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Query users with mathLabRole 'tutor'
-      const tutorsQuery = query(
-        collection(firestore, "users"),
-        where("mathLabRole", "==", "tutor")
-      );
-
-      const snapshot = await getDocs(tutorsQuery);
+    const result = await withLoading(async () => {
+      const constraints = QueryBuilder.buildQuery('users', {
+        where: { mathLabRole: 'tutor' }
+      });
+      
+      const snapshot = await getDocs(query(collection(firestore, "users"), ...constraints));
       const tutorsList = [];
       
       snapshot.forEach((doc) => {
@@ -102,15 +70,18 @@ export default function AdminDashboard() {
       });
 
       setTutors(tutorsList);
-      
-    } catch (error) {
-      console.error("Error fetching tutors:", error);
-      setError("Failed to load tutors. Please try again.");
-    } finally {
-      setIsLoading(false);
-      CachePerformance.endTiming(timing);
-    }
-  }, [userData, cachedUser]);
+      return tutorsList;
+    }, {
+      loadingKey: 'isLoading',
+      onError: (error) => {
+        handleError(error, {
+          context: { operation: 'fetchTutors', userId: user?.uid },
+          showAlert: true
+        });
+        setError("Failed to load tutors. Please try again.");
+      }
+    });
+  }, [userData, cachedUser, withLoading, setLoading]);
 
   // Fetch tutors when component mounts
   useEffect(() => {
@@ -119,7 +90,7 @@ export default function AdminDashboard() {
     }
   }, [fetchTutors, userData, cachedUser]);
 
-  // Add new tutor
+  // Add new tutor using new utilities
   const handleAddTutor = async (e) => {
     e.preventDefault();
     
@@ -128,22 +99,16 @@ export default function AdminDashboard() {
       return;
     }
 
-    setIsAddingTutor(true);
-    setError(null);
-
-    try {
+    const result = await withLoading(async () => {
       // First, check if user exists
-      const usersQuery = query(
-        collection(firestore, "users"),
-        where("email", "==", newTutorEmail.trim())
-      );
+      const constraints = QueryBuilder.buildQuery('users', {
+        where: { email: newTutorEmail.trim() }
+      });
       
-      const snapshot = await getDocs(usersQuery);
+      const snapshot = await getDocs(query(collection(firestore, "users"), ...constraints));
       
       if (snapshot.empty) {
-        setError("User with this email does not exist. They must sign up first.");
-        setIsAddingTutor(false);
-        return;
+        throw new Error("User with this email does not exist. They must sign up first.");
       }
 
       const userDoc = snapshot.docs[0];
@@ -162,21 +127,26 @@ export default function AdminDashboard() {
       setNewTutorEmail("");
       setShowAddTutorForm(false);
       
-    } catch (error) {
-      console.error("Error adding tutor:", error);
-      setError("Failed to add tutor. Please try again.");
-    } finally {
-      setIsAddingTutor(false);
-    }
+      return userDoc.id;
+    }, {
+      loadingKey: 'isAddingTutor',
+      onError: (error) => {
+        handleError(error, {
+          context: { operation: 'addTutor', email: newTutorEmail, userId: user?.uid },
+          showAlert: true
+        });
+        setError(error.message || "Failed to add tutor. Please try again.");
+      }
+    });
   };
 
-  // Remove tutor
+  // Remove tutor using new utilities
   const handleRemoveTutor = async (tutorId) => {
     if (!confirm("Are you sure you want to remove this tutor?")) {
       return;
     }
 
-    try {
+    const result = await withErrorHandling(async () => {
       // Update user's mathLabRole to empty string (remove tutor status)
       await updateDoc(doc(firestore, "users", tutorId), {
         mathLabRole: '',
@@ -186,21 +156,18 @@ export default function AdminDashboard() {
       // Refresh tutors list
       await fetchTutors();
       
-    } catch (error) {
-      console.error("Error removing tutor:", error);
-      setError("Failed to remove tutor. Please try again.");
-    }
+      return tutorId;
+    }, {
+      context: { operation: 'removeTutor', tutorId, userId: user?.uid },
+      showAlert: true,
+      onError: (error) => {
+        setError("Failed to remove tutor. Please try again.");
+      }
+    });
   };
 
-  // Use cached user if available, fallback to real userData
-  const displayUser = userData || cachedUser;
-
-  if (!displayUser) {
-    return null; // Will redirect to login
-  }
-
-  // Show loading state
-  if (isLoading) {
+  // Show loading while authentication is loading
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
         <DashboardTopBar title="Admin Dashboard" showNavLinks={false} />
@@ -209,6 +176,11 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
+  }
+
+  // Redirect handled by useAuthRedirect hook
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
