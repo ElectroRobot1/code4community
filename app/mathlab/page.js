@@ -90,6 +90,13 @@ export default function MathLabPage() {
     }
   }, [isAuthenticated, userData, cachedUser, setLoading]);
 
+  // Auto-set mathLabRole to "student" for existing users with empty role
+  useEffect(() => {
+    if (displayUser && (!displayUser.mathLabRole || displayUser.mathLabRole === "")) {
+      handleRoleSelection('student');
+    }
+  }, [displayUser, handleRoleSelection]);
+
   // Fetch pending requests
   const fetchPendingRequests = useCallback(async () => {
     if (!displayUser) return;
@@ -466,71 +473,6 @@ export default function MathLabPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show role selection if user hasn't set their math lab role
-  if (displayUser && !displayUser.mathLabRole) {
-    return (
-      <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
-        <DashboardTopBar />
-        <div className="container mx-auto px-6 py-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Welcome to Math Lab!</h1>
-              <p className="text-muted-foreground text-lg">
-                Please select your role to get started with tutoring.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <button
-                onClick={() => handleRoleSelection('tutor')}
-                disabled={isUpdating}
-                className="p-6 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
-              >
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-blue-900 mb-2">I&apos;m a Tutor</h3>
-                  <p className="text-blue-700">
-                    Help students with their math homework and assignments.
-                  </p>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => handleRoleSelection('student')}
-                disabled={isUpdating}
-                className="p-6 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
-              >
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-green-900 mb-2">I&apos;m a Student</h3>
-                  <p className="text-green-700">
-                    Get help with your math homework and assignments.
-                  </p>
-                </div>
-              </button>
-            </div>
-            
-            {isUpdating && (
-              <div className="text-center mt-6">
-                <LoadingSpinner />
-                <p className="text-muted-foreground mt-2">Setting up your role...</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

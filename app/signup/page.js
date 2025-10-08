@@ -102,7 +102,7 @@ export default function SignupPage() {
             displayName: displayName.trim(),
             photoURL: "",
             role: isAdmin ? "admin" : "student",
-            mathLabRole: "", // Empty math lab role - user will choose later
+            mathLabRole: "student", // Default to student role
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           };
@@ -169,7 +169,7 @@ export default function SignupPage() {
               displayName: user.displayName || "",
               photoURL: user.photoURL || "",
               role: isAdmin ? "admin" : "student",
-              mathLabRole: "", // Empty math lab role - user will choose later
+              mathLabRole: "student", // Default to student role
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             };
