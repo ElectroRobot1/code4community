@@ -30,12 +30,12 @@ export default function MathLabHistoryPage() {
   // Router for navigation
   const router = useRouter();
   
-  // Handle redirect for unauthorized users
+  // Handle redirect for unauthorized users (only if logged in)
   useEffect(() => {
-    if (user && userData && !isAuthorized) {
+    if (isAuthenticated && user && userData && !isAuthorized) {
       router.push('/welcome');
     }
-  }, [user, userData, isAuthorized, router]);
+  }, [isAuthenticated, user, userData, isAuthorized, router]);
   
   // Additional state
   const [sessionHistory, setSessionHistory] = useState([]);

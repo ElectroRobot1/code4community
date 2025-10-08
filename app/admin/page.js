@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   // Router for navigation
   const router = useRouter();
   
-  // Handle redirect for non-admin users
+  // Handle redirect for non-admin users (only if logged in)
   useEffect(() => {
     if (isAuthenticated && userData && !isAdmin) {
       router.push('/welcome');
