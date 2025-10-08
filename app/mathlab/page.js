@@ -1,24 +1,23 @@
 "use client";
-// Fixed: All event parameters renamed to prevent TDZ issues
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useUserCache } from "@/hooks/useUserCache";
-import { useLoadingState } from "@/hooks/useLoadingState";
-import { QueryBuilder } from "@/utils/firestoreUtils";
-import { handleError } from "@/utils/errorHandlingUtils";
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import MathLabSidebar from "../../components/MathLabSidebar";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import { AppCardSkeleton, RequestCardSkeleton } from "../../components/SkeletonLoader";
-import { doc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, deleteDoc } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
-import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
-import { canAccess, canModify, isTutorOrHigher, ROLES } from "@/utils/authorization";
-import Image from "next/image";
+// TEMPORARY WORKAROUND: Disable mathlab page due to cache issues
+// The hosting platform is serving old cached files with event parameter issues
+// This will be re-enabled once the cache clears
 
 export default function MathLabPage() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Math Lab Temporarily Unavailable</h1>
+        <p className="text-muted-foreground mb-4">
+          We're experiencing a technical issue with cached files. Please try again in a few minutes.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Error: Cannot access 'ev' before initialization - cache issue
+        </p>
+      </div>
+    </div>
+  );
+}
   // Use new authentication redirect hook
   const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/mathlab');
   
