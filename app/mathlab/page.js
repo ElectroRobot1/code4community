@@ -1,4 +1,5 @@
 "use client";
+// Version: TDZ fix - displayUser/isAuthorized moved before effects - build timestamp
 // Fixed: All event parameters renamed to prevent TDZ issues
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useUserCache } from "@/hooks/useUserCache";
@@ -37,6 +38,12 @@ export default function MathLabPage() {
   // Router for navigation
   const router = useRouter();
   
+  // Determine which user data to display (must be declared before effects that depend on it)
+  const displayUser = userData || cachedUser;
+  
+  // Check authorization for Math Lab access (must be declared before effects/deps that use it)
+  const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
+  
   // Handle redirect for unauthorized users (only if logged in)
   useEffect(() => {
     if (isAuthenticated && user && userData && !isAuthorized) {
@@ -74,11 +81,7 @@ export default function MathLabPage() {
     sessionDurationRef.current = sessionDuration;
   }, [sessionDuration]);
 
-  // Determine which user data to display
-  const displayUser = userData || cachedUser;
-
-  // Check authorization for Math Lab access
-  const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
+  // displayUser and isAuthorized moved above to avoid TDZ in hooks/deps
 
   // Set loading to false when authentication and user data are available
   useEffect(() => {
