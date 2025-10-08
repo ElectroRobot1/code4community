@@ -866,7 +866,6 @@ export default function MathLabPage() {
       // Update local cache using centralized cache manager
       const updatedUser = { ...cachedUser, mathLabRole: selectedRole };
       UserCache.setUserData(updatedUser);
-      setCachedUser(updatedUser);
       
       // Invalidate related caches to prevent stale data
       invalidateOnDataChange('mathlab_role', 'update');
