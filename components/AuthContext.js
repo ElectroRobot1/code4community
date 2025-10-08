@@ -177,8 +177,8 @@ export function AuthProvider({ children }) {
       applyVerifiedState();
     };
 
-    const handleStorage = (event) => {
-      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
+    const handleStorage = (storageEvent) => {
+      if (storageEvent.key === 'emailVerificationStatus' && storageEvent.newValue === 'verified') {
         applyVerifiedState();
       }
     };
@@ -198,9 +198,9 @@ export function AuthProvider({ children }) {
 
   // Listen for role change events to force refresh
   useEffect(() => {
-    const handleRoleChange = async (event) => {
+    const handleRoleChange = async (roleChangeEvent) => {
       
-      if (user && event.detail.userId === user.uid) {
+      if (user && roleChangeEvent.detail.userId === user.uid) {
         // Force refresh user data when role changes
         const freshData = await fetchUserData(user, true);
         if (freshData) {

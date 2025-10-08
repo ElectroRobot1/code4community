@@ -42,14 +42,14 @@ export default function DashboardTopBar({ title = "BRHS Utilities", onNavigation
 
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (clickEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(clickEvent.target)) {
         setDropdownOpen(false);
       }
     };
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && dropdownOpen) {
+    const handleKeyDown = (keyEvent) => {
+      if (keyEvent.key === 'Escape' && dropdownOpen) {
         setDropdownOpen(false);
       }
     };
