@@ -49,7 +49,7 @@ export default function MathLabHistoryPage() {
     if (!cachedUser && !userData) return;
     
     const timing = CachePerformance.startTiming('fetchSessionHistory');
-    setIsLoading(true);
+    setLoading('isLoading', true);
     setError(null);
     
     // If force refresh, clear cache first
@@ -79,7 +79,7 @@ export default function MathLabHistoryPage() {
       const cachedHistory = MathLabCache.getSessions();
       if (cachedHistory && cachedHistory.length > 0) {
         setSessionHistory(cachedHistory);
-        setIsLoading(false);
+        setLoading('isLoading', false);
         return; // Exit early if we have cached data
       }
       
@@ -150,7 +150,7 @@ export default function MathLabHistoryPage() {
         setError("Failed to load session history. Please try again.");
       }
     } finally {
-      setIsLoading(false);
+      setLoading('isLoading', false);
       setIsRefreshing(false);
       CachePerformance.endTiming(timing);
     }

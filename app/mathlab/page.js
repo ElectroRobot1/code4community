@@ -256,7 +256,7 @@ export default function MathLabPage() {
       
       // Also check for active sessions using new utilities
       const checkActiveSessions = async () => {
-        const result = await withErrorHandling(async () => {
+        try {
           const constraints = QueryBuilder.buildQuery('tutoringRequests', {
             where: { tutorId: user?.uid || cachedUser?.uid }
           });
@@ -293,10 +293,12 @@ export default function MathLabPage() {
               }
             }
           }
-        }, {
-          context: { operation: 'checkActiveSessions', userId: user?.uid || cachedUser?.uid },
-          showAlert: false
-        });
+        } catch (error) {
+          handleError(error, {
+            context: { operation: 'checkActiveSessions', userId: user?.uid || cachedUser?.uid },
+            showAlert: false
+          });
+        }
       };
       
       checkActiveSessions();

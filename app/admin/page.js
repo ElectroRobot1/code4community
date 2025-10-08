@@ -146,7 +146,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const result = await withErrorHandling(async () => {
+    try {
       // Update user's mathLabRole to empty string (remove tutor status)
       await updateDoc(doc(firestore, "users", tutorId), {
         mathLabRole: '',
@@ -156,14 +156,13 @@ export default function AdminDashboard() {
       // Refresh tutors list
       await fetchTutors();
       
-      return tutorId;
-    }, {
-      context: { operation: 'removeTutor', tutorId, userId: user?.uid },
-      showAlert: true,
-      onError: (error) => {
-        setError("Failed to remove tutor. Please try again.");
-      }
-    });
+    } catch (error) {
+      handleError(error, {
+        context: { operation: 'removeTutor', tutorId, userId: user?.uid },
+        showAlert: true
+      });
+      setError("Failed to remove tutor. Please try again.");
+    }
   };
 
   // Show loading while authentication is loading
