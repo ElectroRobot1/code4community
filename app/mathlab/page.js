@@ -894,8 +894,6 @@ export default function MathLabPage() {
   }, [showRoleSelection, displayUser, handleRoleSelection]);
 
   // Show loading while authentication is loading
-  console.log('[MathLab] Loading states:', { authLoading, isLoading, isAuthenticated, user: !!user, userData: !!userData });
-  
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
