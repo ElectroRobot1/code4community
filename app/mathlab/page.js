@@ -247,7 +247,7 @@ export default function MathLabPage() {
   }, [displayUser?.mathLabRole, setLoading]);
 
   // Check authorization for Math Lab access
-  const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
+  const isAuthorized = user && userData && userData.role && canAccess(userData.role, 'mathlab', userData.mathLabRole);
 
   // Fetch pending requests if user is a tutor
   useEffect(() => {
@@ -545,7 +545,7 @@ export default function MathLabPage() {
     }
 
     // Check authorization
-    if (!canModify(userData.role, 'mathlab', userData.mathLabRole)) {
+    if (!userData || !userData.role || !canModify(userData.role, 'mathlab', userData.mathLabRole)) {
       console.error('Unauthorized: User cannot create math lab requests');
       alert("You don't have permission to create requests.");
       return;
@@ -757,7 +757,7 @@ export default function MathLabPage() {
   // Function for tutors to accept requests
   const handleAcceptRequest = async (requestId, studentId, course) => {
     // Check authorization - only tutors and higher can accept requests
-    if (!isTutorOrHigher(userData.role, userData.mathLabRole)) {
+    if (!userData || !userData.role || !isTutorOrHigher(userData.role, userData.mathLabRole)) {
       console.error('Unauthorized: User cannot accept math lab requests');
       alert("You don't have permission to accept requests.");
       return;
@@ -831,7 +831,7 @@ export default function MathLabPage() {
     // Automatically set role to 'student' since that's the only option
     const selectedRole = 'student';
     
-    setIsUpdating(true);
+    setLoading('isUpdating', true);
 
     try {
       // Get user ID from multiple sources with proper fallback
@@ -884,7 +884,7 @@ export default function MathLabPage() {
       console.error("Error updating math lab role:", error);
       alert(error.message || "Failed to update role. Please try again.");
     } finally {
-      setIsUpdating(false);
+      setLoading('isUpdating', false);
     }
   }, [cachedUser, user?.uid]);
 
