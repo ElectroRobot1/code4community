@@ -1,4 +1,5 @@
 "use client";
+// Fixed: All event parameters renamed to prevent TDZ issues
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useUserCache } from "@/hooks/useUserCache";
 import { useLoadingState } from "@/hooks/useLoadingState";
