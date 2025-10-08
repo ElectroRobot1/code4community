@@ -64,8 +64,8 @@ export default function SettingsPage() {
 
 
   // Password change functionality using new utilities
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
+  const handlePasswordChange = async (submitEvent) => {
+    submitEvent.preventDefault();
     
     // Sanitize inputs
     const sanitizedCurrentPassword = sanitizeInput(currentPassword);

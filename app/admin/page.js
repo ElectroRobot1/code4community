@@ -101,8 +101,8 @@ export default function AdminDashboard() {
   }, [fetchTutors, userData, cachedUser]);
 
   // Add new tutor using new utilities
-  const handleAddTutor = async (e) => {
-    e.preventDefault();
+  const handleAddTutor = async (submitEvent) => {
+    submitEvent.preventDefault();
     
     if (!newTutorEmail.trim()) {
       setError("Please enter an email address");

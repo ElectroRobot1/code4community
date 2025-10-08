@@ -72,8 +72,8 @@ export default function SignupPage() {
     return !error;
   };
 
-  const handleEmailSignup = async (e) => {
-    e.preventDefault();
+  const handleEmailSignup = async (submitEvent) => {
+    submitEvent.preventDefault();
     setError(null);
     
     const isEmailValid = validateEmailField();

@@ -49,8 +49,8 @@ export default function LoginPage() {
     }
   }, [user, userData, authLoading, router, getRedirectUrl, refreshUserData, isRedirecting]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (submitEvent) => {
+    submitEvent.preventDefault();
     setError(null);
     setLoading(true);
     
