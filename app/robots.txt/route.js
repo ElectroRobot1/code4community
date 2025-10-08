@@ -18,8 +18,6 @@ Disallow: /admin
 Disallow: /verify-email
 Disallow: /check-email
 Disallow: /api/
-Disallow: /debug-appcheck
-Disallow: /test-firestore
 
 # Sitemap location
 Sitemap: ${baseUrl}/sitemap.xml
