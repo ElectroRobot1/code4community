@@ -1,4 +1,5 @@
 "use client";
+// Fixed: Event parameter naming to prevent temporal dead zone issues
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth, provider, firestore } from "@/firebase";
