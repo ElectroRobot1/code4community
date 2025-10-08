@@ -219,13 +219,22 @@ export function AuthProvider({ children }) {
     }
   }, [user, fetchUserData]);
 
-  // Function to get redirect URL from query params
+  // Function to get redirect URL from query params or sessionStorage
   const getRedirectUrl = () => {
     if (typeof window !== 'undefined') {
+      // First check URL parameters (for backward compatibility)
       const urlParams = new URLSearchParams(window.location.search);
       const redirectTo = urlParams.get('redirectTo');
       if (redirectTo && redirectTo.startsWith('/')) {
         return redirectTo;
+      }
+      
+      // Then check sessionStorage (preferred method)
+      const sessionRedirect = sessionStorage.getItem('redirectAfterLogin');
+      if (sessionRedirect && sessionRedirect.startsWith('/')) {
+        // Clear it after reading
+        sessionStorage.removeItem('redirectAfterLogin');
+        return sessionRedirect;
       }
     }
     return null;

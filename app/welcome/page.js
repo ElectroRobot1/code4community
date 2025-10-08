@@ -1,15 +1,15 @@
 "use client";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useUserCache } from "@/hooks/useUserCache";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/AuthContext";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import { AppCardSkeleton } from "../../components/SkeletonLoader";
 
 export default function Welcome() {
-  // Use new authentication redirect hook
-  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/welcome');
+  // Use authentication context directly (no auto-redirect)
+  const { user, userData, loading: authLoading } = useAuth();
   
   // Use new user cache hook
   const { cachedUser } = useUserCache();
@@ -31,10 +31,10 @@ export default function Welcome() {
 
   // Set loading to false when component is ready
   useEffect(() => {
-    if (isAuthenticated && (userData || cachedUser)) {
+    if (!authLoading) {
       setLoading('isLoading', false);
     }
-  }, [isAuthenticated, userData, cachedUser, setLoading]);
+  }, [authLoading, setLoading]);
 
 
 
@@ -43,7 +43,9 @@ export default function Welcome() {
     if (user && (userData || cachedUser)) {
       router.push('/mathlab');
     } else {
-      router.push('/login?redirectTo=/mathlab');
+      // Store redirect destination in sessionStorage instead of URL
+      sessionStorage.setItem('redirectAfterLogin', '/mathlab');
+      router.push('/login');
     }
   }, [user, userData, cachedUser, router]);
 
