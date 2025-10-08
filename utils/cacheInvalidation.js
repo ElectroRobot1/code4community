@@ -33,9 +33,9 @@ export class CacheInvalidationManager {
   }
 
   // Handle storage events for cross-tab cache invalidation
-  handleStorageEvent(event) {
-    if (event.key && event.key.startsWith('brhs_')) {
-      const cacheKey = event.key;
+  handleStorageEvent(storageEvent) {
+    if (storageEvent.key && storageEvent.key.startsWith('brhs_')) {
+      const cacheKey = storageEvent.key;
       
       // Notify listeners about cache invalidation
       if (this.invalidationListeners.has(cacheKey)) {
