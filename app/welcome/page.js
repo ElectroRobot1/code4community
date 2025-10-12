@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import { AppCardSkeleton } from "../../components/SkeletonLoader";
 import { UserCache, CachePerformance } from "@/utils/cache";
+import Footer from "../../components/Footer";
 
 export default function Welcome() {
   const authContext = useAuth();
@@ -293,6 +294,9 @@ export default function Welcome() {
           </div>
         </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
