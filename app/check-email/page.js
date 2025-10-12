@@ -16,19 +16,19 @@ function CheckEmailContent() {
   useEffect(() => {
     let redirectTimeout = null;
 
-    const handleMessage = (messageEvent) => {
+    const handleMessage = (event) => {
       
-      if (messageEvent.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin) return;
       
-      if (messageEvent.data.type === 'EMAIL_VERIFIED') {
+      if (event.data.type === 'EMAIL_VERIFIED') {
         handleVerificationComplete();
       }
     };
 
     // Local handler when storage changes (cross-tab)
-    const handleStorage = (storageEvent) => {
+    const handleStorage = (event) => {
       
-      if (storageEvent.key === 'emailVerificationStatus' && storageEvent.newValue === 'verified') {
+      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
         localStorage.removeItem('emailVerificationStatus');
         handleVerificationComplete();
       }

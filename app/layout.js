@@ -3,7 +3,6 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Version: Fixed event parameter naming issues - build timestamp
 // Security headers are configured in next.config.mjs
 
 const geistSans = Geist({
@@ -49,19 +48,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        {/* reCAPTCHA script for Firebase App Check */}
-        <script
-          src="https://www.google.com/recaptcha/api.js?render=explicit"
-          async
-          defer
-        ></script>
-      </head>
+      <head></head>
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* reCAPTCHA container for Firebase App Check */}
-        <div id="recaptcha-container" style={{ display: 'none' }}></div>
         <ErrorBoundary>
           <AuthProvider>{children}</AuthProvider>
         </ErrorBoundary>

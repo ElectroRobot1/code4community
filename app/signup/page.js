@@ -1,5 +1,4 @@
 "use client";
-// Fixed: Event parameter naming to prevent temporal dead zone issues
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth, provider, firestore } from "@/firebase";
@@ -72,8 +71,8 @@ export default function SignupPage() {
     return !error;
   };
 
-  const handleEmailSignup = async (submitEvent) => {
-    submitEvent.preventDefault();
+  const handleEmailSignup = async (e) => {
+    e.preventDefault();
     setError(null);
     
     const isEmailValid = validateEmailField();
@@ -102,7 +101,7 @@ export default function SignupPage() {
             displayName: displayName.trim(),
             photoURL: "",
             role: isAdmin ? "admin" : "student",
-            mathLabRole: "student", // Default to student role
+            mathLabRole: "", // Empty math lab role - user will choose later
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           };
@@ -169,7 +168,7 @@ export default function SignupPage() {
               displayName: user.displayName || "",
               photoURL: user.photoURL || "",
               role: isAdmin ? "admin" : "student",
-              mathLabRole: "student", // Default to student role
+              mathLabRole: "", // Empty math lab role - user will choose later
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             };

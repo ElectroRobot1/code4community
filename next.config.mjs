@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  generateBuildId: async () => {
-    return `mathlab-tdz-fix-${Date.now()}`;
-  },
   images: {
     remotePatterns: [
       {

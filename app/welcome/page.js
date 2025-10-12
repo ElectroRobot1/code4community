@@ -1,54 +1,131 @@
 "use client";
-import { useUserCache } from "@/hooks/useUserCache";
-import { useLoadingState } from "@/hooks/useLoadingState";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "../../components/AuthContext";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/AuthContext";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import { AppCardSkeleton } from "../../components/SkeletonLoader";
+import { UserCache, CachePerformance } from "@/utils/cache";
 
 export default function Welcome() {
-  // Use authentication context directly (no auto-redirect)
-  const { user, userData, loading: authLoading } = useAuth();
-  
-  // Use new user cache hook
-  const { cachedUser } = useUserCache();
-  
-  // Use new loading state hook
-  const { isLoading, setLoading } = useLoadingState({
-    isLoading: true
-  });
-  
-  // Router for navigation
+  const authContext = useAuth();
+  const { user, userData, isEmailVerified, loading: authLoading } = authContext;
   const router = useRouter();
-  
-  // Additional state
+  const [cachedUser, setCachedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   
 
-  // Use cached user if available, fallback to real userData - simplified with new hooks
-  const displayUser = userData || cachedUser;
-
-  // Set loading to false when component is ready
+  // Optimized caching with performance monitoring
   useEffect(() => {
-    if (!authLoading) {
-      setLoading('isLoading', false);
+    const timing = CachePerformance.startTiming('loadWelcomeCachedUser');
+    
+    const cached = UserCache.getUserData();
+    if (cached) {
+      setCachedUser(cached);
     }
-  }, [authLoading, setLoading]);
+    setIsLoading(false);
+    
+    CachePerformance.endTiming(timing);
+  }, []);
 
+  // Optimized cache update with stale data detection
+  useEffect(() => {
+    if (userData) {
+      const timing = CachePerformance.startTiming('updateWelcomeCache');
+      
+      // Check if cached data is stale
+      const cached = UserCache.getUserData();
+      const isStale = !cached || cached.uid !== userData.uid || 
+                     (cached.updatedAt && userData.updatedAt && 
+                      new Date(cached.updatedAt) < new Date(userData.updatedAt));
+      
+      
+      if (isStale) {
+        UserCache.setUserData(userData);
+        setCachedUser(userData);
+      }
+      
+      setIsLoading(false);
+      
+      CachePerformance.endTiming(timing);
+    } else {
+      // Clear cached user when userData is null (user signed out)
+      setCachedUser(null);
+      setIsLoading(false);
+    }
+  }, [userData]);
 
+  // Check email verification status and redirect if needed
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      // User is signed in but email is not verified, redirect to verification page
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
 
+  // Listen for email verification completion from popup/verification page (no polling)
+  useEffect(() => {
+    const handleMessage = (event) => {
+      // Verify the origin for security
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'EMAIL_VERIFIED' && event.data.action === 'redirect_and_signin') {
+        // Force refresh the authentication state
+        window.location.reload();
+      }
+    };
+
+    const handleEmailVerifiedEvent = (event) => {
+      // Force refresh the authentication state
+      window.location.reload();
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
+        localStorage.removeItem('emailVerificationStatus');
+        window.location.reload();
+      }
+    };
+
+    // Listen for messages from the verification page
+    window.addEventListener('message', handleMessage);
+    
+    // Listen for custom email verification events
+    window.addEventListener('emailVerified', handleEmailVerifiedEvent);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('emailVerified', handleEmailVerifiedEvent);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  // Handle redirect after successful email verification
+  useEffect(() => {
+    if (userData && isEmailVerified) {
+      // User is verified, check if they came from a specific page
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirectTo');
+      
+      if (redirectTo && redirectTo.startsWith('/')) {
+        // Redirect to the original destination
+        router.push(redirectTo);
+      }
+      // If no redirectTo param, stay on welcome page (default behavior)
+    }
+  }, [userData, isEmailVerified, router]);
 
   const handleMathLabClick = useCallback(() => {
     if (user && (userData || cachedUser)) {
       router.push('/mathlab');
     } else {
-      // Store redirect destination in sessionStorage instead of URL
-      sessionStorage.setItem('redirectAfterLogin', '/mathlab');
-      router.push('/login');
+      router.push('/login?redirectTo=/mathlab');
     }
   }, [user, userData, cachedUser, router]);
 
+  // Prioritize fresh userData over cached data for accuracy
+  const displayUser = userData || cachedUser;
   
 
   // Apps data with Math Lab as the first item - memoized for performance

@@ -81,21 +81,6 @@ if (!isBuildTime && typeof window !== 'undefined' && process.env.NODE_ENV !== 'd
       isTokenAutoRefreshEnabled: true
     });
     console.log('Firebase App Check initialized');
-    
-    // Suppress IndexedDB storage errors (common in private browsing/incognito)
-    const originalConsoleWarn = console.warn;
-    console.warn = function(...args) {
-      const message = args.join(' ');
-      if (message.includes('AppCheck: Error thrown when opening storage') || 
-          message.includes('appCheck/storage-open') ||
-          message.includes('Failed to read token from IndexedDB') ||
-          message.includes('Failed to write token to IndexedDB')) {
-        // Suppress these specific App Check storage errors
-        return;
-      }
-      originalConsoleWarn.apply(console, args);
-    };
-    
   } catch (error) {
     console.error('Failed to initialize App Check:', error);
   }

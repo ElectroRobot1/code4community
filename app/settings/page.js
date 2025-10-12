@@ -1,29 +1,17 @@
 "use client";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useUserCache } from "@/hooks/useUserCache";
-import { useLoadingState } from "@/hooks/useLoadingState";
-import { handleError } from "@/utils/errorHandlingUtils";
+import { useAuth } from "../../components/AuthContext";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import { auth } from "@/firebase";
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { validatePassword, sanitizeInput } from "@/utils/validation";
-import { UserCache } from "@/utils/cache";
+import { UserCache, CachePerformance } from "@/utils/cache";
 
 export default function SettingsPage() {
-  // Use new authentication redirect hook
-  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/settings');
-  
-  // Use new user cache hook
-  const { cachedUser } = useUserCache();
-  
-  // Use new loading state hook
-  const { isLoading, setLoading, withLoading, isChangingPassword } = useLoadingState({
-    isLoading: false,
-    isChangingPassword: false
-  });
-  
-  // Additional state
+  const { user, userData, isEmailVerified } = useAuth();
+  const router = useRouter();
+  const [cachedUser, setCachedUser] = useState(null);
   const [updateMessage, setUpdateMessage] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
   
@@ -32,27 +20,62 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // Use cached user if available, fallback to real userData - simplified with new hooks
-  const displayUser = userData || cachedUser;
+  // Optimized caching with centralized cache manager
+  useEffect(() => {
+    const timing = CachePerformance.startTiming('loadSettingsCachedUser');
+    
+    const cached = UserCache.getUserData();
+    if (cached) {
+      setCachedUser(cached);
+    }
+    
+    CachePerformance.endTiming(timing);
+  }, []);
 
-  // Show loading while authentication is loading
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
-        <DashboardTopBar title="Settings" />
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  // Update cache when userData changes
+  useEffect(() => {
+    if (userData && user) {
+      const timing = CachePerformance.startTiming('updateSettingsCache');
+      
+      // Combine Firebase Auth user with Firestore data
+      const combinedUserData = {
+        ...userData,
+        uid: user.uid,
+        email: user.email
+      };
+      
+      // Update cache using centralized cache manager
+      UserCache.setUserData(combinedUserData);
+      setCachedUser(combinedUserData);
+      
+      CachePerformance.endTiming(timing);
+    }
+  }, [userData, user]);
 
-  // Redirect handled by useAuthRedirect hook
-  if (!isAuthenticated) {
-    return null;
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user && !cachedUser) {
+      router.push('/login?redirectTo=/settings');
+    }
+  }, [user, cachedUser, router]);
+
+  // Redirect to email verification if email is not verified
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
+
+
+  // Use cached user if available, fallback to real userData + user
+  const displayUser = cachedUser || (userData && user ? { ...userData, uid: user.uid, email: user.email } : null);
+
+  if (!displayUser) {
+    return null; // Will redirect to login
   }
 
   // Tab configuration
@@ -63,9 +86,9 @@ export default function SettingsPage() {
   ];
 
 
-  // Password change functionality using new utilities
-  const handlePasswordChange = async (submitEvent) => {
-    submitEvent.preventDefault();
+  // Password change functionality
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
     
     // Sanitize inputs
     const sanitizedCurrentPassword = sanitizeInput(currentPassword);
@@ -93,7 +116,11 @@ export default function SettingsPage() {
       return;
     }
     
-    const result = await withLoading(async () => {
+    setIsChangingPassword(true);
+    setPasswordMessage("");
+    
+    try {
+      
       // Re-authenticate user with current password
       const credential = EmailAuthProvider.credential(user.email, sanitizedCurrentPassword);
       await reauthenticateWithCredential(user, credential);
@@ -117,29 +144,27 @@ export default function SettingsPage() {
         setPasswordSuccess(false);
       }, 3000);
       
-      return true;
-    }, {
-      loadingKey: 'isChangingPassword',
-      onError: (error) => {
-        handleError(error, {
-          context: { operation: 'changePassword', userId: user?.uid },
-          showAlert: false // We'll handle the message manually
-        });
-        
-        if (error.code === 'auth/wrong-password') {
-          setPasswordMessage("The current password you entered is incorrect. Please try again.");
-        } else if (error.code === 'auth/weak-password') {
-          setPasswordMessage("New password is too weak. Please choose a stronger password.");
-        } else if (error.code === 'auth/requires-recent-login') {
-          setPasswordMessage("Please sign out and sign back in, then try again.");
-        } else if (error.code === 'auth/invalid-credential') {
-          setPasswordMessage("The current password you entered is incorrect. Please try again.");
-        } else {
-          setPasswordMessage("Failed to change password. Please try again.");
-        }
-        setPasswordSuccess(false);
+    } catch (error) {
+      console.error('[SettingsPage] handlePasswordChange: Password change error', {
+        code: error.code,
+        message: error.message
+      });
+      
+      if (error.code === 'auth/wrong-password') {
+        setPasswordMessage("The current password you entered is incorrect. Please try again.");
+      } else if (error.code === 'auth/weak-password') {
+        setPasswordMessage("New password is too weak. Please choose a stronger password.");
+      } else if (error.code === 'auth/requires-recent-login') {
+        setPasswordMessage("Please sign out and sign back in, then try again.");
+      } else if (error.code === 'auth/invalid-credential') {
+        setPasswordMessage("The current password you entered is incorrect. Please try again.");
+      } else {
+        setPasswordMessage("Failed to change password. Please try again.");
       }
-    });
+      setPasswordSuccess(false);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleClosePasswordForm = () => {

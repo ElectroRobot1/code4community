@@ -43,8 +43,8 @@ function ResetPasswordForm() {
     }
   };
 
-  const handleResetPassword = async (submitEvent) => {
-    submitEvent.preventDefault();
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
     
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");

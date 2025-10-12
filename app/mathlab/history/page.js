@@ -1,11 +1,7 @@
 "use client";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useUserCache } from "@/hooks/useUserCache";
-import { useLoadingState } from "@/hooks/useLoadingState";
-import { QueryBuilder } from "@/utils/firestoreUtils";
-import { handleError } from "@/utils/errorHandlingUtils";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useAuth } from "../../../components/AuthContext";
 import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import DashboardTopBar from "../../../components/DashboardTopBar";
 import MathLabSidebar from "../../../components/MathLabSidebar";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -15,32 +11,14 @@ import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
 import { canAccess } from "@/utils/authorization";
 
 export default function MathLabHistoryPage() {
-  // Use new authentication redirect hook
-  const { isAuthenticated, isLoading: authLoading, user, userData } = useAuthRedirect('/mathlab/history');
-  
-  // Use new user cache hook
-  const { cachedUser } = useUserCache();
-  
-  // Use new loading state hook
-  const { isLoading, setLoading, isRefreshing } = useLoadingState({
-    isLoading: true,
-    isRefreshing: false
-  });
-  
-  // Router for navigation
+  const { user, userData, isEmailVerified } = useAuth();
   const router = useRouter();
-  
-  // Handle redirect for unauthorized users (only if logged in)
-  useEffect(() => {
-    if (isAuthenticated && user && userData && !isAuthorized) {
-      router.push('/welcome');
-    }
-  }, [isAuthenticated, user, userData, isAuthorized, router]);
-  
-  // Additional state
+  const [cachedUser, setCachedUser] = useState(null);
   const [sessionHistory, setSessionHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, student, tutor
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Available courses - memoized for performance
   const courses = useMemo(() => [
@@ -52,15 +30,59 @@ export default function MathLabHistoryPage() {
     "Geometry"
   ], []);
 
+  // Optimized caching with centralized cache manager
+  useEffect(() => {
+    const timing = CachePerformance.startTiming('loadHistoryCachedUser');
+    
+    const cached = UserCache.getUserData();
+    if (cached) {
+      setCachedUser(cached);
+    }
+    
+    CachePerformance.endTiming(timing);
+  }, []);
+
+  // Update cache when userData changes
+  useEffect(() => {
+    if (userData && user) {
+      const timing = CachePerformance.startTiming('updateHistoryCache');
+      
+      const combinedUserData = {
+        ...userData,
+        uid: user.uid,
+        email: user.email
+      };
+      
+      UserCache.setUserData(combinedUserData);
+      setCachedUser(combinedUserData);
+      
+      CachePerformance.endTiming(timing);
+    }
+  }, [userData, user]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user && !cachedUser) {
+      router.push('/login?redirectTo=/mathlab/history');
+    }
+  }, [user, cachedUser, router]);
+
   // Check authorization for Math Lab access
   const isAuthorized = user && userData && canAccess(userData.role, 'mathlab', userData.mathLabRole);
+
+  // Redirect to email verification if email is not verified
+  useEffect(() => {
+    if (userData && !isEmailVerified) {
+      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
+    }
+  }, [userData, isEmailVerified, router]);
 
   // Fetch session history
   const fetchSessionHistory = useCallback(async (forceRefresh = false) => {
     if (!cachedUser && !userData) return;
     
     const timing = CachePerformance.startTiming('fetchSessionHistory');
-    setLoading('isLoading', true);
+    setIsLoading(true);
     setError(null);
     
     // If force refresh, clear cache first
@@ -90,7 +112,7 @@ export default function MathLabHistoryPage() {
       const cachedHistory = MathLabCache.getSessions();
       if (cachedHistory && cachedHistory.length > 0) {
         setSessionHistory(cachedHistory);
-        setLoading('isLoading', false);
+        setIsLoading(false);
         return; // Exit early if we have cached data
       }
       
@@ -161,7 +183,7 @@ export default function MathLabHistoryPage() {
         setError("Failed to load session history. Please try again.");
       }
     } finally {
-      setLoading('isLoading', false);
+      setIsLoading(false);
       setIsRefreshing(false);
       CachePerformance.endTiming(timing);
     }
@@ -220,15 +242,15 @@ export default function MathLabHistoryPage() {
     return null; // Will redirect to login
   }
 
-  // Show access denied if not authorized - redirect to welcome instead
+  // Show access denied if not authorized
   if (user && userData && !isAuthorized) {
     return (
       <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
         <DashboardTopBar title="Math Lab History" showNavLinks={false} />
         <div className="container mx-auto px-6 py-8">
           <div className="text-center">
-            <LoadingSpinner />
-            <p className="mt-4 text-muted-foreground">Redirecting to welcome page...</p>
+            <h1 className="text-2xl font-bold text-destructive mb-4">Access Denied</h1>
+            <p className="text-muted-foreground">You don&apos;t have permission to access the Math Lab.</p>
           </div>
         </div>
       </div>
