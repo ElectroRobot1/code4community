@@ -30,25 +30,26 @@ export default function PrivacyPolicy() {
               
               <h3 className="text-xl font-semibold text-foreground mb-3">2.1 Account Information</h3>
               <div className="text-muted-foreground leading-relaxed space-y-3">
-                <p>When you create an account, we collect:</p>
+                <p>When you sign in with Google, we collect:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Email address:</strong> Used for authentication and communication</li>
-                  <li><strong>Display name:</strong> Your preferred name for the platform</li>
-                  <li><strong>Role:</strong> Student, teacher, or admin designation</li>
+                  <li><strong>Email address:</strong> From your Google account, used for authentication and communication</li>
+                  <li><strong>Display name:</strong> Your Google account name for the platform</li>
+                  <li><strong>Role:</strong> Student, teacher, or admin designation (assigned based on your school email)</li>
                   <li><strong>Math Lab role:</strong> Student or tutor designation for the tutoring system</li>
-                  <li><strong>Profile photo URL:</strong> Optional profile picture from Google authentication</li>
+                  <li><strong>Profile photo URL:</strong> Your Google profile picture (if available)</li>
                   <li><strong>Account creation and update timestamps:</strong> For account management</li>
                 </ul>
               </div>
 
               <h3 className="text-xl font-semibold text-foreground mb-3 mt-6">2.2 Authentication Data</h3>
               <div className="text-muted-foreground leading-relaxed space-y-3">
-                <p>We use Firebase Authentication which may collect:</p>
+                <p>We use Firebase Authentication with Google Sign-In which collects:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Google account information (when using Google Sign-In)</li>
-                  <li>Email verification status</li>
+                  <li>Google account information (name, email, profile picture)</li>
+                  <li>Email verification status from Google</li>
                   <li>Authentication tokens and session data</li>
                   <li>Device and browser information for security</li>
+                  <li>Google account permissions and access tokens</li>
                 </ul>
               </div>
 
@@ -119,7 +120,7 @@ export default function PrivacyPolicy() {
                 <p>We use the following third-party services:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Firebase (Google):</strong> Authentication, database, and hosting services</li>
-                  <li><strong>Google Authentication:</strong> For Google Sign-In functionality</li>
+                  <li><strong>Google Sign-In:</strong> Primary authentication method for all users</li>
                   <li><strong>ReCaptcha:</strong> For bot protection and security</li>
                   <li><strong>Next.js/Vercel:</strong> Web application framework and hosting</li>
                 </ul>

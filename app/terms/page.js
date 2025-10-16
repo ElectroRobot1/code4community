@@ -36,14 +36,15 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold text-foreground mb-4">3. User Accounts</h2>
               <div className="text-muted-foreground leading-relaxed space-y-3">
                 <p>
-                  To access certain features of the Service, you must create an account. You agree to:
+                  To access the Service, you must sign in using your Google account. You agree to:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Provide accurate, current, and complete information during registration</li>
-                  <li>Maintain and update your account information to keep it accurate and current</li>
-                  <li>Maintain the security of your password and account</li>
+                  <li>Use only your legitimate Google account for authentication</li>
+                  <li>Ensure your Google account information is accurate and current</li>
+                  <li>Maintain the security of your Google account credentials</li>
                   <li>Accept responsibility for all activities under your account</li>
                   <li>Notify us immediately of any unauthorized use of your account</li>
+                  <li>Not share your Google account credentials with others</li>
                 </ul>
               </div>
             </section>
@@ -52,12 +53,13 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold text-foreground mb-4">4. Authentication Requirements</h2>
               <div className="text-muted-foreground leading-relaxed space-y-3">
                 <p>
-                  The Service requires email verification for account activation. You must:
+                  The Service uses Google Authentication for secure access. You must:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Use a valid email address</li>
-                  <li>Complete email verification before accessing certain features</li>
-                  <li>Use Google Authentication or email/password authentication as provided</li>
+                  <li>Use a valid Google account associated with Broad Run High School</li>
+                  <li>Complete email verification through Google before accessing certain features</li>
+                  <li>Use only Google Sign-In authentication as provided by the Service</li>
+                  <li>Ensure your Google account email matches your school email domain</li>
                 </ul>
               </div>
             </section>
