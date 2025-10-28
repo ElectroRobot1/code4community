@@ -129,6 +129,14 @@ export default function Welcome() {
   const displayUser = userData || cachedUser;
   
 
+  const handleGradeCalculatorClick = useCallback(() => {
+    if (user && (userData || cachedUser)) {
+      router.push('/grade-calculator');
+    } else {
+      router.push('/login?redirectTo=/grade-calculator');
+    }
+  }, [user, userData, cachedUser, router]);
+
   // Apps data with Math Lab as the first item - memoized for performance
   const allApps = useMemo(() => [
     { 
@@ -137,14 +145,19 @@ export default function Welcome() {
       isActive: true,
       onClick: handleMathLabClick
     },
-    { name: "Coming Soon", description: "More features coming soon", isActive: false },
+    { 
+      name: "Grade Calculator", 
+      description: "Calculate your grades", 
+      isActive: true,
+      onClick: handleGradeCalculatorClick
+    },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false }
-  ], [handleMathLabClick]);
+  ], [handleMathLabClick, handleGradeCalculatorClick]);
 
   // Filter apps based on search query - memoized for performance
   const filteredApps = useMemo(() => 
