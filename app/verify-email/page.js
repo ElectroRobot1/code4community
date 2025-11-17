@@ -436,11 +436,11 @@ function VerifyEmailContent() {
           <div className="flex items-center">
             <div className="flex items-center space-x-3">
               <Image
-                src="/spartan.png"
-                alt="BRHS Spartan Logo"
-                width={32}
-                height={32}
-                className="w-8 h-8"
+                  src="/spartan.png"
+                  alt="Code4Community Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
                 priority
               />
               <h1 className="text-xl font-semibold text-foreground">Code4Community</h1>

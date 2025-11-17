@@ -387,7 +387,7 @@ export default function GradeCalculator() {
         .filter(a => a.category === "Extra Credit")
         .reduce((sum, a) => sum + (a.earned || 0), 0);
       
-      return Math.min(100, Math.round(baseGrade + extraCreditTotal));
+      return Math.min(100, baseGrade + extraCreditTotal);
     } else {
       // Simple average (all points equal weight)
       const regularAssignments = assignments.filter(a => a.category !== "Extra Credit");
@@ -399,12 +399,12 @@ export default function GradeCalculator() {
       const totalPossible = regularAssignments.reduce((sum, a) => sum + a.possible, 0);
       
       const baseGrade = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-      return Math.min(100, Math.round(baseGrade + extraCreditTotal));
+      return Math.min(100, baseGrade + extraCreditTotal);
     }
   };
 
   const getLetterGrade = (percent) => {
-    if (percent >= 97) return "A+";
+    if (percent >= 98) return "A+";
     if (percent >= 93) return "A";
     if (percent >= 90) return "A-";
     if (percent >= 87) return "B+";
@@ -471,7 +471,7 @@ export default function GradeCalculator() {
                   <h3 className="text-lg font-semibold text-foreground mb-2">{courseName}</h3>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-muted-foreground">{currentGrade}</span>
-                    <span className="text-xl text-muted-foreground">{currentPercent}%</span>
+                    <span className="text-xl text-muted-foreground">{currentPercent.toFixed(2)}%</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Current Grade</p>
                 </div>
@@ -482,14 +482,14 @@ export default function GradeCalculator() {
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-primary">{newGrade}</span>
                       <span className={`text-xl ${newPercent > currentPercent ? 'text-green-500' : newPercent < currentPercent ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {newPercent}%
+                        {newPercent.toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       {newPercent > currentPercent 
-                        ? `+${newPercent - currentPercent}% increase` 
+                        ? `+${(newPercent - currentPercent).toFixed(2)}% increase` 
                         : newPercent < currentPercent 
-                        ? `${currentPercent - newPercent}% decrease`
+                        ? `${(currentPercent - newPercent).toFixed(2)}% decrease`
                         : "No change"}
                     </p>
                   </div>
@@ -567,7 +567,7 @@ export default function GradeCalculator() {
                     <tbody>
                       {assignments.filter(assignment => visibleCategories[assignment.category]).map((assignment) => {
                         const percent = assignment.possible > 0 
-                          ? Math.round((assignment.earned / assignment.possible) * 100) 
+                          ? (assignment.earned / assignment.possible) * 100 
                           : 0;
                         const isChanged = assignment.earned !== assignment.originalEarned || assignment.possible !== assignment.originalPossible;
                         
@@ -614,7 +614,7 @@ export default function GradeCalculator() {
                                 min="0"
                               />
                             </td>
-                            <td className="px-4 py-3 text-sm font-medium text-foreground">{percent}%</td>
+                            <td className="px-4 py-3 text-sm font-medium text-foreground">{percent.toFixed(2)}%</td>
                             <td className="px-4 py-3">
                               <div className="flex gap-2">
                                 {isChanged && (

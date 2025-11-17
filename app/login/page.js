@@ -163,6 +163,10 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
+      if (!user) {
+        throw new Error("Authentication failed: No user returned");
+      }
+      
       // Check if user exists in our database
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
       
@@ -239,14 +243,29 @@ export default function LoginPage() {
     } catch (error) {
       console.error("[LoginPage] handleGoogleLogin: Google login error", {
         code: error.code,
-        message: error.message
+        message: error.message,
+        error: error
       });
+      
+      // Handle specific Firebase Auth errors
       if (error.code === "auth/popup-closed-by-user") {
         setError("Sign in was cancelled. Please try again.");
       } else if (error.code === "auth/popup-blocked") {
         setError("Pop-up was blocked. Please allow pop-ups for this site and try again.");
+      } else if (error.code === "auth/network-request-failed") {
+        setError("Network error. Please check your connection and try again.");
+      } else if (error.code === "auth/unauthorized-domain") {
+        setError("This domain is not authorized. Please contact support.");
+      } else if (error.code === "auth/operation-not-allowed") {
+        setError("Google sign-in is not enabled. Please contact support.");
+      } else if (error.code === "auth/invalid-api-key") {
+        setError("Invalid API key configuration. Please contact support.");
       } else {
-        setError("Google login failed. Please try again.");
+        // Show more detailed error in development
+        const errorMessage = process.env.NODE_ENV === 'development' 
+          ? `Google login failed: ${error.message || error.code || 'Unknown error'}. Check console for details.`
+          : "Google login failed. Please try again.";
+        setError(errorMessage);
       }
     } finally {
       setLoading(false);

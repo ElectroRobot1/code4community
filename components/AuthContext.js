@@ -59,9 +59,17 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error("[AuthContext] fetchUserData: Error fetching user data", {
         error: err,
+        code: err?.code,
+        message: err?.message,
         uid: currentUser.uid,
         forceRefresh
       });
+      
+      // In development, provide more detailed error information
+      if (process.env.NODE_ENV === 'development') {
+        console.error("[AuthContext] fetchUserData: Full error details", err);
+      }
+      
       CachePerformance.endTiming(timing);
       return null;
     }
