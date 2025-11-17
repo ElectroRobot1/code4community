@@ -429,16 +429,17 @@ export default function MathLabPage() {
             const requestToCheck = studentRequestRef.current || previousStudentRequestRef.current;
             if (requestToCheck && requestToCheck.status === 'accepted') {
               // Session ended - show session ended screen
+              // For students, show tutor info; for tutors, show student info
               console.log('[StudentRequest] Session ended! Showing session ended screen');
               setSessionEndData({
-                studentName: (displayUser?.displayName && displayUser.displayName.trim()) || 
-                            ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim()) ||
-                            user?.email || cachedUser?.email || 'Student',
-                studentEmail: user?.email || cachedUser?.email || '',
+                studentName: requestToCheck.tutorName || 'Tutor',
+                studentEmail: requestToCheck.tutorEmail || '',
+                tutorName: requestToCheck.tutorName || 'Tutor',
+                tutorEmail: requestToCheck.tutorEmail || '',
                 course: requestToCheck.course,
                 startTime: requestToCheck.sessionStartedAt || requestToCheck.acceptedAt,
                 endTime: new Date(),
-                duration: sessionDurationRef.currentRef.current
+                duration: sessionDurationRef.current || 0
               });
               setSessionStatus('ended');
             }
@@ -757,13 +758,19 @@ export default function MathLabPage() {
       MathLabCache.setSessions([]); // Clear session history cache
 
       // Set session end data for session over screen
+      // For tutors, show student info
       setSessionEndData({
         studentName: activeSession.studentName,
         studentEmail: activeSession.studentEmail,
+        tutorName: (displayUser?.displayName && displayUser.displayName.trim())
+          || ([displayUser?.firstName, displayUser?.lastName].filter(Boolean).join(' ').trim())
+          || user?.email
+          || 'Anonymous Tutor',
+        tutorEmail: user?.email || cachedUser?.email || '',
         course: activeSession.course,
         startTime: sessionStartTime,
         endTime: endTime,
-        duration: sessionDurationRef.current
+        duration: sessionDurationRef.current || sessionDuration
       });
       setSessionStatus('ended');
       
@@ -955,6 +962,12 @@ export default function MathLabPage() {
 
   // Show session over screen if session just ended (for both tutors and students)
   if (sessionStatus === 'ended' && sessionEndData) {
+    // Determine if this is a student or tutor viewing the screen
+    const isStudentView = displayUser?.mathLabRole === 'student' || (!displayUser?.mathLabRole && !isTutor);
+    const personName = isStudentView ? (sessionEndData.tutorName || sessionEndData.studentName) : sessionEndData.studentName;
+    const personEmail = isStudentView ? (sessionEndData.tutorEmail || sessionEndData.studentEmail) : sessionEndData.studentEmail;
+    const personLabel = isStudentView ? "Tutor" : "Student";
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <DashboardTopBar 
@@ -985,16 +998,16 @@ export default function MathLabPage() {
             {/* Session Summary */}
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Student Info */}
+                {/* Person Info (Tutor for students, Student for tutors) */}
                 <div className="text-center">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Student</h3>
-                  <p className="text-primary font-medium">{sessionEndData.studentName}</p>
-                  <p className="text-sm text-gray-500 mt-1">{sessionEndData.studentEmail}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{personLabel}</h3>
+                  <p className="text-primary font-medium">{personName}</p>
+                  <p className="text-sm text-gray-500 mt-1">{personEmail}</p>
                 </div>
 
                 {/* Course Info */}
