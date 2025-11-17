@@ -10,7 +10,7 @@ import { doc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, 
 import { firestore } from "@/firebase";
 import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
 import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
-import { canAccess, canModify, isTutorOrHigher, ROLES } from "@/utils/authorization";
+import { canAccess, canModify, isTutorOrHigher, isAdminUser, ROLES } from "@/utils/authorization";
 import Image from "next/image";
 
 export default function MathLabPage() {
@@ -206,11 +206,16 @@ export default function MathLabPage() {
 
   // Use cached user if available, fallback to real userData - memoized for performance
   const displayUser = useMemo(() => userData || cachedUser, [userData, cachedUser]);
+  
+  // Helper function to check if user is a tutor (including admins who can also tutor)
+  const isTutor = useMemo(() => {
+    return displayUser?.mathLabRole === 'tutor' || isAdminUser(displayUser?.role, user?.email);
+  }, [displayUser?.mathLabRole, displayUser?.role, user?.email]);
 
   // Function to fetch pending requests for tutors
   // Optimized fetchPendingRequests with intelligent caching
   const fetchPendingRequests = useCallback(() => {
-    if (displayUser?.mathLabRole !== 'tutor') {
+    if (!isTutor) {
       return () => {}; // Return empty cleanup function
     }
     
@@ -255,7 +260,7 @@ export default function MathLabPage() {
       CachePerformance.endTiming(timing);
       return () => {}; // Return empty cleanup function on error
     }
-  }, [displayUser?.mathLabRole]);
+  }, [isTutor]);
 
   // Redirect to login if not authenticated (use cached user if available)
   useEffect(() => {
@@ -276,7 +281,7 @@ export default function MathLabPage() {
 
   // Fetch pending requests if user is a tutor
   useEffect(() => {
-    if (displayUser?.mathLabRole === 'tutor') {
+    if (isTutor) {
       const unsubscribe = fetchPendingRequests();
       
       // Also check for active sessions
@@ -679,7 +684,7 @@ export default function MathLabPage() {
       if (!document.hidden && displayUser) {
         // Page became visible, refresh cache
         MathLabCache.clearAll();
-        if (displayUser.mathLabRole === 'tutor') {
+        if (isTutor) {
           fetchPendingRequests();
         }
       }
@@ -687,7 +692,7 @@ export default function MathLabPage() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [displayUser, fetchPendingRequests]);
+  }, [displayUser, isTutor, fetchPendingRequests]);
 
   // Function to cancel student request - now deletes from database
   const handleCancelRequest = async () => {
@@ -730,7 +735,7 @@ export default function MathLabPage() {
         course: activeSession.course,
         startTime: sessionStartTime,
         endTime: endTime,
-        duration: sessionDurationRef.currentRef.current,
+        duration: sessionDurationRef.current || sessionDuration,
         completedAt: endTime,
         status: 'completed'
       };
@@ -1410,7 +1415,7 @@ export default function MathLabPage() {
   }
 
   // Show tutoring session if active
-  if (activeSession && displayUser?.mathLabRole === 'tutor') {
+  if (activeSession && isTutor) {
     const isSessionStarted = sessionStatus === 'started';
     
     return (
@@ -1570,7 +1575,7 @@ export default function MathLabPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center ml-0 md:ml-16 pb-16 md:pb-0" style={{ minHeight: 'calc(100vh - 80px)' }}>
-        {displayUser.mathLabRole === 'tutor' ? (
+        {isTutor ? (
           // Tutor Dashboard - Redesigned with Horizontal Grid
           <div className="max-w-7xl w-full mx-4">
             {/* Header Section */}

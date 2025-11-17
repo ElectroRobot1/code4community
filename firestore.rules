@@ -41,11 +41,13 @@ service cloud.firestore {
              request.auth.token.email == '1021676@lcps.org';
     }
     
-    // Helper function to check if user is a tutor (by mathLabRole)
+    // Helper function to check if user is a tutor (by mathLabRole or admin role)
     function isTutor() {
       return isAuthenticated() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.mathLabRole == 'tutor';
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.mathLabRole == 'tutor' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+              isAdminByEmail());
     }
     
     // Helper function to check if user is a student (by mathLabRole or default role)
