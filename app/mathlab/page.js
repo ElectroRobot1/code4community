@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "../../components/AuthContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import MathLabSidebar from "../../components/MathLabSidebar";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -1093,7 +1093,9 @@ export default function MathLabPage() {
           title="BRHS Math Lab" 
           showNavLinks={false}
         />
-        <MathLabSidebar />
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
 
         <div className="flex-1 flex items-center justify-center px-4 py-12 ml-0 md:ml-16 pb-16 md:pb-12">
           <div className="max-w-2xl w-full">
@@ -1199,7 +1201,9 @@ export default function MathLabPage() {
             title="BRHS Math Lab" 
             showNavLinks={false}
           />
+          <Suspense fallback={null}>
           <MathLabSidebar />
+        </Suspense>
 
           <div className="flex-1 flex items-center justify-center px-4 py-12 ml-0 md:ml-16 pb-16 md:pb-12">
             <div className="max-w-4xl w-full">
@@ -1279,7 +1283,9 @@ export default function MathLabPage() {
           title="BRHS Math Lab" 
           showNavLinks={false}
         />
-        <MathLabSidebar />
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
 
         <div className="flex-1 flex items-center justify-center px-4 py-12 ml-0 md:ml-16 pb-16 md:pb-12">
           <div className="max-w-2xl w-full">
@@ -1450,7 +1456,9 @@ export default function MathLabPage() {
           title="BRHS Math Lab" 
           showNavLinks={false}
         />
-        <MathLabSidebar />
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
 
         <div className="flex-1 flex items-center justify-center px-4 py-12 ml-0 md:ml-16 pb-16 md:pb-12">
           <div className="max-w-2xl w-full">
@@ -1556,7 +1564,9 @@ export default function MathLabPage() {
           title="BRHS Math Lab" 
           showNavLinks={false}
         />
-        <MathLabSidebar />
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
 
         <div className="flex-1 flex items-center justify-center px-4 py-12 ml-0 md:ml-16 pb-16 md:pb-12">
           <div className="max-w-4xl w-full">
@@ -1687,7 +1697,11 @@ export default function MathLabPage() {
         title="BRHS Math Lab" 
         showNavLinks={false} // Don't show navigation links on math lab page
       />
-      <MathLabSidebar />
+      <Suspense fallback={null}>
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
+      </Suspense>
 
       {/* Role Change Message */}
       {roleChangeMessage && (

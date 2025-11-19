@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "../../../components/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import DashboardTopBar from "../../../components/DashboardTopBar";
 import MathLabSidebar from "../../../components/MathLabSidebar";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -192,7 +192,9 @@ export default function SessionTrackingPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <DashboardTopBar title="Session Tracking" />
-      <MathLabSidebar />
+      <Suspense fallback={null}>
+        <MathLabSidebar />
+      </Suspense>
       
       <div className="flex-1 px-6 py-4 ml-0 md:ml-16 pb-16 md:pb-4">
         <div className="max-w-7xl mx-auto">

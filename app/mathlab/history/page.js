@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "../../../components/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import DashboardTopBar from "../../../components/DashboardTopBar";
 import MathLabSidebar from "../../../components/MathLabSidebar";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -261,7 +261,9 @@ export default function MathLabHistoryPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
       <DashboardTopBar title="Math Lab History" showNavLinks={false} />
-      <MathLabSidebar />
+      <Suspense fallback={null}>
+        <MathLabSidebar />
+      </Suspense>
       
       {/* Main Content with sidebar offset */}
       <div className="ml-0 md:ml-16 pb-16 md:pb-0">
