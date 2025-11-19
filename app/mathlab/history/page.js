@@ -8,7 +8,7 @@ import LoadingSpinner from "../../../components/LoadingSpinner";
 import { doc, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
-import { canAccess } from "@/utils/authorization";
+import { canAccess, isAdminUser } from "@/utils/authorization";
 
 export default function MathLabHistoryPage() {
   const { user, userData, isEmailVerified } = useAuth();
@@ -200,11 +200,12 @@ export default function MathLabHistoryPage() {
   useEffect(() => {
     const displayUser = userData || cachedUser;
     const isTutor = displayUser?.mathLabRole === 'tutor';
+    const isAdmin = userData && user && isAdminUser(userData.role, user.email);
     
-    if (!isTutor && filter === 'tutor') {
+    if (!isTutor && !isAdmin && filter === 'tutor') {
       setFilter('all');
     }
-  }, [userData, cachedUser, filter]);
+  }, [userData, cachedUser, filter, user]);
 
   // Filter sessions based on current filter
   const filteredSessions = useMemo(() => {
@@ -280,14 +281,15 @@ export default function MathLabHistoryPage() {
                 {(() => {
                   const displayUser = userData || cachedUser;
                   const isTutor = displayUser?.mathLabRole === 'tutor';
+                  const isAdmin = userData && user && isAdminUser(userData.role, user.email);
                   
                   const filterOptions = [
                     { id: "all", label: "All Sessions" },
                     { id: "student", label: "As Student" }
                   ];
                   
-                  // Only add tutor filter if user is a tutor
-                  if (isTutor) {
+                  // Add tutor filter if user is a tutor or admin (admins can also tutor)
+                  if (isTutor || isAdmin) {
                     filterOptions.push({ id: "tutor", label: "As Tutor" });
                   }
                   

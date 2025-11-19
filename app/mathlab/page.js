@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "../../components/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import MathLabSidebar from "../../components/MathLabSidebar";
@@ -13,9 +13,44 @@ import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
 import { canAccess, canModify, isTutorOrHigher, isAdminUser, ROLES } from "@/utils/authorization";
 import Image from "next/image";
 
+// Component for live updating session timer
+function ActiveSessionTimer({ startTime }) {
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const updateDuration = () => {
+      const now = new Date();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      setDuration(elapsed);
+    };
+
+    updateDuration();
+    const interval = setInterval(updateDuration, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <span className="font-mono font-medium text-primary">
+      {formatTime(duration)}
+    </span>
+  );
+}
+
 export default function MathLabPage() {
   const { user, userData, isEmailVerified, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedCourse, setSelectedCourse] = useState("");
   const [isMatching, setIsMatching] = useState(false);
   const [cachedUser, setCachedUser] = useState(null);
@@ -24,6 +59,8 @@ export default function MathLabPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [activeSessions, setActiveSessions] = useState([]);
+  const [isLoadingActiveSessions, setIsLoadingActiveSessions] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [sessionDuration, setSessionDuration] = useState(0);
@@ -211,6 +248,11 @@ export default function MathLabPage() {
   const isTutor = useMemo(() => {
     return displayUser?.mathLabRole === 'tutor' || isAdminUser(displayUser?.role, user?.email);
   }, [displayUser?.mathLabRole, displayUser?.role, user?.email]);
+  
+  // Check if user is admin
+  const isAdmin = useMemo(() => {
+    return userData && user && isAdminUser(userData.role, user.email);
+  }, [userData, user]);
 
   // Function to fetch pending requests for tutors
   // Optimized fetchPendingRequests with intelligent caching
@@ -261,6 +303,83 @@ export default function MathLabPage() {
       return () => {}; // Return empty cleanup function on error
     }
   }, [isTutor]);
+
+  // Function to fetch all active sessions for admins with real-time updates
+  const fetchActiveSessions = useCallback(() => {
+    if (!isAdmin) {
+      return () => {}; // Return empty cleanup function
+    }
+    
+    setIsLoadingActiveSessions(true);
+    
+    try {
+      // Check cache first for initial load
+      const cachedActiveSessions = MathLabCache.getActiveSessions();
+      if (cachedActiveSessions && cachedActiveSessions.length >= 0) {
+        setActiveSessions(cachedActiveSessions);
+        setIsLoadingActiveSessions(false);
+      }
+
+      // Query all tutoring requests with status 'accepted' (active sessions)
+      const activeSessionsQuery = query(
+        collection(firestore, "tutoringRequests"),
+        where("status", "==", "accepted")
+      );
+
+      // Use real-time listener for live updates
+      const unsubscribe = onSnapshot(activeSessionsQuery, (snapshot) => {
+        const sessions = [];
+        
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const sessionStartTime = data.sessionStartedAt?.toDate 
+            ? data.sessionStartedAt.toDate() 
+            : (data.sessionStartedAt ? new Date(data.sessionStartedAt) : (data.acceptedAt?.toDate ? data.acceptedAt.toDate() : new Date()));
+          
+          sessions.push({
+            id: doc.id,
+            tutorId: data.tutorId,
+            tutorName: data.tutorName || 'Unknown Tutor',
+            tutorEmail: data.tutorEmail || '',
+            studentId: data.studentId,
+            studentName: data.studentName || 'Unknown Student',
+            studentEmail: data.studentEmail || '',
+            course: data.course || 'Unknown',
+            sessionStartedAt: sessionStartTime,
+            acceptedAt: data.acceptedAt?.toDate ? data.acceptedAt.toDate() : (data.acceptedAt ? new Date(data.acceptedAt) : new Date()),
+            isStarted: !!data.sessionStartedAt
+          });
+        });
+
+        // Sort by start time (most recent first)
+        sessions.sort((a, b) => b.sessionStartedAt - a.sessionStartedAt);
+        
+        // Cache the results (will be updated by real-time listener)
+        MathLabCache.setActiveSessions(sessions);
+        setActiveSessions(sessions);
+        setIsLoadingActiveSessions(false);
+      }, (error) => {
+        console.error("Error fetching active sessions:", error);
+        setIsLoadingActiveSessions(false);
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error setting up active sessions listener:", error);
+      setIsLoadingActiveSessions(false);
+      return () => {}; // Return empty cleanup function on error
+    }
+  }, [isAdmin]);
+
+  // Fetch active sessions for admins with real-time updates
+  useEffect(() => {
+    if (isAdmin) {
+      const unsubscribe = fetchActiveSessions();
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [isAdmin, fetchActiveSessions]);
 
   // Redirect to login if not authenticated (use cached user if available)
   useEffect(() => {
@@ -1588,7 +1707,7 @@ export default function MathLabPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center ml-0 md:ml-16 pb-16 md:pb-0" style={{ minHeight: 'calc(100vh - 80px)' }}>
-        {isTutor ? (
+        {(isTutor && searchParams?.get('view') !== 'student') ? (
           // Tutor Dashboard - Redesigned with Horizontal Grid
           <div className="max-w-7xl w-full mx-4">
             {/* Header Section */}
@@ -1644,7 +1763,7 @@ export default function MathLabPage() {
                           alt={request.studentName}
                           name={request.studentName}
                           className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800"
-                          showOnlineIndicator={true}
+                          showOnlineIndicator={false}
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-gray-900 text-lg truncate">{request.studentName}</h4>
@@ -1687,6 +1806,112 @@ export default function MathLabPage() {
                 </div>
               )}
             </div>
+
+            {/* Active Sessions Section - Only for Admins */}
+            {isAdmin && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-foreground">Active Tutoring Sessions</h3>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Live updates</span>
+                  </div>
+                </div>
+                
+                {isLoadingActiveSessions ? (
+                  <div className="card-elevated p-8 rounded-xl">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    </div>
+                  </div>
+                ) : activeSessions.length === 0 ? (
+                  <div className="card-elevated p-8 rounded-xl text-center">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-foreground mb-2">No Active Sessions</h4>
+                    <p className="text-muted-foreground">There are currently no active tutoring sessions</p>
+                  </div>
+                ) : (
+                  <div className="card-elevated rounded-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Tutor</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Student</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Course</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Duration</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Started</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeSessions.map((session) => {
+                            const formatTime = (seconds) => {
+                              const hours = Math.floor(seconds / 3600);
+                              const minutes = Math.floor((seconds % 3600) / 60);
+                              const secs = seconds % 60;
+                              if (hours > 0) {
+                                return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                              }
+                              return `${minutes}:${secs.toString().padStart(2, '0')}`;
+                            };
+                            
+                            // Calculate current duration in real-time if session has started
+                            const now = new Date();
+                            const currentDuration = session.isStarted 
+                              ? Math.floor((now - session.sessionStartedAt) / 1000)
+                              : 0;
+                            
+                            return (
+                              <tr key={session.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                  <div>
+                                    <div className="font-medium">{session.tutorName}</div>
+                                    {session.tutorEmail && (
+                                      <div className="text-muted-foreground text-xs">{session.tutorEmail}</div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                  <div>
+                                    <div className="font-medium">{session.studentName}</div>
+                                    {session.studentEmail && (
+                                      <div className="text-muted-foreground text-xs">{session.studentEmail}</div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                  {session.course}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                  {session.isStarted ? (
+                                    <ActiveSessionTimer startTime={session.sessionStartedAt} />
+                                  ) : (
+                                    <span className="text-muted-foreground">Not started</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                  {session.isStarted 
+                                    ? session.sessionStartedAt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                    : session.acceptedAt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                  }
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         ) : (
           // Student Dashboard

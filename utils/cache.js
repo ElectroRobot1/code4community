@@ -9,6 +9,10 @@ export const CACHE_CONFIG = {
   USER_PREFERENCES: 'brhs_user_preferences',
   MATHLAB_REQUESTS: 'brhs_mathlab_requests',
   MATHLAB_SESSIONS: 'brhs_mathlab_sessions',
+  MATHLAB_ACTIVE_SESSIONS: 'brhs_mathlab_active_sessions',
+  TUTORS_LIST: 'brhs_tutors_list',
+  ADMINS_LIST: 'brhs_admins_list',
+  SESSION_TRACKING: 'brhs_session_tracking',
   COURSES: 'brhs_courses',
   SETTINGS: 'brhs_settings',
   NAVIGATION: 'brhs_navigation_state',
@@ -261,9 +265,50 @@ export const MathLabCache = {
     return CacheManager.get(CACHE_CONFIG.MATHLAB_SESSIONS);
   },
 
+  setActiveSessions(sessions) {
+    return CacheManager.set(CACHE_CONFIG.MATHLAB_ACTIVE_SESSIONS, sessions, CACHE_CONFIG.DEFAULT_TTL);
+  },
+
+  getActiveSessions() {
+    return CacheManager.get(CACHE_CONFIG.MATHLAB_ACTIVE_SESSIONS);
+  },
+
+  setSessionTracking(sessions) {
+    return CacheManager.set(CACHE_CONFIG.SESSION_TRACKING, sessions, CACHE_CONFIG.DEFAULT_TTL);
+  },
+
+  getSessionTracking() {
+    return CacheManager.get(CACHE_CONFIG.SESSION_TRACKING);
+  },
+
   clearAll() {
     CacheManager.remove(CACHE_CONFIG.MATHLAB_REQUESTS);
     CacheManager.remove(CACHE_CONFIG.MATHLAB_SESSIONS);
+    CacheManager.remove(CACHE_CONFIG.MATHLAB_ACTIVE_SESSIONS);
+    CacheManager.remove(CACHE_CONFIG.SESSION_TRACKING);
+  }
+};
+
+export const AdminCache = {
+  setTutors(tutors) {
+    return CacheManager.set(CACHE_CONFIG.TUTORS_LIST, tutors, CACHE_CONFIG.DEFAULT_TTL);
+  },
+
+  getTutors() {
+    return CacheManager.get(CACHE_CONFIG.TUTORS_LIST);
+  },
+
+  setAdmins(admins) {
+    return CacheManager.set(CACHE_CONFIG.ADMINS_LIST, admins, CACHE_CONFIG.DEFAULT_TTL);
+  },
+
+  getAdmins() {
+    return CacheManager.get(CACHE_CONFIG.ADMINS_LIST);
+  },
+
+  clearAll() {
+    CacheManager.remove(CACHE_CONFIG.TUTORS_LIST);
+    CacheManager.remove(CACHE_CONFIG.ADMINS_LIST);
   }
 };
 

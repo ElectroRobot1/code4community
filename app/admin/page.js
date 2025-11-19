@@ -6,7 +6,7 @@ import DashboardTopBar from "../../components/DashboardTopBar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { doc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
-import { UserCache, CachePerformance } from "@/utils/cache";
+import { UserCache, AdminCache, CachePerformance } from "@/utils/cache";
 import { isAdminUser } from "@/utils/authorization";
 
 export default function AdminDashboard() {
@@ -14,11 +14,15 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
   const [tutors, setTutors] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddTutorForm, setShowAddTutorForm] = useState(false);
   const [newTutorEmail, setNewTutorEmail] = useState("");
   const [isAddingTutor, setIsAddingTutor] = useState(false);
+  const [showAddAdminForm, setShowAddAdminForm] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
 
   // Optimized caching with centralized cache manager
   useEffect(() => {
@@ -75,7 +79,7 @@ export default function AdminDashboard() {
   }, [userData, isEmailVerified, router]);
 
   // Fetch tutors
-  const fetchTutors = useCallback(async () => {
+  const fetchTutors = useCallback(async (forceRefresh = false) => {
     if (!cachedUser && !userData) return;
     
     const timing = CachePerformance.startTiming('fetchTutors');
@@ -83,6 +87,22 @@ export default function AdminDashboard() {
     setError(null);
     
     try {
+      // Check cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cachedTutors = AdminCache.getTutors();
+        if (cachedTutors && cachedTutors.length >= 0) {
+          // Convert createdAt strings back to Date objects
+          const tutorsWithDates = cachedTutors.map(tutor => ({
+            ...tutor,
+            createdAt: tutor.createdAt instanceof Date ? tutor.createdAt : new Date(tutor.createdAt)
+          }));
+          setTutors(tutorsWithDates);
+          setIsLoading(false);
+          CachePerformance.endTiming(timing);
+          return;
+        }
+      }
+
       // Query users with mathLabRole 'tutor'
       const tutorsQuery = query(
         collection(firestore, "users"),
@@ -101,6 +121,8 @@ export default function AdminDashboard() {
         });
       });
 
+      // Cache the results
+      AdminCache.setTutors(tutorsList);
       setTutors(tutorsList);
       
     } catch (error) {
@@ -112,12 +134,66 @@ export default function AdminDashboard() {
     }
   }, [userData, cachedUser]);
 
-  // Fetch tutors when component mounts
+  // Fetch admins
+  const fetchAdmins = useCallback(async (forceRefresh = false) => {
+    if (!cachedUser && !userData) return;
+    
+    const timing = CachePerformance.startTiming('fetchAdmins');
+    setError(null);
+    
+    try {
+      // Check cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cachedAdmins = AdminCache.getAdmins();
+        if (cachedAdmins && cachedAdmins.length >= 0) {
+          // Convert createdAt strings back to Date objects
+          const adminsWithDates = cachedAdmins.map(admin => ({
+            ...admin,
+            createdAt: admin.createdAt instanceof Date ? admin.createdAt : new Date(admin.createdAt)
+          }));
+          setAdmins(adminsWithDates);
+          CachePerformance.endTiming(timing);
+          return;
+        }
+      }
+
+      // Query users with role 'admin'
+      const adminsQuery = query(
+        collection(firestore, "users"),
+        where("role", "==", "admin")
+      );
+
+      const snapshot = await getDocs(adminsQuery);
+      const adminsList = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        adminsList.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+        });
+      });
+
+      // Cache the results
+      AdminCache.setAdmins(adminsList);
+      setAdmins(adminsList);
+      
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+      setError("Failed to load admins. Please try again.");
+    } finally {
+      CachePerformance.endTiming(timing);
+    }
+  }, [userData, cachedUser]);
+
+  // Fetch tutors and admins when component mounts
   useEffect(() => {
     if (userData || cachedUser) {
       fetchTutors();
+      fetchAdmins();
     }
-  }, [fetchTutors, userData, cachedUser]);
+  }, [fetchTutors, fetchAdmins, userData, cachedUser]);
 
   // Add new tutor
   const handleAddTutor = async (e) => {
@@ -155,8 +231,8 @@ export default function AdminDashboard() {
         updatedAt: new Date()
       });
 
-      // Refresh tutors list
-      await fetchTutors();
+      // Refresh tutors list (force refresh to clear cache)
+      await fetchTutors(true);
       
       // Clear form
       setNewTutorEmail("");
@@ -183,12 +259,85 @@ export default function AdminDashboard() {
         updatedAt: new Date()
       });
 
-      // Refresh tutors list
-      await fetchTutors();
+      // Refresh tutors list (force refresh to clear cache)
+      await fetchTutors(true);
       
     } catch (error) {
       console.error("Error removing tutor:", error);
       setError("Failed to remove tutor. Please try again.");
+    }
+  };
+
+  // Add new admin
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+    
+    if (!newAdminEmail.trim()) {
+      setError("Please enter an email address");
+      return;
+    }
+
+    setIsAddingAdmin(true);
+    setError(null);
+
+    try {
+      // First, check if user exists
+      const usersQuery = query(
+        collection(firestore, "users"),
+        where("email", "==", newAdminEmail.trim())
+      );
+      
+      const snapshot = await getDocs(usersQuery);
+      
+      if (snapshot.empty) {
+        setError("User with this email does not exist. They must sign up first.");
+        setIsAddingAdmin(false);
+        return;
+      }
+
+      const userDoc = snapshot.docs[0];
+      const userData = userDoc.data();
+
+      // Update user's role to 'admin'
+      await updateDoc(doc(firestore, "users", userDoc.id), {
+        role: 'admin',
+        updatedAt: new Date()
+      });
+
+      // Refresh admins list (force refresh to clear cache)
+      await fetchAdmins(true);
+      
+      // Clear form
+      setNewAdminEmail("");
+      setShowAddAdminForm(false);
+      
+    } catch (error) {
+      console.error("Error adding admin:", error);
+      setError("Failed to add admin. Please try again.");
+    } finally {
+      setIsAddingAdmin(false);
+    }
+  };
+
+  // Remove admin
+  const handleRemoveAdmin = async (adminId) => {
+    if (!confirm("Are you sure you want to remove this admin?")) {
+      return;
+    }
+
+    try {
+      // Update user's role to 'student' (remove admin status)
+      await updateDoc(doc(firestore, "users", adminId), {
+        role: 'student',
+        updatedAt: new Date()
+      });
+
+      // Refresh admins list (force refresh to clear cache)
+      await fetchAdmins(true);
+      
+    } catch (error) {
+      console.error("Error removing admin:", error);
+      setError("Failed to remove admin. Please try again.");
     }
   };
 
@@ -346,6 +495,123 @@ export default function AdminDashboard() {
                     </div>
                     <button
                       onClick={() => handleRemoveTutor(tutor.id)}
+                      className="px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Admins Section */}
+          <div className="bg-card border border-border rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Admins</h2>
+                <p className="text-muted-foreground">
+                  Manage users with admin privileges
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddAdminForm(true)}
+                className="btn-primary"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Admin
+              </button>
+            </div>
+
+            {/* Add Admin Form */}
+            {showAddAdminForm && (
+              <div className="mb-6 p-4 bg-muted/20 rounded-lg border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Add New Admin</h3>
+                <form onSubmit={handleAddAdmin} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter user's email address"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The user must have already signed up with this email address.
+                    </p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddAdminForm(false);
+                        setNewAdminEmail("");
+                        setError(null);
+                      }}
+                      className="btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isAddingAdmin}
+                      className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isAddingAdmin ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                          Adding...
+                        </div>
+                      ) : (
+                        "Add Admin"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Admins List */}
+            {admins.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Admins Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Add admins to give them system administration privileges.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {admins.map((admin) => (
+                  <div key={admin.id} className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-border">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">{admin.displayName || admin.email}</h4>
+                        <p className="text-sm text-muted-foreground">{admin.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Added {admin.createdAt?.toLocaleDateString() || 'Unknown date'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAdmin(admin.id)}
                       className="px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                     >
                       Remove
