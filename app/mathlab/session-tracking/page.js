@@ -10,7 +10,7 @@ import { firestore } from "@/firebase";
 import { UserCache, MathLabCache, CachePerformance } from "@/utils/cache";
 import { isAdminUser } from "@/utils/authorization";
 
-export default function SessionTrackingPage() {
+function SessionTrackingPageContent() {
   const { user, userData, isEmailVerified, loading } = useAuth();
   const router = useRouter();
   const [cachedUser, setCachedUser] = useState(null);
@@ -304,6 +304,21 @@ export default function SessionTrackingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SessionTrackingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SessionTrackingPageContent />
+    </Suspense>
   );
 }
 
