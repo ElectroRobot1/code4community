@@ -86,7 +86,14 @@ function SessionTrackingPageContent() {
       if (!forceRefresh) {
         const cachedSessions = MathLabCache.getSessionTracking();
         if (cachedSessions && cachedSessions.length >= 0) {
-          setSessions(cachedSessions);
+          // Convert date strings back to Date objects
+          const sessionsWithDates = cachedSessions.map(session => ({
+            ...session,
+            completedAt: session.completedAt instanceof Date ? session.completedAt : new Date(session.completedAt),
+            startTime: session.startTime instanceof Date ? session.startTime : new Date(session.startTime),
+            endTime: session.endTime instanceof Date ? session.endTime : new Date(session.endTime)
+          }));
+          setSessions(sessionsWithDates);
           setIsLoading(false);
           CachePerformance.endTiming(timing);
           return;

@@ -1,8 +1,9 @@
 "use client";
 import { useAuth } from "../../components/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
+import MathLabSidebar from "../../components/MathLabSidebar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { doc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
@@ -353,7 +354,10 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
         <DashboardTopBar title="Admin Dashboard" showNavLinks={false} />
-        <div className="flex items-center justify-center py-12">
+        <Suspense fallback={null}>
+          <MathLabSidebar />
+        </Suspense>
+        <div className="flex items-center justify-center py-12 ml-0 md:ml-16">
           <LoadingSpinner />
         </div>
       </div>
@@ -363,6 +367,9 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" style={{ overscrollBehavior: 'none' }}>
       <DashboardTopBar title="Admin Dashboard" showNavLinks={false} />
+      <Suspense fallback={null}>
+        <MathLabSidebar />
+      </Suspense>
       
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-6xl mx-auto">
