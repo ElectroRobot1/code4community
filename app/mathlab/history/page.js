@@ -351,12 +351,15 @@ function MathLabHistoryPageContent() {
                       : `You haven't completed any sessions ${filter === "student" ? "as a student" : "as a tutor"} yet.`
                     }
                   </p>
-                  <div className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium">
+                  <button
+                    onClick={() => router.push('/mathlab')}
+                    className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors cursor-pointer"
+                  >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                     Start your first session
-                  </div>
+                  </button>
                 </div>
               </div>
             ) : (
