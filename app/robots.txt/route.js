@@ -6,17 +6,12 @@ export async function GET() {
   const robotsTxt = `User-agent: *
 Allow: /
 Allow: /welcome
-Allow: /login
-Allow: /signup
-Allow: /reset-password
+Allow: /grade-calculator
+Allow: /yearbook-formatting
+Allow: /privacy
+Allow: /terms
 
-# Disallow protected/private pages
-Disallow: /mathlab
-Disallow: /mathlab/history
-Disallow: /settings
-Disallow: /admin
-Disallow: /verify-email
-Disallow: /check-email
+# Disallow API routes
 Disallow: /api/
 Disallow: /debug-appcheck
 Disallow: /test-firestore

@@ -1,158 +1,27 @@
 "use client";
-import { useAuth } from "../../components/AuthContext";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
-import { AppCardSkeleton } from "../../components/SkeletonLoader";
-import { UserCache, CachePerformance } from "@/utils/cache";
 import Footer from "../../components/Footer";
 
 export default function Welcome() {
-  const authContext = useAuth();
-  const { user, userData, isEmailVerified, loading: authLoading } = authContext;
   const router = useRouter();
-  const [cachedUser, setCachedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  
-
-  // Optimized caching with performance monitoring
-  useEffect(() => {
-    const timing = CachePerformance.startTiming('loadWelcomeCachedUser');
-    
-    const cached = UserCache.getUserData();
-    if (cached) {
-      setCachedUser(cached);
-    }
-    setIsLoading(false);
-    
-    CachePerformance.endTiming(timing);
-  }, []);
-
-  // Optimized cache update with stale data detection
-  useEffect(() => {
-    if (userData) {
-      const timing = CachePerformance.startTiming('updateWelcomeCache');
-      
-      // Check if cached data is stale
-      const cached = UserCache.getUserData();
-      const isStale = !cached || cached.uid !== userData.uid || 
-                     (cached.updatedAt && userData.updatedAt && 
-                      new Date(cached.updatedAt) < new Date(userData.updatedAt));
-      
-      
-      if (isStale) {
-        UserCache.setUserData(userData);
-        setCachedUser(userData);
-      }
-      
-      setIsLoading(false);
-      
-      CachePerformance.endTiming(timing);
-    } else {
-      // Clear cached user when userData is null (user signed out)
-      setCachedUser(null);
-      setIsLoading(false);
-    }
-  }, [userData]);
-
-  // Check email verification status and redirect if needed
-  useEffect(() => {
-    if (userData && !isEmailVerified) {
-      // User is signed in but email is not verified, redirect to verification page
-      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
-    }
-  }, [userData, isEmailVerified, router]);
-
-  // Listen for email verification completion from popup/verification page (no polling)
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Verify the origin for security
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data.type === 'EMAIL_VERIFIED' && event.data.action === 'redirect_and_signin') {
-        // Force refresh the authentication state
-        window.location.reload();
-      }
-    };
-
-    const handleEmailVerifiedEvent = (event) => {
-      // Force refresh the authentication state
-      window.location.reload();
-    };
-
-    const handleStorage = (event) => {
-      if (event.key === 'emailVerificationStatus' && event.newValue === 'verified') {
-        localStorage.removeItem('emailVerificationStatus');
-        window.location.reload();
-      }
-    };
-
-    // Listen for messages from the verification page
-    window.addEventListener('message', handleMessage);
-    
-    // Listen for custom email verification events
-    window.addEventListener('emailVerified', handleEmailVerifiedEvent);
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-      window.removeEventListener('emailVerified', handleEmailVerifiedEvent);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
-
-  // Handle redirect after successful email verification
-  useEffect(() => {
-    if (userData && isEmailVerified) {
-      // User is verified, check if they came from a specific page
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get('redirectTo');
-      
-      if (redirectTo && redirectTo.startsWith('/')) {
-        // Redirect to the original destination
-        router.push(redirectTo);
-      }
-      // If no redirectTo param, stay on welcome page (default behavior)
-    }
-  }, [userData, isEmailVerified, router]);
 
   const handleMathLabClick = useCallback(() => {
-    if (user && (userData || cachedUser)) {
-      router.push('/mathlab');
-    } else {
-      router.push('/login?redirectTo=/mathlab');
-    }
-  }, [user, userData, cachedUser, router]);
-
-  // Prioritize fresh userData over cached data for accuracy
-  const displayUser = userData || cachedUser;
-  
+    // Math Lab removed - no longer available
+  }, []);
 
   const handleGradeCalculatorClick = useCallback(() => {
-    if (user && (userData || cachedUser)) {
-      router.push('/grade-calculator');
-    } else {
-      router.push('/login?redirectTo=/grade-calculator');
-    }
-  }, [user, userData, cachedUser, router]);
+    router.push('/grade-calculator');
+  }, [router]);
 
   const handleYearbookFormattingClick = useCallback(() => {
-    if (user && (userData || cachedUser)) {
-      router.push('/yearbook-formatting');
-    } else {
-      router.push('/login?redirectTo=/yearbook-formatting');
-    }
-  }, [user, userData, cachedUser, router]);
+    router.push('/yearbook-formatting');
+  }, [router]);
 
-  // Apps data with Math Lab as the first item - memoized for performance
+  // Apps data - memoized for performance
   const allApps = useMemo(() => [
-    { 
-      name: "BRHS Math Lab", 
-      description: "Math Lab Scheduling System", 
-      isActive: true,
-      onClick: handleMathLabClick
-    },
     { 
       name: "Grade Calculator", 
       description: "Calculate your grades", 
@@ -171,7 +40,7 @@ export default function Welcome() {
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false }
-  ], [handleMathLabClick, handleGradeCalculatorClick, handleYearbookFormattingClick]);
+  ], [handleGradeCalculatorClick, handleYearbookFormattingClick]);
 
   // Filter apps based on search query - memoized for performance
   const filteredApps = useMemo(() => 
@@ -181,26 +50,6 @@ export default function Welcome() {
     ), [allApps, searchQuery]
   );
 
-  // Show loading state
-  if (isLoading || authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <DashboardTopBar 
-          title="Code4Community" 
-          showNavLinks={false}
-        />
-        <div className="flex-1 px-6 py-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <AppCardSkeleton key={index} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
 
   return (
@@ -215,16 +64,12 @@ export default function Welcome() {
       <div className="px-6 py-2">
         <div className="flex items-center justify-between">
           <div>
-            {displayUser && (
-              <>
-                <h2 className="text-2xl font-bold text-foreground mb-1">
-                  Welcome back, {displayUser.displayName || displayUser.email}!
-                </h2>
-                <p className="text-muted-foreground">
-                  Choose an app to get started
-                </p>
-              </>
-            )}
+            <h2 className="text-2xl font-bold text-foreground mb-1">
+              Welcome
+            </h2>
+            <p className="text-muted-foreground">
+              Choose an app to get started
+            </p>
           </div>
           
           {/* Centered Available Apps Title */}

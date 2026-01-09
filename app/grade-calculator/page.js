@@ -1,14 +1,9 @@
 "use client";
-import { useAuth } from "../../components/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 
 export default function GradeCalculator() {
-  const authContext = useAuth();
-  const { user, userData, isEmailVerified, loading: authLoading } = authContext;
-  const router = useRouter();
   
   const [pastedText, setPastedText] = useState("");
   const [assignments, setAssignments] = useState([]);
@@ -47,19 +42,6 @@ export default function GradeCalculator() {
     }
   }, [showFilterMenu]);
 
-  // Check email verification status and redirect if needed
-  useEffect(() => {
-    if (userData && !isEmailVerified) {
-      router.push('/verify-email?email=' + encodeURIComponent(userData.email));
-    }
-  }, [userData, isEmailVerified, router]);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login?redirectTo=/grade-calculator');
-    }
-  }, [user, authLoading, router]);
 
   const parseGradebook = (text) => {
     const lines = text.split('\n').filter(line => line.trim());
@@ -860,18 +842,6 @@ export default function GradeCalculator() {
     originalAssignments.some(orig => !assignments.find(a => a.id === orig.id)); // Assignment was deleted
   const newPercent = calculateNewGrade();
   const newGrade = getLetterGrade(newPercent);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <DashboardTopBar title="Grade Calculator" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Security headers are configured in next.config.mjs
@@ -53,7 +52,7 @@ export default function RootLayout({ children }) {
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </ErrorBoundary>
       </body>
     </html>

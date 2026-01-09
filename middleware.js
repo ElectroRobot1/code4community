@@ -23,10 +23,9 @@ export function middleware(request) {
              request.headers.get('x-real-ip') || 
              'unknown';
   
-  const isAuthRequest = request.url.includes('/login') || 
-                       request.url.includes('/signup');
+  const isAuthRequest = false; // Auth routes removed
   
-  const isEmailVerification = request.url.includes('/verify-email');
+  const isEmailVerification = false; // Email verification removed
 
   // Debug logging removed for production
   

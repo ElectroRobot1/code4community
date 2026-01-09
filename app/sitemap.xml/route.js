@@ -18,62 +18,28 @@ export async function GET() {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/login`,
+      url: `${baseUrl}/grade-calculator`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/signup`,
+      url: `${baseUrl}/yearbook-formatting`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/reset-password`,
+      url: `${baseUrl}/privacy`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    
-    // Protected pages (require authentication)
-    {
-      url: `${baseUrl}/mathlab`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 0.5,
     },
     {
-      url: `${baseUrl}/mathlab/history`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/settings`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/admin`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    
-    // Email verification pages
-    {
-      url: `${baseUrl}/verify-email`,
+      url: `${baseUrl}/terms`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/check-email`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.4,
+      priority: 0.5,
     },
   ];
 
