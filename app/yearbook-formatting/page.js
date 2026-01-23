@@ -1,9 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 
 export default function YearbookFormatting() {
+  useEffect(() => {
+    document.title = "Code4Community | Yearbook Formatting";
+  }, []);
+  
   const [pastedText, setPastedText] = useState("");
   const [photographer, setPhotographer] = useState("");
   const [formattedOutput, setFormattedOutput] = useState("");

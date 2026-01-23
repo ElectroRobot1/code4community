@@ -1,9 +1,14 @@
 "use client";
+import { useEffect } from "react";
 import Image from "next/image";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 
 export default function AboutUs() {
+  useEffect(() => {
+    document.title = "Code4Community | About Us";
+  }, []);
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <DashboardTopBar 

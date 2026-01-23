@@ -10,7 +10,7 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
   const navLinks = [
     { label: "HOME", path: "/" },
     { label: "ABOUT US", path: "/about" },
-    { label: "SERVICES", path: "/welcome" },
+    { label: "SERVICES", path: "/services" },
     { label: "CONTACT", path: "/contact" },
   ];
 

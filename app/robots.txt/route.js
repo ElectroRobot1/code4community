@@ -5,7 +5,9 @@ export async function GET() {
   
   const robotsTxt = `User-agent: *
 Allow: /
-Allow: /welcome
+Allow: /services
+Allow: /about
+Allow: /contact
 Allow: /grade-calculator
 Allow: /yearbook-formatting
 Allow: /privacy

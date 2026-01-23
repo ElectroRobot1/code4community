@@ -4,6 +4,9 @@ import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 
 export default function GradeCalculator() {
+  useEffect(() => {
+    document.title = "Code4Community | Grade Calculator";
+  }, []);
   
   const [pastedText, setPastedText] = useState("");
   const [assignments, setAssignments] = useState([]);

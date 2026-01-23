@@ -1,7 +1,12 @@
 "use client";
+import { useEffect } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 
 export default function PrivacyPolicy() {
+  useEffect(() => {
+    document.title = "Code4Community | Privacy Policy";
+  }, []);
+  
   return (
     <div className="min-h-screen bg-background">
       <DashboardTopBar 

@@ -1,7 +1,12 @@
 "use client";
+import { useEffect } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 
 export default function TermsOfService() {
+  useEffect(() => {
+    document.title = "Code4Community | Terms of Service";
+  }, []);
+  
   return (
     <div className="min-h-screen bg-background">
       <DashboardTopBar 

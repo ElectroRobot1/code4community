@@ -7,6 +7,10 @@ import Footer from "../components/Footer";
 
 export default function Home() {
   const router = useRouter();
+  
+  useEffect(() => {
+    document.title = "Code4Community | Home";
+  }, []);
   const [projectsCount, setProjectsCount] = useState(0);
   const [hoursCount, setHoursCount] = useState(0);
   const [currentPartner, setCurrentPartner] = useState(0);

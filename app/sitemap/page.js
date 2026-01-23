@@ -4,7 +4,9 @@ import DashboardTopBar from '../../components/DashboardTopBar';
 export default function SitemapPage() {
   const publicPages = [
     { path: '/', title: 'Home', description: 'Main landing page' },
-    { path: '/welcome', title: 'Welcome', description: 'Welcome page' },
+    { path: '/about', title: 'About Us', description: 'Learn about Code4Community' },
+    { path: '/services', title: 'Services', description: 'Our available services and tools' },
+    { path: '/contact', title: 'Contact', description: 'Get in touch with us' },
     { path: '/grade-calculator', title: 'Grade Calculator', description: 'Calculate your grades' },
     { path: '/yearbook-formatting', title: 'Yearbook Formatting', description: 'Format student names for yearbook captions' },
     { path: '/privacy', title: 'Privacy Policy', description: 'Privacy policy' },

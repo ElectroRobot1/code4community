@@ -4,12 +4,12 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 
-export default function Welcome() {
+export default function Services() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   
   useEffect(() => {
-    document.title = "Code4Community | Welcome";
+    document.title = "Code4Community | Services";
   }, []);
 
   const handleMathLabClick = useCallback(() => {
@@ -69,21 +69,21 @@ export default function Welcome() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground mb-1">
-              Welcome
+              Services
             </h2>
             <p className="text-muted-foreground">
-              Choose an app to get started
+              Explore our available services
             </p>
           </div>
           
           {/* Centered Available Apps Title */}
           <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
-            <h3 className="text-2xl font-bold text-foreground mb-1">Available Apps</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-1">Our Services</h3>
             <p className="text-muted-foreground text-sm">
-              {searchQuery ? `Found ${filteredApps.length} app${filteredApps.length !== 1 ? 's' : ''}` : "Choose an app to get started"}
+              {searchQuery ? `Found ${filteredApps.length} service${filteredApps.length !== 1 ? 's' : ''}` : "Choose a service to get started"}
             </p>
             <div id="search-description" className="sr-only">
-              Search through available applications by name or description
+              Search through available services by name or description
             </div>
           </div>
           
@@ -92,11 +92,11 @@ export default function Welcome() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search apps..."
+                placeholder="Search services..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full py-2.5 pl-10 pr-10 text-sm text-foreground bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
-                aria-label="Search applications"
+                aria-label="Search services"
                 aria-describedby="search-description"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -163,7 +163,7 @@ export default function Welcome() {
             {/* No results message */}
             {searchQuery && filteredApps.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-muted-foreground text-lg mb-2">No apps found</div>
+                <div className="text-muted-foreground text-lg mb-2">No services found</div>
                 <div className="text-sm text-muted-foreground">Try searching with different keywords</div>
               </div>
             )}
