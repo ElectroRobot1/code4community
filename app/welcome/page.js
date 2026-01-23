@@ -57,7 +57,7 @@ export default function Welcome() {
       {/* Use the reusable DashboardTopBar component */}
       <DashboardTopBar 
         title="Code4Community" 
-        showNavLinks={false} // Don't show navigation links on welcome page
+        showNavLinks={true}
       />
 
       {/* Header with Welcome and Available Apps */}

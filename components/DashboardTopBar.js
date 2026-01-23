@@ -1,55 +1,77 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function DashboardTopBar({ title = "Code4Community", onNavigation, showNavLinks = true }) {
   const router = useRouter();
+  const pathname = usePathname();
 
+  const navLinks = [
+    { label: "HOME", path: "/" },
+    { label: "ABOUT US", path: "/about" },
+    { label: "SERVICES", path: "/welcome" },
+    { label: "CONTACT", path: "/contact" },
+  ];
 
   return (
     <>
-      <header className="bg-background border-b border-border px-6 py-4 mb-6 relative z-40">
-        <div className="container">
+      <header className={`bg-background border-b border-border px-6 py-4 relative z-40 ${pathname === '/' ? 'mb-0' : 'mb-6'}`}>
+        <div className="container mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                <Image
-                  src="/spartan.png"
-                  alt="Code4Community Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
+            {/* Logo and Title on Left */}
+            <div className="flex items-center space-x-3">
+              <Image
+                src="/spartan.png"
+                alt="Code4Community Logo"
+                width={40}
+                height={40}
+                className="w-10 h-10"
+              />
+              <div className="flex flex-col">
                 <button
-                  onClick={() => router.push("/welcome")}
-                  className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                  onClick={() => router.push("/")}
+                  className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded text-left"
                   title="Go to Home"
                 >
                   {title}
                 </button>
+                <p className="text-xs text-muted-foreground">
+                  YOUR PARTNER IN SOFTWARE SOLUTIONS
+                </p>
               </div>
-              
-              {/* Home Button - Always show */}
-              <button
-                onClick={() => router.push("/welcome")}
-                className="nav-link"
-                title="Go to Home"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Home
-              </button>
-              
-              {/* Navigation Links - Only show if showNavLinks is true */}
-              {showNavLinks && (
-                <>
-                  {/* Currently no navigation links are implemented */}
-                </>
-              )}
             </div>
-
+            
+            {/* Navigation Links on Right */}
+            {showNavLinks && (
+              <nav className="flex items-center space-x-6">
+                {navLinks.map((link) => {
+                  const isActive = pathname === link.path;
+                  return (
+                    <button
+                      key={link.path}
+                      onClick={() => router.push(link.path)}
+                      className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded ${
+                        isActive
+                          ? "text-primary"
+                          : "text-foreground hover:text-primary"
+                      }`}
+                    >
+                      {link.label}
+                    </button>
+                  );
+                })}
+                {/* Lock Icon for Contact */}
+                <svg 
+                  className="w-4 h-4 text-muted-foreground" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </nav>
+            )}
           </div>
         </div>
       </header>
