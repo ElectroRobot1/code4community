@@ -40,7 +40,7 @@ export default function AboutUs() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-4">
               This website is created and run by the <strong className="text-foreground">Code4Community club at Broad Run High School</strong> (Loudoun County Public Schools). 
-              We are a student-led club—the people who build and maintain this site are club members and the executive board. 
+              We are a student-led club: the people who build and maintain this site are club members and the executive board. 
               All tools and content here are produced by our club as part of our activities at Broad Run.
             </p>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
@@ -56,7 +56,7 @@ export default function AboutUs() {
               Who We Are
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-4">
-              We are a student-led organization at Broad Run High School—building free, useful tools for students and staff 
+              We are a student-led organization at Broad Run High School, building free, useful tools for students and staff 
               while learning software development, design, and teamwork.
             </p>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
@@ -71,7 +71,7 @@ export default function AboutUs() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-4">
               This project aligns with our academic and career goals: we learn by doing. We design and code real 
-              applications, work with users (students and teachers), and maintain the site—giving us experience 
+              applications, work with users (students and teachers), and maintain the site, which gives us experience 
               in software development while providing the school with practical, free tools.
             </p>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">

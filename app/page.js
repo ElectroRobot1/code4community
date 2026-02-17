@@ -191,7 +191,7 @@ export default function Home() {
           </h1>
           <p className="text-base md:text-lg leading-relaxed max-w-3xl mx-auto text-white">
             Code4Community builds free software tools for students and teachers—grade calculators, 
-            seating charts, yearbook formatting, and more. We learn by building; the school benefits from what we make.
+            seating charts, yearbook formatting, and more. We learn by building and the school benefits from what we make.
           </p>
         </div>
       </div>
@@ -204,7 +204,7 @@ export default function Home() {
           </h2>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-4">
             Code4Community is a student-led team that designs and builds web tools for our school community. 
-            We create apps that support teaching and learning—so students get useful tools and we get real 
+            We create apps that support teaching and learning, so students get useful tools and we get real 
             experience in software development, design, and teamwork.
           </p>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
@@ -222,7 +222,7 @@ export default function Home() {
             Our Mission
           </h2>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            To support our school with practical software tools while learning real-world development—building 
+            To support our school with practical software tools while learning real-world development by building 
             things that students and teachers actually use.
           </p>
         </div>
