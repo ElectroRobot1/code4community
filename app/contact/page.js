@@ -34,8 +34,16 @@ export default function Contact() {
           {/* Contact Information */}
           <section>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
-              Contact Information
+              Official Contact
             </h2>
+            <p className="text-muted-foreground mb-4">
+              <strong className="text-foreground">Shail Shah, Aryan Kothari, and Pranav Natarajan</strong> are students at Broad Run High School 
+              and the executive board of the Code4Community club. They run this site and are the point of contact for any inquiries 
+              about our tools, the club, or this project.
+            </p>
+            <p className="text-muted-foreground mb-6">
+              You can reach them at the email below.
+            </p>
             <div className="bg-background border border-border rounded-lg p-8">
               <div className="space-y-6">
                 <div>
@@ -52,10 +60,10 @@ export default function Contact() {
                 
                 <div className="pt-4 border-t border-border">
                   <h3 className="text-lg font-semibold text-foreground mb-4">
-                    Business Hours
+                    Response Time
                   </h3>
                   <p className="text-muted-foreground">
-                    We typically respond to inquiries within 1-2 business days. 
+                    We typically respond within 1–2 business days. 
                     For urgent matters, please indicate so in your email subject line.
                   </p>
                 </div>
@@ -72,54 +80,6 @@ export default function Contact() {
                     <li>Support and feedback</li>
                   </ul>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Additional Information */}
-          <section>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
-              Why Choose Us
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Experienced Team
-                </h3>
-                <p className="text-muted-foreground">
-                  Our team brings years of combined experience in software development, 
-                  ensuring high-quality solutions for your business needs.
-                </p>
-              </div>
-              
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Privacy-Focused
-                </h3>
-                <p className="text-muted-foreground">
-                  We prioritize your data security and privacy in all our solutions, 
-                  building trust through transparent practices.
-                </p>
-              </div>
-              
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Custom Solutions
-                </h3>
-                <p className="text-muted-foreground">
-                  Every business is unique. We work closely with you to develop 
-                  tailored software solutions that fit your specific requirements.
-                </p>
-              </div>
-              
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Reliable Support
-                </h3>
-                <p className="text-muted-foreground">
-                  We're committed to providing ongoing support and maintenance 
-                  to ensure your software continues to meet your needs.
-                </p>
               </div>
             </div>
           </section>

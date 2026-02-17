@@ -52,7 +52,6 @@ export default function Services() {
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false },
-    { name: "Coming Soon", description: "More features coming soon", isActive: false },
     { name: "Coming Soon", description: "More features coming soon", isActive: false }
   ], [handleGradeCalculatorClick, handleYearbookFormattingClick, handleSeatingChartClick]);
 
@@ -90,7 +89,7 @@ export default function Services() {
           <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
             <h3 className="text-2xl font-bold text-foreground mb-1">Our Services</h3>
             <p className="text-muted-foreground text-sm">
-              {searchQuery ? `Found ${filteredApps.length} service${filteredApps.length !== 1 ? 's' : ''}` : "Choose a service to get started"}
+              {searchQuery ? `Found ${filteredApps.length} service${filteredApps.length !== 1 ? 's' : ''}` : "Student-built tools that support teaching and learning—choose a service to get started"}
             </p>
             <div id="search-description" className="sr-only">
               Search through available services by name or description
