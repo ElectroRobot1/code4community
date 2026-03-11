@@ -178,8 +178,106 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Our Work - live demos; replace image areas with screenshots later if desired */}
+      {/* The Problem */}
       <section className="border-t border-border bg-muted/20 py-16 md:py-20 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+            Many Community Organizations Need Digital Tools
+          </h2>
+          <p className="text-lg text-muted-foreground mb-6">
+            But building software is often expensive or complicated.
+          </p>
+          <p className="text-foreground leading-relaxed mb-6">
+            Nonprofits and small organizations often need simple tools to run their programs effectively with things like event trackers, volunteer systems, or internal dashboards.
+          </p>
+          <p className="text-foreground leading-relaxed mb-6">
+            Unfortunately, hiring developers or agencies can cost thousands of dollars, making these tools inaccessible to many community groups.
+          </p>
+          <p className="font-semibold text-foreground">
+            Code4Community was created to help solve this challenge.
+          </p>
+        </div>
+      </section>
+
+      {/* What We Do */}
+      <section className="border-t border-border bg-background py-16 md:py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-3">
+            What We Do
+          </h2>
+          <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+            Our student team designs and builds digital tools for local organizations completely free of charge.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="rounded-xl border border-border bg-muted/30 p-6">
+              <h3 className="font-semibold text-foreground mb-2">Custom Websites</h3>
+              <p className="text-sm text-muted-foreground">
+                We build simple, clean websites for organizations that need an online presence.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-6">
+              <h3 className="font-semibold text-foreground mb-2">Productivity Tools</h3>
+              <p className="text-sm text-muted-foreground">
+                Internal tools to help manage events, volunteers, and programs.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-6">
+              <h3 className="font-semibold text-foreground mb-2">Data Dashboards</h3>
+              <p className="text-sm text-muted-foreground">
+                Track donations, participation, and organization data in one place.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-6">
+              <h3 className="font-semibold text-foreground mb-2">Custom Solutions</h3>
+              <p className="text-sm text-muted-foreground">
+                If your organization has a unique problem, we work with you to design a custom solution.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How the Process Works */}
+      <section className="border-t border-border bg-muted/20 py-16 md:py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">
+            How the Process Works
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="relative">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">1</span>
+              <h3 className="font-semibold text-foreground mb-2">Submit a Request</h3>
+              <p className="text-sm text-muted-foreground">
+                Tell us about the problem you&apos;re trying to solve and what kind of tool you might need.
+              </p>
+            </div>
+            <div className="relative">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">2</span>
+              <h3 className="font-semibold text-foreground mb-2">We Plan the Tool</h3>
+              <p className="text-sm text-muted-foreground">
+                Our team reviews your request and works with you to define the features and requirements.
+              </p>
+            </div>
+            <div className="relative">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">3</span>
+              <h3 className="font-semibold text-foreground mb-2">Students Build the Tool</h3>
+              <p className="text-sm text-muted-foreground">
+                Our developers design and build the software while keeping you updated throughout the process.
+              </p>
+            </div>
+            <div className="relative">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">4</span>
+              <h3 className="font-semibold text-foreground mb-2">Launch and Feedback</h3>
+              <p className="text-sm text-muted-foreground">
+                We deliver the finished tool and gather feedback to improve it.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Some of Our Work - live demos */}
+      <section className="border-t border-border bg-background py-16 md:py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
             Some of Our Work
