@@ -1,94 +1,125 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, applyActionCode } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
-// Environment-based Firebase config
+import { firebaseConfig as devFirebaseConfig, recaptchaSiteKey as devRecaptchaSiteKey } from "./keys.dev.js";
+
+/**
+ * Dev: use literal config from keys.dev.js — Next dev often inlines NEXT_PUBLIC_* as "" in the client bundle.
+ * Prod: NEXT_PUBLIC_* from Vercel / host at build time.
+ * Build without env: placeholder for static generation.
+ */
+const isDev = process.env.NODE_ENV === "development";
+
+const isBuildTime =
+  typeof window === "undefined" &&
+  !isDev &&
+  !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
 let firebaseConfig;
 let recaptchaSiteKey;
 
-// Check if we're in a build environment (no environment variables available)
-const isBuildTime = typeof window === 'undefined' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
 if (isBuildTime) {
-  // Build time - use placeholder config to prevent errors
   firebaseConfig = {
     apiKey: "build-time-placeholder",
     authDomain: "build-time-placeholder",
     projectId: "build-time-placeholder",
     storageBucket: "build-time-placeholder",
     messagingSenderId: "build-time-placeholder",
-    appId: "build-time-placeholder"
+    appId: "build-time-placeholder",
   };
   recaptchaSiteKey = null;
-  console.log('Using build-time placeholder Firebase config');
-} else if (process.env.NODE_ENV === 'development') {
-  // Development: keys.dev.js maps NEXT_PUBLIC_* from .env.local (file is safe to commit)
-  const devConfig = require('./keys.dev.js');
-  firebaseConfig = devConfig.firebaseConfig;
-  recaptchaSiteKey = devConfig.recaptchaSiteKey;
-  console.log('Using development Firebase config (keys.dev.js → env)');
+  console.log("Using build-time placeholder Firebase config");
+} else if (isDev) {
+  firebaseConfig = devFirebaseConfig;
+  recaptchaSiteKey = devRecaptchaSiteKey;
+  console.log("Using development Firebase config (keys.dev.js)");
 } else {
-  // Production environment - use environment variables
   firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
-  recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  console.log('Using production Firebase config');
+  const rk = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  recaptchaSiteKey =
+    typeof rk === "string" && rk.trim().length > 0 ? rk.trim() : null;
+  console.log("Using production Firebase config (env)");
 }
 
-// Initialize Firebase
-let app, auth, firestore, provider;
+let app;
+let auth;
+let firestore;
+let provider;
 
 try {
-  app = initializeApp(firebaseConfig);
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   firestore = getFirestore(app);
   provider = new GoogleAuthProvider();
-  console.log('Firebase initialized successfully');
+  console.log("Firebase initialized successfully");
 } catch (error) {
-  console.error('Failed to initialize Firebase:', error);
-  // Create fallback instances to prevent undefined errors
+  console.error("Failed to initialize Firebase:", error);
   app = null;
   auth = null;
   firestore = null;
   provider = null;
 }
 
-// Initialize App Check only in production and not during build time
-if (!isBuildTime && typeof window !== 'undefined' && process.env.NODE_ENV !== 'development' && recaptchaSiteKey) {
+if (
+  !isBuildTime &&
+  typeof window !== "undefined" &&
+  !isDev &&
+  recaptchaSiteKey &&
+  app
+) {
   try {
-    const appCheck = initializeAppCheck(app, {
+    initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(recaptchaSiteKey),
-      isTokenAutoRefreshEnabled: true
+      isTokenAutoRefreshEnabled: true,
     });
-    console.log('Firebase App Check initialized');
+    console.log("Firebase App Check initialized");
   } catch (error) {
-    console.error('Failed to initialize App Check:', error);
+    console.error("Failed to initialize App Check:", error);
   }
-} else if (process.env.NODE_ENV === 'development') {
-  console.log('Firebase initialized without App Check (development mode)');
+} else if (isDev) {
+  console.log("Firebase initialized without App Check (development mode)");
 } else if (isBuildTime) {
-  console.log('Firebase initialized without App Check (build time)');
+  console.log("Firebase initialized without App Check (build time)");
 }
 
-// Configure Google provider (guard in case init failed)
 if (provider) {
   provider.setCustomParameters({
-    prompt: 'select_account',
-    access_type: 'offline'
+    prompt: "select_account",
+    access_type: "offline",
   });
 }
 
-// Export Firebase instances with validation
 if (!firestore) {
-  console.error('CRITICAL: Firestore is not initialized properly');
+  console.error("CRITICAL: Firestore is not initialized properly");
 }
 
-export { auth, provider, firestore, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, applyActionCode, app };
+export {
+  auth,
+  provider,
+  firestore,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  fetchSignInMethodsForEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  applyActionCode,
+  app,
+};
 export default app;

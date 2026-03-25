@@ -2,19 +2,8 @@
  * Web API key used by Identity Toolkit `accounts:lookup` — must match the Firebase app the user signed into.
  */
 function getFirebaseWebApiKey() {
-  if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-    return process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  }
-  // Local dev: keys.dev.js reads same NEXT_PUBLIC_FIREBASE_API_KEY from .env.local
-  if (process.env.NODE_ENV === "development") {
-    try {
-      const { firebaseConfig } = require("../keys.dev.js");
-      const k = firebaseConfig?.apiKey;
-      if (k) return k;
-    } catch {
-      /* ignore */
-    }
-  }
+  const k = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (typeof k === "string" && k.trim()) return k.trim();
   return undefined;
 }
 

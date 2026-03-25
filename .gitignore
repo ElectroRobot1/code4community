@@ -37,6 +37,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Local Firebase dev client config (copy from tempkeys.dev.js)
+keys.dev.js
+
 # vercel
 .vercel
 
