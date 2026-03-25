@@ -2,6 +2,8 @@
 import { useLayoutEffect, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../utils/AuthContext";
 import DashboardTopBar from "../components/DashboardTopBar";
 import Footer from "../components/Footer";
 
@@ -48,6 +50,8 @@ const DELETE_MS = 45;
 const HOLD_MS = 2200;
 
 export default function Home() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [displayLength, setDisplayLength] = useState(() => heroPhrases[0].length);
   const [phase, setPhase] = useState("holding"); // 'holding' | 'deleting' | 'typing'
@@ -55,6 +59,17 @@ export default function Home() {
   useLayoutEffect(() => {
     document.title = "Code4Community | Home";
   }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user?.emailVerified) {
+      router.replace("/dashboard");
+      return;
+    }
+    if (user) {
+      router.replace("/verify-email");
+    }
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     let intervalId = null;
@@ -95,6 +110,14 @@ export default function Home() {
   }, [phase, phraseIndex]);
 
   const visibleText = heroPhrases[phraseIndex].slice(0, displayLength);
+
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

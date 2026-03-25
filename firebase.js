@@ -23,24 +23,11 @@ if (isBuildTime) {
   recaptchaSiteKey = null;
   console.log('Using build-time placeholder Firebase config');
 } else if (process.env.NODE_ENV === 'development') {
-  // Development environment - use dev keys
-  try {
-    const devConfig = require('./keys.dev.js');
-    firebaseConfig = devConfig.firebaseConfig;
-    recaptchaSiteKey = devConfig.recaptchaSiteKey;
-    console.log('Using development Firebase config');
-  } catch (error) {
-    console.warn('Development keys not found, falling back to environment variables');
-    firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-    };
-    recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  }
+  // Development: keys.dev.js maps NEXT_PUBLIC_* from .env.local (file is safe to commit)
+  const devConfig = require('./keys.dev.js');
+  firebaseConfig = devConfig.firebaseConfig;
+  recaptchaSiteKey = devConfig.recaptchaSiteKey;
+  console.log('Using development Firebase config (keys.dev.js → env)');
 } else {
   // Production environment - use environment variables
   firebaseConfig = {

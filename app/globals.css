@@ -6,6 +6,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* KaTeX (MathText): inherit text color in light/dark */
+.math-text .katex {
+  color: inherit;
+}
+
+/* Short inline math inside wrapping sentences (MixedMathLine) */
+.math-text--inline {
+  display: inline !important;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+.math-text--inline .katex {
+  display: inline-block;
+  font-size: 1em;
+}
+
 /* No margin/padding so content goes edge-to-edge (no white border) */
 html {
   margin: 0;

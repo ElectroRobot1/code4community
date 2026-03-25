@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../utils/AuthContext";
+import StudyStatsSection from "../../components/settings/StudyStatsSection";
 import {
   auth,
   updateProfile,
@@ -174,9 +175,11 @@ export default function SettingsPage() {
       <DashboardTopBar title="Code4Community" showNavLinks={true} />
 
       <div className="flex-1 container mx-auto px-6 py-12">
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
           <p className="text-muted-foreground mb-8">Manage your account details.</p>
+
+          <StudyStatsSection user={user} />
 
           {/* Display name */}
           <section className="rounded-xl border border-border bg-background p-6 mb-6">

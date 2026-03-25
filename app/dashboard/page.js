@@ -153,10 +153,12 @@ export default function DashboardPage() {
       <div className="flex-1 container mx-auto px-6 py-12">
         <div className="max-w-2xl mx-auto space-y-10">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
-            <p className="text-muted-foreground mb-8">
-              Manage your Code4Community services and account in one place.
-            </p>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Manage your Code4Community services and account in one place.
+              </p>
+            </div>
             <div className="rounded-lg border border-border bg-muted/30 p-10 text-center">
               <p className="text-foreground font-medium mb-2">No services currently activated</p>
               <p className="text-muted-foreground text-sm mb-6">

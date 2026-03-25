@@ -81,7 +81,10 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
         )}
         <button
           type="button"
-          onClick={() => { closeMenu(); router.push("/"); }}
+          onClick={() => {
+            closeMenu();
+            router.push(user?.emailVerified ? "/dashboard" : "/");
+          }}
           className="flex items-center gap-2 min-w-0 flex-1"
         >
           <Image src="/c4c.png" alt="" width={32} height={32} className="w-8 h-8 shrink-0" />
@@ -129,9 +132,24 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
           {/* Nav links */}
           {showNavLinks && (
             <nav className="flex-1 overflow-auto py-2">
-              {[...BASE_NAV_LINKS, ...(user ? [{ label: "SETTINGS", path: "/settings" }] : []), ...(user?.email === ADMIN_EMAIL ? [{ label: "ADMIN", path: "/admin" }] : [])].map((link) => {
-                const isActive = pathname === link.path;
-                return (
+              {(() => {
+                const adminLink =
+                  user?.email === ADMIN_EMAIL ? [{ label: "ADMIN", path: "/admin" }] : [];
+                const links = user?.emailVerified
+                  ? [
+                      { label: "DASHBOARD", path: "/dashboard" },
+                      { label: "STUDYING", path: "/study" },
+                      { label: "SETTINGS", path: "/settings" },
+                      ...adminLink,
+                    ]
+                  : user
+                    ? [...BASE_NAV_LINKS, { label: "SETTINGS", path: "/settings" }, ...adminLink]
+                    : [...BASE_NAV_LINKS, ...adminLink];
+                return links.map((link) => {
+                  const isActive =
+                    pathname === link.path ||
+                    (link.path !== "/" && pathname?.startsWith(`${link.path}/`));
+                  return (
                   <div key={link.path} className="border-b border-gray-100">
                     <button
                       type="button"
@@ -143,8 +161,9 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
                       {link.label}
                     </button>
                   </div>
-                );
-              })}
+                  );
+                });
+              })()}
               {user && (
                 <div className="border-b border-gray-100">
                   <button

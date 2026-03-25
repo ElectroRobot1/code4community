@@ -38,13 +38,22 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Account";
 
   const adminEmail = "shail40926@gmail.com";
-  const navLinks = [
+  /** Signed-in (app) navigation vs marketing site */
+  const signedInNavLinks =
+    user && user.emailVerified
+      ? [
+          { label: "Dashboard", path: "/dashboard" },
+          { label: "Studying", path: "/study" },
+        ]
+      : null;
+  const publicNavLinks = [
     { label: "HOME", path: "/" },
     { label: "ABOUT US", path: "/about" },
     { label: "SERVICES", path: "/services" },
     { label: "CONTACT", path: "/contact" },
     ...(user?.email === adminEmail ? [{ label: "ADMIN", path: "/admin" }] : []),
   ];
+  const navLinks = signedInNavLinks || publicNavLinks;
 
   return (
     <>
@@ -63,9 +72,9 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
               />
               <div className="flex flex-col">
                 <button
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push(user && user.emailVerified ? "/dashboard" : "/")}
                   className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded text-left"
-                  title="Go to Home"
+                  title={user && user.emailVerified ? "Go to Dashboard" : "Go to Home"}
                 >
                   {title}
                 </button>
@@ -79,7 +88,9 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
             {showNavLinks && (
               <nav className="flex items-center space-x-4 md:space-x-6">
                 {navLinks.map((link) => {
-                  const isActive = pathname === link.path;
+                  const isActive =
+                    pathname === link.path ||
+                    (link.path !== "/" && pathname?.startsWith(`${link.path}/`));
                   return (
                     <button
                       key={link.path}
@@ -125,6 +136,15 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
                           >
                             Settings
                           </Link>
+                          {user?.email === adminEmail && (
+                            <Link
+                              href="/admin"
+                              onClick={() => setDropdownOpen(false)}
+                              className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted focus:outline-none focus:bg-muted"
+                            >
+                              Admin
+                            </Link>
+                          )}
                           <button
                             type="button"
                             onClick={handleSignOut}
