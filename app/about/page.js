@@ -131,10 +131,10 @@ export default function AboutUs() {
       </div>
 
       {/* About blurb */}
-      <div className="bg-background py-16 md:py-20 px-6">
+      <div className="bg-background pt-6 pb-14 md:pt-8 md:pb-16 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-5 gap-10 md:gap-12 items-start">
-            <div className="md:col-span-2">
+            <div className="order-2 md:order-none md:col-span-2 md:mt-10">
               <div className="aspect-square max-w-xs relative rounded-lg overflow-hidden bg-muted shadow-md border border-border flex items-center justify-center p-6">
                 <Image
                   src="/c4c.png"
@@ -145,16 +145,17 @@ export default function AboutUs() {
                 />
               </div>
             </div>
-            <div className="md:col-span-3">
-              <h2 className="text-2xl font-bold text-foreground mb-4">About Code4Community</h2>
-              <div className="text-muted-foreground leading-relaxed space-y-4">
+            <div className="order-1 md:order-none md:col-span-3">
+              <div className="max-w-[30.24rem] space-y-5 [&_p]:text-[0.88rem] [&_p]:text-black [&_p]:dark:text-neutral-100 [&_p]:leading-[1.75]">
                 <p>
-                  Code4Community was started as a club at Broad Run High School to build software that
-                  teachers and organizations at our school could use. After building hundreds of
-                  applications and having great success, we decided to expand to helping create services
-                  to benefit our community, free of charge.
+                 Shail Shah created Code4Community in 2023 when he wrote a simple program on calculating grades with new assignments. Positive student response prompted him to kick into gear and create content for the rest of the school year.
+                  
                 </p>
                 <p>
+                Code4Community was started as a club at Broad Run High School to build software that
+                  teachers and organizations at our school could use. After building hundreds of
+                  applications and having great success, we decided to expand to helping create services
+                  to benefit our community, free of charge. 
                   Our goal is to help organizations and the community through technology by building the
                   tools and software they need to work better. We focus on practical, free solutions
                   that make a real difference for teams and users.
