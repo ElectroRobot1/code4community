@@ -49,29 +49,31 @@ const merriweatherStyle = { fontFamily: "'Merriweather', Georgia, serif" };
 
 function TeamMemberCard({ member, onOpen }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(member)}
-      aria-label={`Open profile for ${member.name}`}
-      className="group flex w-full flex-col items-center rounded-lg p-1 text-center transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-    >
-      <div className="mb-3 h-40 w-40 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
-        <Image
-          src={member.image}
-          alt=""
-          width={160}
-          height={160}
-          className="h-full w-full object-cover"
-        />
-      </div>
-      <h3
-        className="mb-1 text-lg font-semibold text-foreground decoration-foreground underline-offset-4 group-hover:underline"
-        style={merriweatherStyle}
+    <div className="flex justify-center">
+      <button
+        type="button"
+        onClick={() => onOpen(member)}
+        aria-label={`Open profile for ${member.name}`}
+        className="group flex w-fit max-w-full flex-col items-center rounded-lg p-1 text-center transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
-        {member.name}
-      </h3>
-      <p className="text-sm text-muted-foreground">{member.role}</p>
-    </button>
+        <div className="mb-3 h-40 w-40 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
+          <Image
+            src={member.image}
+            alt=""
+            width={160}
+            height={160}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        <h3
+          className="mb-1 text-lg font-semibold text-foreground decoration-foreground underline-offset-4 group-hover:underline"
+          style={merriweatherStyle}
+        >
+          {member.name}
+        </h3>
+        <p className="text-sm text-muted-foreground">{member.role}</p>
+      </button>
+    </div>
   );
 }
 
