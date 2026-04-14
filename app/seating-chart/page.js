@@ -53,9 +53,14 @@ const RESTRICTION_TYPES = [
   { id: "must_sit_near_front", label: "Must sit near front" },
 ];
 
+/** When false, furniture always lands exactly under the pointer (no edge magnetism). */
+const ENABLE_FURNITURE_SNAP = false;
+/** Pixels (canvas space); only used if ENABLE_FURNITURE_SNAP is true */
 const SNAP_THRESHOLD = 24;
 
 function getSnappedPosition(dropX, dropY, movingW, movingH, otherFurniture, excludeId) {
+  if (!ENABLE_FURNITURE_SNAP) return { x: dropX, y: dropY };
+
   const others = otherFurniture.filter((f) => f.id !== excludeId);
   if (others.length === 0) return { x: dropX, y: dropY };
 
@@ -273,10 +278,11 @@ export default function SeatingChart() {
     );
   }, []);
 
+  /** Map pointer to logical canvas coords (center of furniture). Uses the scaled inner layer’s rect so border + transform match the drawn canvas. */
   const getCanvasCoords = useCallback((e) => {
     const scrollEl = canvasScrollRef.current;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect || !scrollEl) return null;
+    if (!scrollEl) return null;
+    const rect = scrollEl.getBoundingClientRect();
     const scrollLeft = scrollEl.scrollLeft || 0;
     const scrollTop = scrollEl.scrollTop || 0;
     const x = (e.clientX - rect.left + scrollLeft) / zoom;

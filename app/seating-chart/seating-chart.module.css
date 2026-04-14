@@ -11,6 +11,8 @@
   --sc-mariner-extra: #eaf2fb;
   --sc-negative: #ed1c24;
   --sc-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 0 2px rgba(0, 0, 0, 0.12);
+  /* Sidebar “block” frame (thicker than default hairlines) */
+  --sc-panel-block-border: #aeb4c4;
   font-family: var(--font-seating-open), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 24px;
@@ -36,12 +38,13 @@
   padding: 16px 24px 24px;
 }
 
+/* No outer border here — it stacked with .canvasDropZone’s border (double frame + white gutter). */
 .mainContainer {
   display: flex;
   flex: 1;
   min-height: 0;
   gap: 0;
-  border: 1px solid var(--sc-border);
+  border: none;
   border-radius: 8px;
   overflow: hidden;
   background: var(--sc-white);
@@ -53,7 +56,9 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--sc-border);
+  border: 3px solid var(--sc-panel-block-border);
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
   background: var(--sc-white);
 }
 
@@ -343,7 +348,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--sc-solitude);
+  background: var(--sc-white);
 }
 
 .furnitureWrapper {
@@ -355,6 +360,7 @@
   overflow: hidden;
 }
 
+/* White canvas column outside the box; visible frame on the drop zone only */
 .canvasDropZone {
   flex: 1;
   position: relative;
@@ -363,22 +369,14 @@
   border-radius: 8px;
   background: #ffffff;
   border: 2px solid var(--sc-border);
+  overscroll-behavior: contain;
 }
 
 .canvasInnerScroll {
   position: absolute;
   inset: 0;
-  overflow: auto;
-}
-
-.canvasInnerScroll::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.canvasInnerScroll::-webkit-scrollbar-thumb {
-  background: var(--sc-border);
-  border-radius: 5px;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .canvasStage {
@@ -543,5 +541,6 @@
   .sidePanel {
     width: 100%;
     max-height: 320px;
+    border-radius: 16px 16px 0 0;
   }
 }
