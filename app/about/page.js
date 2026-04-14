@@ -158,7 +158,7 @@ export default function AboutUs() {
           <div className="w-1/2 max-[991.98px]:w-[70%] max-[767.98px]:w-[80%] max-[575.98px]:w-full">
             <div className="relative mr-auto w-full max-w-[482px] overflow-hidden" style={{ aspectRatio: "482 / 316" }}>
               <Image
-                src="/c4c%20about%20us.png"
+                src="/c4c%20about%20us%20%281%29.png"
                 alt="Code4Community at Broad Run High School — school spirit on the fence"
                 fill
                 className="object-cover object-center"
