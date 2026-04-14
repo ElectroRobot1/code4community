@@ -1,5 +1,17 @@
 import { withAppCheck } from "@/utils/appCheck";
 import { avatarRouteRateLimit } from "@/utils/rateLimit";
+import sharp from "sharp";
+
+const AVATAR_FETCH_TIMEOUT_MS = 8000;
+const DEFAULT_AVATAR_SIZE = 96;
+const MIN_AVATAR_SIZE = 32;
+const MAX_AVATAR_SIZE = 256;
+
+function normalizeRequestedSize(szParam) {
+  const parsed = parseInt(szParam || `${DEFAULT_AVATAR_SIZE}`, 10);
+  if (Number.isNaN(parsed)) return DEFAULT_AVATAR_SIZE;
+  return Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, parsed));
+}
 
 async function avatarHandler(request) {
   try {
@@ -36,19 +48,12 @@ async function avatarHandler(request) {
       return new Response("Host not allowed", { status: 400 });
     }
 
-    // Normalize Google avatar URL to a specific size
-    const size = (() => {
-      const n = parseInt(szParam || "96", 10);
-      if (Number.isNaN(n)) return 96;
-      return Math.min(256, Math.max(32, n));
-    })();
-
-    // Strip any existing Google size/transform suffix in the path (e.g., "=s96-c" or other variants)
-    const cleanedPathname = parsedUrl.pathname.replace(/=[^/]*$/, "");
-    const normalizedUrl = `${parsedUrl.origin}${cleanedPathname}=s${size}-c`;
+    const size = normalizeRequestedSize(szParam);
+    // Keep only the original image URL and apply consistent resizing server-side.
+    const normalizedUrl = `${parsedUrl.origin}${parsedUrl.pathname}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), AVATAR_FETCH_TIMEOUT_MS);
     const upstreamResponse = await fetch(normalizedUrl, {
       // Revalidate daily; let platforms like Vercel cache at the edge
       next: { revalidate: 86400 },
@@ -66,15 +71,21 @@ async function avatarHandler(request) {
       });
     }
 
-    const contentType =
-      upstreamResponse.headers.get("content-type") || "image/jpeg";
-    const arrayBuffer = await upstreamResponse.arrayBuffer();
-    const contentLength = arrayBuffer.byteLength.toString();
+    const sourceBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
+    const resizedBuffer = await sharp(sourceBuffer)
+      .resize(size, size, {
+        fit: "cover",
+        position: "center",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+    const contentLength = resizedBuffer.byteLength.toString();
 
-    return new Response(arrayBuffer, {
+    return new Response(resizedBuffer, {
       status: 200,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": "image/jpeg",
         "Cache-Control":
           "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
         "Content-Length": contentLength,
