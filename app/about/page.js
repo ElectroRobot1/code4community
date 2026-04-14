@@ -2,8 +2,15 @@
 import { useLayoutEffect, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Lato } from "next/font/google";
 import DashboardTopBar from "../../components/DashboardTopBar";
 import Footer from "../../components/Footer";
+
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+});
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=80";
@@ -46,6 +53,17 @@ const members = [
 ];
 
 const merriweatherStyle = { fontFamily: "'Merriweather', Georgia, serif" };
+
+/** DeltaMath-style about description — font comes from `lato.className` on the section */
+const aboutBlurbDescriptionStyle = {
+  margin: 0,
+  padding: 0,
+  fontSize: "16px",
+  fontWeight: 400,
+  letterSpacing: "-0.2px",
+  lineHeight: 1.6,
+  WebkitFontSmoothing: "antialiased",
+};
 
 function TeamMemberCard({ member, onOpen }) {
   return (
@@ -130,44 +148,49 @@ export default function AboutUs() {
         </div>
       </div>
 
-      {/* About blurb */}
-      <div className="bg-background pt-6 pb-14 md:pt-8 md:pb-16 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-5 gap-10 md:gap-12 items-start">
-            <div className="order-2 md:order-none md:col-span-2 md:mt-10">
-              <div className="aspect-square max-w-xs relative rounded-lg overflow-hidden bg-muted shadow-md border border-border flex items-center justify-center p-6">
-                <Image
-                  src="/c4c.png"
-                  alt="Code4Community logo"
-                  width={200}
-                  height={200}
-                  className="object-contain w-full h-full"
-                />
-              </div>
-            </div>
-            <div className="order-1 md:order-none md:col-span-3">
-              <div className="max-w-[30.24rem] space-y-5 [&_p]:text-[0.88rem] [&_p]:text-black [&_p]:dark:text-neutral-100 [&_p]:leading-[1.75]">
-                <p>
-                 Shail Shah created Code4Community in 2023 when he wrote a simple program on calculating grades with new assignments. Positive student response prompted him to kick into gear and create content for the rest of the school year.
-                  
-                </p>
-                <p>
-                Code4Community was started as a club at Broad Run High School to build software that
-                  teachers and organizations at our school could use. After building hundreds of
-                  applications and having great success, we decided to expand to helping create services
-                  to benefit our community, free of charge. 
-                  Our goal is to help organizations and the community through technology by building the
-                  tools and software they need to work better. We focus on practical, free solutions
-                  that make a real difference for teams and users.
-                </p>
-              </div>
-              <Link
-                href="/contact"
-                className="inline-block mt-6 px-6 py-3 bg-background border-2 border-foreground text-foreground font-medium rounded-lg hover:bg-foreground hover:text-background transition-colors"
+      {/* About blurb — DeltaMath-like container sizing and spacing */}
+      <div className="bg-background px-6 py-10 md:px-0 md:py-0">
+        <div
+          className={`${lato.className} mx-auto box-border flex w-full max-w-[1200px] flex-col items-center justify-evenly gap-8 md:flex-row md:px-[80px] md:py-[50px]`}
+        >
+          <div className="relative aspect-video w-full max-w-[482px] shrink-0 overflow-hidden bg-muted">
+            <Image
+              src="/c4c%20about%20us.png"
+              alt="Code4Community at Broad Run High School — school spirit on the fence"
+              fill
+              className="object-cover object-center"
+              sizes="482px"
+            />
+          </div>
+          <div className="w-full max-w-[17em] text-left md:max-w-[40em]">
+            <div>
+              <p
+                className="mb-[1.6em] text-[#212121] dark:text-neutral-200"
+                style={aboutBlurbDescriptionStyle}
               >
-                Contact Us
-              </Link>
+                Shail Shah created Code4Community in 2023 when he wrote a simple program on calculating
+                grades with new assignments. Positive student response prompted him to kick into gear and
+                create content for the rest of the school year.
+              </p>
+              <p
+                className="text-[#212121] dark:text-neutral-200"
+                style={aboutBlurbDescriptionStyle}
+              >
+                Code4Community was started as a club at Broad Run High School to build software that
+                teachers and organizations at our school could use. After building hundreds of
+                applications and having great success, we decided to expand to helping create services to
+                benefit our community, free of charge. Our goal is to help organizations and the community
+                through technology by building the tools and software they need to work better. We focus
+                on practical, free solutions that make a real difference for teams and users.
+              </p>
             </div>
+            <Link
+              href="/contact"
+              className="mt-5 inline-flex h-9 min-w-[120px] items-center justify-center border border-[#999] bg-transparent px-4 text-sm font-normal text-[#212121] transition-colors hover:bg-foreground hover:text-background"
+              style={{ letterSpacing: "-0.2px" }}
+            >
+              Contact Us
+            </Link>
           </div>
         </div>
       </div>

@@ -173,12 +173,17 @@ export default function LoginPage() {
           </form>
 
           <div className="relative my-4">
-            <span className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </span>
-            <span className="relative flex justify-center text-xs uppercase tracking-wider text-muted-foreground">
-              Or continue with
-            </span>
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center"
+              aria-hidden
+            >
+              <div className="h-px w-full bg-border" />
+            </div>
+            <div className="relative z-10 flex justify-center">
+              <span className="bg-background px-4 py-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
           </div>
 
           <button
