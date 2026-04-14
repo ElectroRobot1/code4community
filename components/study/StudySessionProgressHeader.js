@@ -28,6 +28,16 @@ const STAR_LABELS = ["First star!", "Second star!", "Third star!", "Fourth star!
 const STAR_PATH =
   "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z";
 
+function getBurstTier(prevCorrect, nextCorrect) {
+  for (let i = 0; i < GROUP_THRESHOLDS.length; i += 1) {
+    const threshold = GROUP_THRESHOLDS[i];
+    if (prevCorrect < threshold && nextCorrect >= threshold) {
+      return i;
+    }
+  }
+  return null;
+}
+
 function StarIcon({ filled, ringClass }) {
   return (
     <svg
@@ -100,6 +110,8 @@ export default function StudySessionProgressHeader({
   const [burstTier, setBurstTier] = useState(null);
   const initializedRef = useRef(false);
   const prevCorrectRef = useRef(0);
+  const burstStartTimerRef = useRef(null);
+  const burstClearTimerRef = useRef(null);
 
   useEffect(() => {
     if (!initializedRef.current) {
@@ -108,23 +120,38 @@ export default function StudySessionProgressHeader({
       return;
     }
     const prev = prevCorrectRef.current;
-    if (questionsCorrect <= prev) {
-      prevCorrectRef.current = questionsCorrect;
-      return;
-    }
-    for (let i = 0; i < GROUP_THRESHOLDS.length; i++) {
-      const t = GROUP_THRESHOLDS[i];
-      if (prev < t && questionsCorrect >= t) {
-        setBurstTier(i);
-        prevCorrectRef.current = questionsCorrect;
-        const timer = window.setTimeout(() => setBurstTier(null), 2500);
-        return () => window.clearTimeout(timer);
+    if (questionsCorrect > prev) {
+      const tier = getBurstTier(prev, questionsCorrect);
+      if (tier !== null) {
+        if (burstStartTimerRef.current) {
+          window.clearTimeout(burstStartTimerRef.current);
+        }
+        if (burstClearTimerRef.current) {
+          window.clearTimeout(burstClearTimerRef.current);
+        }
+        burstStartTimerRef.current = window.setTimeout(() => {
+          setBurstTier(tier);
+          burstStartTimerRef.current = null;
+        }, 0);
+        burstClearTimerRef.current = window.setTimeout(() => {
+          setBurstTier(null);
+          burstClearTimerRef.current = null;
+        }, 2500);
       }
     }
     prevCorrectRef.current = questionsCorrect;
   }, [questionsCorrect]);
 
-  let segmentIndex = 0;
+  useEffect(() => {
+    return () => {
+      if (burstStartTimerRef.current) {
+        window.clearTimeout(burstStartTimerRef.current);
+      }
+      if (burstClearTimerRef.current) {
+        window.clearTimeout(burstClearTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
@@ -170,11 +197,12 @@ export default function StudySessionProgressHeader({
         role="group"
         aria-label={`Session progress: ${questionsAnswered} question${questionsAnswered === 1 ? "" : "s"} completed out of ${totalQuestions} loaded`}
       >
-        {GROUP_SIZES.map((size, gi) => (
+        {GROUP_SIZES.map((size, gi) => {
+          const groupStart = GROUP_SIZES.slice(0, gi).reduce((sum, current) => sum + current, 0);
+          return (
           <div key={gi} className="flex gap-0.5 flex-1 min-w-0">
             {Array.from({ length: size }, (_, j) => {
-              const idx = segmentIndex;
-              segmentIndex += 1;
+              const idx = groupStart + j;
               const filled = idx < filledSegments;
               return (
                 <div
@@ -186,7 +214,8 @@ export default function StudySessionProgressHeader({
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

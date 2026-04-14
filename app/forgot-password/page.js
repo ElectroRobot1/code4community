@@ -3,9 +3,8 @@
 import { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
-import { auth, sendPasswordResetEmail } from "../../firebase";
+import { AppPageLayout, CenteredMain } from "@/components/common/AppPageLayout";
+import { auth, sendPasswordResetEmail } from "@/firebase";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -38,10 +37,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+    <AppPageLayout>
+      <CenteredMain className="py-12">
         <div className="w-full max-w-md">
           <div className="flex justify-center mb-8">
             <Image src="/c4c.png" alt="Code4Community" width={56} height={56} />
@@ -100,9 +97,7 @@ export default function ForgotPasswordPage() {
             </Link>
           </p>
         </div>
-      </div>
-
-      <Footer />
-    </div>
+      </CenteredMain>
+    </AppPageLayout>
   );
 }

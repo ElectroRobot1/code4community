@@ -4,9 +4,9 @@ import { useLayoutEffect, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { firestore } from "../../firebase";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { firestore } from "@/firebase";
+import { AppPageLayout, CenteredMain } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
 import { useAuth } from "@/utils/AuthContext";
 
 const ADMIN_EMAIL = "shail40926@gmail.com";
@@ -55,15 +55,7 @@ export default function AdminPage() {
   }, [authLoading, user, router]);
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <DashboardTopBar title="Code4Community" showNavLinks={true} />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Loading…</p>
-        </div>
-        <Footer />
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   if (!user) {
@@ -72,24 +64,20 @@ export default function AdminPage() {
 
   if (user.email !== ADMIN_EMAIL) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <DashboardTopBar title="Code4Community" showNavLinks={true} />
-        <div className="flex-1 flex items-center justify-center px-6">
+      <AppPageLayout>
+        <CenteredMain className="px-6">
           <div className="text-center">
             <h1 className="text-xl font-semibold text-foreground mb-2">Access denied</h1>
             <p className="text-muted-foreground mb-4">This page is for administrators only.</p>
             <Link href="/" className="text-primary hover:underline">Back to home</Link>
           </div>
-        </div>
-        <Footer />
-      </div>
+        </CenteredMain>
+      </AppPageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
+    <AppPageLayout>
       <div className="border-t border-border bg-muted/20 flex-1">
         <div className="max-w-4xl mx-auto px-6 pt-6 pb-10">
           <h1 className="text-2xl font-bold text-foreground mb-2">Admin dashboard</h1>
@@ -169,8 +157,6 @@ export default function AdminPage() {
           )}
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

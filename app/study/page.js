@@ -2,10 +2,10 @@
 
 import { useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../utils/AuthContext";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
-import StudyQuiz from "../../components/study/StudyQuiz";
+import { useAuth } from "@/utils/AuthContext";
+import StudyQuiz from "@/components/study/StudyQuiz";
+import { AppPageLayout, ContainerMain } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
 
 export default function StudyPage() {
   const router = useRouter();
@@ -27,24 +27,16 @@ export default function StudyPage() {
   }, [user, authLoading, router]);
 
   if (authLoading || !user || !user.emailVerified) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 container mx-auto px-6 py-4 md:py-6">
+    <AppPageLayout>
+      <ContainerMain className="py-4 md:py-6">
         <div className="max-w-6xl mx-auto w-full min-w-0 space-y-6">
           <StudyQuiz user={user} />
         </div>
-      </div>
-
-      <Footer />
-    </div>
+      </ContainerMain>
+    </AppPageLayout>
   );
 }

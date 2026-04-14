@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useLayoutEffect } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 
 export default function YearbookFormatting() {
   useLayoutEffect(() => {
@@ -227,8 +226,7 @@ export default function YearbookFormatting() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Yearbook Formatting" />
+    <AppPageLayout title="Yearbook Formatting">
       
       <div className="flex-1 px-6 py-4">
         <div className="max-w-7xl mx-auto">
@@ -325,8 +323,7 @@ Grade: 12`}
         </div>
       </div>
       
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }
 

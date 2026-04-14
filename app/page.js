@@ -3,11 +3,11 @@ import { useLayoutEffect, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../utils/AuthContext";
-import DashboardTopBar from "../components/DashboardTopBar";
-import Footer from "../components/Footer";
-import WorkProjectTile from "../components/WorkProjectTile";
-import { getFeaturedWorkProjects } from "../lib/workProjects";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
+import WorkProjectTile from "@/components/WorkProjectTile";
+import { useAuth } from "@/utils/AuthContext";
+import { getFeaturedWorkProjects } from "@/lib/workProjects";
 
 // Partner logos: add / replace with your partner images in public/
 const partners = [
@@ -114,17 +114,11 @@ export default function Home() {
   const visibleText = heroPhrases[phraseIndex].slice(0, displayLength);
 
   if (authLoading || user) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
+    <AppPageLayout>
       {/* Split hero + dashboard */}
       <div className="flex-1 flex flex-col lg:flex-row lg:min-h-[calc(100vh-4rem)]">
         {/* Left: Hero */}
@@ -333,7 +327,6 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

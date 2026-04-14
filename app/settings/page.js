@@ -2,10 +2,10 @@
 
 import { useLayoutEffect, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
-import { useAuth } from "../../utils/AuthContext";
-import StudyStatsSection from "../../components/settings/StudyStatsSection";
+import { AppPageLayout, ContainerMain } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
+import { useAuth } from "@/utils/AuthContext";
+import StudyStatsSection from "@/components/settings/StudyStatsSection";
 import {
   auth,
   updateProfile,
@@ -14,7 +14,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   sendPasswordResetEmail,
-} from "../../firebase";
+} from "@/firebase";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -191,18 +191,12 @@ export default function SettingsPage() {
   }, [personalModalOpen, closePersonalModal]);
 
   if (authLoading || !user || !user.emailVerified) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 container mx-auto px-6 py-12">
+    <AppPageLayout>
+      <ContainerMain className="py-12">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
           <p className="text-muted-foreground mb-8">Manage your account details.</p>
@@ -247,7 +241,7 @@ export default function SettingsPage() {
 
           <StudyStatsSection user={user} />
         </div>
-      </div>
+      </ContainerMain>
 
       {personalModalOpen && (
         <div
@@ -446,7 +440,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

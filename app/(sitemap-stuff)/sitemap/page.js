@@ -1,19 +1,19 @@
-import Link from 'next/link';
-import DashboardTopBar from '../../../components/DashboardTopBar';
+import Link from "next/link";
+import DashboardTopBar from "@/components/DashboardTopBar";
 
 export default function SitemapPage() {
   const publicPages = [
-    { path: '/', title: 'Home', description: 'Main landing page' },
-    { path: '/about', title: 'About Us', description: 'Learn about Code4Community' },
-    { path: '/services', title: 'Services', description: 'Our available services and tools' },
-    { path: '/work', title: 'Our Work', description: 'Student-built tools and projects' },
-    { path: '/grade-calculator', title: 'Grade Calculator', description: 'Calculate your grades' },
-    { path: '/yearbook-formatting', title: 'Yearbook Formatting', description: 'Format student names for yearbook captions' },
-    { path: '/seating-chart', title: 'Seating Chart', description: 'Classroom seating charts and assignments' },
-    { path: '/contact', title: 'Contact', description: 'Get in touch with us' },
-    { path: '/get-started', title: 'Get Started', description: 'Request a tool or get started with us' },
-    { path: '/privacy', title: 'Privacy Policy', description: 'Privacy policy' },
-    { path: '/terms', title: 'Terms of Service', description: 'Terms of service' },
+    { path: "/", title: "Home", description: "Main landing page" },
+    { path: "/about", title: "About Us", description: "Learn about Code4Community" },
+    { path: "/services", title: "Services", description: "Our available services and tools" },
+    { path: "/work", title: "Our Work", description: "Student-built tools and projects" },
+    { path: "/grade-calculator", title: "Grade Calculator", description: "Calculate your grades" },
+    { path: "/yearbook-formatting", title: "Yearbook Formatting", description: "Format student names for yearbook captions" },
+    { path: "/seating-chart", title: "Seating Chart", description: "Classroom seating charts and assignments" },
+    { path: "/contact", title: "Contact", description: "Get in touch with us" },
+    { path: "/get-started", title: "Get Started", description: "Request a tool or get started with us" },
+    { path: "/privacy", title: "Privacy Policy", description: "Privacy policy" },
+    { path: "/terms", title: "Terms of Service", description: "Terms of service" },
   ];
 
   return (

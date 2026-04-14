@@ -25,7 +25,6 @@ export default function MathText({ latex, display = false, inline = false, class
   return (
     <span
       className={`math-text ${modeClass} ${className}`}
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

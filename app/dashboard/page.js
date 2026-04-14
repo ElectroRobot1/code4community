@@ -2,11 +2,11 @@
 
 import { useLayoutEffect, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../utils/AuthContext";
+import { useAuth } from "@/utils/AuthContext";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
-import { firestore } from "../../firebase";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { firestore } from "@/firebase";
+import { AppPageLayout, ContainerMain } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
 
 const TIMELINE_OPTIONS = [
   { value: "", label: "Select timeline…" },
@@ -96,11 +96,7 @@ export default function DashboardPage() {
   }, [user?.email]);
 
   if (authLoading || !user || !user.emailVerified) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   const handleFormChange = (e) => {
@@ -147,10 +143,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 container mx-auto px-6 py-12">
+    <AppPageLayout>
+      <ContainerMain className="py-12">
         <div className="max-w-2xl mx-auto space-y-10">
           <div>
             <div className="mb-6">
@@ -372,9 +366,7 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
-
-      <Footer />
-    </div>
+      </ContainerMain>
+    </AppPageLayout>
   );
 }

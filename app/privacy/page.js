@@ -1,6 +1,6 @@
 "use client";
 import { useLayoutEffect } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
+import DashboardTopBar from "@/components/DashboardTopBar";
 
 export default function PrivacyPolicy() {
   useLayoutEffect(() => {

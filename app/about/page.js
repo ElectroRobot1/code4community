@@ -3,8 +3,7 @@ import { useLayoutEffect, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Lato } from "next/font/google";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 
 const lato = Lato({
   subsets: ["latin"],
@@ -119,8 +118,7 @@ export default function AboutUs() {
   }, [modalMember]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
+    <AppPageLayout>
 
       {/* Hero */}
       <div className="relative text-white py-20 md:py-28 px-6 md:px-12 lg:px-16 overflow-hidden -mt-6">
@@ -276,7 +274,6 @@ export default function AboutUs() {
         </div>
       )}
 
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

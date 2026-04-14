@@ -4,14 +4,16 @@ import { useLayoutEffect, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import DashboardTopBar from "../../../components/DashboardTopBar";
-import Footer from "../../../components/Footer";
-import { auth, applyActionCode } from "../../../firebase";
+import { AppPageLayout, CenteredMain } from "@/components/common/AppPageLayout";
+import { auth, applyActionCode } from "@/firebase";
 
 export default function AuthVerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState("checking"); // 'checking' | 'success' | 'expired' | 'invalid'
+  const oobCode = searchParams.get("oobCode");
+  const mode = searchParams.get("mode");
+  const hasInvalidLink = mode !== "verifyEmail" || !oobCode;
+  const [status, setStatus] = useState(hasInvalidLink ? "invalid" : "checking"); // 'checking' | 'success' | 'expired' | 'invalid'
   const [errorMessage, setErrorMessage] = useState(null);
 
   useLayoutEffect(() => {
@@ -19,11 +21,7 @@ export default function AuthVerifyEmailPage() {
   }, []);
 
   useEffect(() => {
-    const oobCode = searchParams.get("oobCode");
-    const mode = searchParams.get("mode");
-
-    if (mode !== "verifyEmail" || !oobCode) {
-      setStatus("invalid");
+    if (hasInvalidLink || !oobCode) {
       return;
     }
 
@@ -57,13 +55,11 @@ export default function AuthVerifyEmailPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [searchParams, router]);
+  }, [hasInvalidLink, oobCode, router]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+    <AppPageLayout>
+      <CenteredMain className="py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-6">
             <Image src="/c4c.png" alt="Code4Community" width={56} height={56} />
@@ -106,9 +102,7 @@ export default function AuthVerifyEmailPage() {
             </>
           )}
         </div>
-      </div>
-
-      <Footer />
-    </div>
+      </CenteredMain>
+    </AppPageLayout>
   );
 }

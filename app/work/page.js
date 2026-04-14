@@ -2,8 +2,7 @@
 
 import { useLayoutEffect, useEffect } from "react";
 import Link from "next/link";
-import DashboardTopBar from "@/components/DashboardTopBar";
-import Footer from "@/components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 import WorkProjectTile from "@/components/WorkProjectTile";
 import { WORK_PROJECTS } from "@/lib/workProjects";
 
@@ -20,9 +19,7 @@ export default function WorkPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
+    <AppPageLayout>
       <main className="flex-1 border-t border-border px-6 py-12 md:py-16">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2">Our Work</h1>
@@ -53,8 +50,6 @@ export default function WorkPage() {
           </p>
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

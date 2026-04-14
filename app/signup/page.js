@@ -4,10 +4,17 @@ import { useState, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
-import { useAuth } from "../../utils/AuthContext";
-import { auth, provider, createUserWithEmailAndPassword, signInWithPopup, updateProfile, sendEmailVerification } from "../../firebase";
+import { AppPageLayout, CenteredMain } from "@/components/common/AppPageLayout";
+import FullPageLoading from "@/components/common/FullPageLoading";
+import { useAuth } from "@/utils/AuthContext";
+import {
+  auth,
+  provider,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+  sendEmailVerification,
+} from "@/firebase";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -93,11 +100,7 @@ export default function SignupPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   if (user) {
@@ -105,10 +108,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
-
-      <div className="flex-1 flex items-center justify-center px-6 py-8 min-h-0">
+    <AppPageLayout>
+      <CenteredMain className="py-8 min-h-0">
         <div className="w-full max-w-md">
           <div className="flex justify-center mb-4">
             <Image src="/c4c.png" alt="Code4Community" width={48} height={48} />
@@ -302,9 +303,7 @@ export default function SignupPage() {
             </Link>
           </p>
         </div>
-      </div>
-
-      <Footer />
-    </div>
+      </CenteredMain>
+    </AppPageLayout>
   );
 }

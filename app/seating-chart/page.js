@@ -2,7 +2,7 @@
 
 import { Lexend_Deca, Open_Sans } from "next/font/google";
 import React, { useState, useLayoutEffect, useRef, useCallback, useEffect, useMemo } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
+import DashboardTopBar from "@/components/DashboardTopBar";
 import styles from "./seating-chart.module.css";
 
 /** Gynzy-style typography for this page only (does not change global layout fonts). */

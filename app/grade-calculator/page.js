@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useLayoutEffect } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 
 export default function GradeCalculator() {
   useLayoutEffect(() => {
@@ -169,7 +168,6 @@ export default function GradeCalculator() {
     
     // If we found assignments section, parse from there
     if (assignmentsStartIndex >= 0) {
-      console.log("🔍 Found assignments section at line", assignmentsStartIndex);
       // Parse assignments systematically
       // Pattern: Date -> Name -> Category -> Score info
       let i = assignmentsStartIndex;
@@ -186,9 +184,6 @@ export default function GradeCalculator() {
         
         if (dateMatch) {
           const date = dateMatch[1];
-          console.log(`\n📅 Found date: ${date} at line ${i}`);
-          console.log(`   Line content: "${line}"`);
-          console.log(`   Raw line: "${lines[i]}"`);
           let assignmentName = "";
           let category = "Other";
           let earned = 0;
@@ -201,7 +196,6 @@ export default function GradeCalculator() {
           let categoryFound = false;
           let shouldBreak = false;
           
-          console.log(`   Looking ahead from line ${i + 1} to ${Math.min(i + 15, lines.length)}`);
           
           // Extract assignment name (usually the next non-empty line after date)
           while (j < Math.min(i + 15, lines.length) && !shouldBreak) {
@@ -253,7 +247,6 @@ export default function GradeCalculator() {
                     !potentialName.match(/^\d+\.?\d*\/\d+\.?\d*$/) && !potentialName.match(/out of/i)) {
                   assignmentName = potentialName;
                   nameFound = true;
-                  console.log(`   ✅ Found name: "${assignmentName}" at line ${j}`);
                 }
               } else {
                 // Not tab-separated, use the whole line if it's substantial
@@ -261,7 +254,6 @@ export default function GradeCalculator() {
                     !nextLine.match(/out of/i) && !nextLine.match(/^\d+$/)) {
                   assignmentName = nextLine;
                   nameFound = true;
-                  console.log(`   ✅ Found name: "${assignmentName}" at line ${j}`);
                 }
               }
             }
@@ -271,15 +263,12 @@ export default function GradeCalculator() {
               if (nextLine.includes("Major Summative")) {
                 category = "Major Summative";
                 categoryFound = true;
-                console.log(`   ✅ Found category: "${category}" at line ${j}`);
               } else if (nextLine.includes("Minor Summative")) {
                 category = "Minor Summative";
                 categoryFound = true;
-                console.log(`   ✅ Found category: "${category}" at line ${j}`);
               } else if (nextLine.includes("Graded Formative")) {
                 category = "Graded Formative";
                 categoryFound = true;
-                console.log(`   ✅ Found category: "${category}" at line ${j}`);
               }
             }
             
@@ -291,7 +280,6 @@ export default function GradeCalculator() {
                 earned = parseFloat(outOfMatch[1]);
                 possible = parseFloat(outOfMatch[2]);
                 foundScore = true;
-                console.log(`   ✅ Found score (out of): ${earned}/${possible} at line ${j}`);
               }
               
               // Format 2: "Raw Score	X.XX/Y.YYY"
@@ -301,7 +289,6 @@ export default function GradeCalculator() {
                   earned = parseFloat(rawScoreMatch[1]);
                   possible = parseFloat(rawScoreMatch[2]);
                   foundScore = true;
-                  console.log(`   ✅ Found score (Raw Score): ${earned}/${possible} at line ${j}`);
                 }
               }
               
@@ -319,7 +306,6 @@ export default function GradeCalculator() {
                       earned = num1;
                       possible = num2;
                       foundScore = true;
-                      console.log(`   ✅ Found score (X/Y): ${earned}/${possible} at line ${j}`);
                     }
                   }
                 }
@@ -337,23 +323,15 @@ export default function GradeCalculator() {
                     earned = num1;
                     possible = num2;
                     foundScore = true;
-                    console.log(`   ✅ Found score (tab-separated): ${earned}/${possible} at line ${j}`);
                   }
                 }
               }
-            }
-            
-            // Debug: show what we're checking
-            if (j <= i + 5) {
-              console.log(`   🔍 Line ${j}: "${nextLine.substring(0, 50)}${nextLine.length > 50 ? '...' : ''}"`);
             }
             
             j++;
           }
           
           // Only add if we found a valid score
-          console.log(`   📊 Summary for ${date}: name="${assignmentName}", category="${category}", score=${foundScore ? `${earned}/${possible}` : 'NOT FOUND'}`);
-          
           if (foundScore && possible > 0) {
             // If we don't have a name but have a category, try to get name from context
             if (!assignmentName && category !== "Other") {
@@ -365,7 +343,6 @@ export default function GradeCalculator() {
                     prevLine.length > 2) {
                   assignmentName = prevLine.split('\t')[0].trim();
                   if (assignmentName && !navigationItems.includes(assignmentName)) {
-                    console.log(`   🔄 Found name from context: "${assignmentName}"`);
                     break;
                   }
                 }
@@ -374,7 +351,6 @@ export default function GradeCalculator() {
             
             // Filter out entries with very generic names (but allow if we have a category)
             if (assignmentName && assignmentName.length < 3 && category === "Other") {
-              console.log(`   ❌ Skipping: name too short and no category`);
               i = shouldBreak ? j - 1 : j;
               continue;
             }
@@ -382,7 +358,6 @@ export default function GradeCalculator() {
             // If we still don't have a name, generate one
             if (!assignmentName) {
               assignmentName = `Assignment ${parsedAssignments.length + 1}`;
-              console.log(`   🔄 Generated name: "${assignmentName}"`);
             }
             
             // If we don't have a category, try to infer from context or use "Other"
@@ -391,13 +366,10 @@ export default function GradeCalculator() {
               const contextText = lines.slice(i, Math.min(i + 10, lines.length)).join(' ');
               if (contextText.includes("Major Summative")) {
                 category = "Major Summative";
-                console.log(`   🔄 Inferred category from context: "${category}"`);
               } else if (contextText.includes("Minor Summative")) {
                 category = "Minor Summative";
-                console.log(`   🔄 Inferred category from context: "${category}"`);
               } else if (contextText.includes("Graded Formative")) {
                 category = "Graded Formative";
-                console.log(`   🔄 Inferred category from context: "${category}"`);
               }
             }
             
@@ -417,9 +389,6 @@ export default function GradeCalculator() {
                 originalEarned: earned,
                 originalPossible: possible
               });
-              console.log(`   ✅ ADDED assignment: ${date} - ${assignmentName} (${category}) ${earned}/${possible}`);
-            } else {
-              console.log(`   ⚠️  Skipping duplicate: ${date} - ${assignmentName}`);
             }
             
             // Move to the next assignment
@@ -432,24 +401,14 @@ export default function GradeCalculator() {
               i = j - 1; // Continue from where we stopped (j was incremented at end of inner loop)
             }
           } else {
-            console.log(`   ❌ SKIPPING: No valid score found (foundScore=${foundScore}, possible=${possible})`);
             // Move forward even if we didn't find a complete assignment
             i++;
           }
         } else {
-          // Debug: log if we're in the assignments section and skipping a line that might be a date
-          if (i >= assignmentsStartIndex && i < assignmentsStartIndex + 100) {
-            // Check if this line looks like it might have a date (but didn't match our strict pattern)
-            const mightBeDate = line.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
-            if (mightBeDate && !line.includes("Marking Period") && !line.includes("Grade Calculation")) {
-              console.log(`   ⚠️  Line ${i} might contain a date but didn't match: "${line.substring(0, 50)}"`);
-            }
-          }
           i++;
         }
       }
     } else {
-      console.log("⚠️  Assignments section not found, using fallback method");
       // Fallback: try to find assignments without "Assignments" header
       // Use the old method as backup
       for (let i = 0; i < lines.length; i++) {
@@ -533,16 +492,6 @@ export default function GradeCalculator() {
         }
       }
     }
-
-    console.log(`\n📋 PARSING SUMMARY:`);
-    console.log(`   Course: ${parsedCourseName || "Unknown"}`);
-    console.log(`   Grade: ${parsedCurrentGrade} (${parsedCurrentPercent}%)`);
-    console.log(`   Category Weights:`, parsedWeights);
-    console.log(`   Assignments Found: ${parsedAssignments.length}`);
-    parsedAssignments.forEach((a, idx) => {
-      console.log(`   ${idx + 1}. ${a.date} - ${a.name} (${a.category}) ${a.earned}/${a.possible}`);
-    });
-    console.log(`\n`);
 
     return {
       courseName: parsedCourseName || "Unknown Course",
@@ -847,8 +796,7 @@ export default function GradeCalculator() {
   const newGrade = getLetterGrade(newPercent);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Grade Calculator" />
+    <AppPageLayout title="Grade Calculator">
       
       <div className="flex-1 px-6 py-4">
         <div className="max-w-7xl mx-auto">
@@ -1064,8 +1012,7 @@ export default function GradeCalculator() {
         </div>
       </div>
       
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }
 

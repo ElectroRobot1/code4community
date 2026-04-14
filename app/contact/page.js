@@ -1,7 +1,6 @@
 "use client";
 import { useLayoutEffect } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 
 export default function Contact() {
   useLayoutEffect(() => {
@@ -9,8 +8,7 @@ export default function Contact() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <DashboardTopBar title="Code4Community" showNavLinks={true} />
+    <AppPageLayout>
 
       {/* Hero: grid extends up to top bar (pull up over the header's margin) */}
       <div className="relative min-h-[28vh] flex flex-col justify-center px-6 py-12 lg:py-16 lg:px-8 xl:px-12 overflow-hidden -mt-6">
@@ -63,7 +61,6 @@ export default function Contact() {
         </div>
       </div>
 
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }

@@ -16,6 +16,7 @@ import {
 import { skillTagLabel } from "@/utils/studyTags";
 
 const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+const STATS_RENDER_NOW = Date.now();
 
 /** Last 42 days as day cells, then pad start so weeks align (Sun–Sat). */
 function buildCalendarGrid(stats) {
@@ -65,13 +66,16 @@ function SubjectSkillTable({ subject, weakness, mastery }) {
   ].filter((k) => (missTags[k] || 0) > 0 || mastTags[k]);
   if (keys.length === 0) return null;
 
-  const now = Date.now();
   const rows = keys.map((k) => {
     const misses = missTags[k] || 0;
     const e = mastTags[k];
     let score = null;
     if (e?.lastAt) {
-      score = decayedMasteryScore(e.score, Date.parse(e.lastAt) || now, now);
+      score = decayedMasteryScore(
+        e.score,
+        Date.parse(e.lastAt) || STATS_RENDER_NOW,
+        STATS_RENDER_NOW
+      );
     }
     return { k, misses, score };
   });
@@ -114,6 +118,31 @@ function SubjectSkillTable({ subject, weakness, mastery }) {
       </p>
     </div>
   );
+}
+
+function buildSubjectSkillRows(subject, weakness, mastery, now) {
+  const sub = subject === "science" ? "science" : "history";
+  const missTags = weakness?.[sub]?.tags || {};
+  const mastTags = mastery?.[sub]?.tags || {};
+  const keys = [...new Set([...Object.keys(missTags), ...Object.keys(mastTags)])].filter(
+    (k) => (missTags[k] || 0) > 0 || mastTags[k]
+  );
+  const rows = keys.map((k) => {
+    const misses = missTags[k] || 0;
+    const e = mastTags[k];
+    let score = null;
+    if (e?.lastAt) {
+      score = decayedMasteryScore(e.score, Date.parse(e.lastAt) || now, now);
+    }
+    return { k, misses, score };
+  });
+  rows.sort((a, b) => {
+    if (a.score === null && b.score === null) return b.misses - a.misses;
+    if (a.score === null) return 1;
+    if (b.score === null) return -1;
+    return a.score - b.score || b.misses - a.misses;
+  });
+  return rows;
 }
 
 function SubjectSkillInsights({ subject, studyWeakness, studyMastery }) {

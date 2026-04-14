@@ -1,7 +1,6 @@
 "use client";
 import { useState, useMemo, useLayoutEffect } from "react";
-import DashboardTopBar from "../../components/DashboardTopBar";
-import Footer from "../../components/Footer";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
 
 export default function Welcome() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,12 +30,7 @@ export default function Welcome() {
 
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Use the reusable DashboardTopBar component */}
-      <DashboardTopBar 
-        title="Code4Community" 
-        showNavLinks={true}
-      />
+    <AppPageLayout>
 
       {/* Header with Welcome and Available Apps */}
       <div className="px-6 py-2">
@@ -145,8 +139,6 @@ export default function Welcome() {
         </div>
       </div>
       
-      {/* Footer */}
-      <Footer />
-    </div>
+    </AppPageLayout>
   );
 }
