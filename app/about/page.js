@@ -55,7 +55,6 @@ const merriweatherStyle = { fontFamily: "'Merriweather', Georgia, serif" };
 
 /** DeltaMath-style about description — font comes from `lato.className` on the section */
 const aboutBlurbDescriptionStyle = {
-  margin: 0,
   padding: 0,
   paddingBottom: "10px",
   fontSize: "16px",
@@ -64,6 +63,12 @@ const aboutBlurbDescriptionStyle = {
   lineHeight: 1.6,
   color: "#292627",
   WebkitFontSmoothing: "antialiased",
+};
+
+const aboutBlurbFirstParaStyle = {
+  ...aboutBlurbDescriptionStyle,
+  marginTop: 0,
+  marginBottom: "1.6em",
 };
 
 function TeamMemberCard({ member, onOpen }) {
@@ -166,12 +171,18 @@ export default function AboutUs() {
           </div>
           <div className="flex w-1/2 flex-col items-start justify-center px-5 py-5 pl-[50px] max-[991.98px]:w-[70%] max-[991.98px]:px-0 max-[991.98px]:pt-[50px] max-[991.98px]:text-center max-[767.98px]:w-[80%] max-[575.98px]:w-full">
             <div>
-              <p className="text-[16px]" style={aboutBlurbDescriptionStyle}>
+              <p
+                className="text-[#212121] dark:text-neutral-200"
+                style={aboutBlurbFirstParaStyle}
+              >
                 Shail Shah created Code4Community in 2023 when he wrote a simple program on calculating
                 grades with new assignments. Positive student response prompted him to kick into gear and
                 create content for the rest of the school year.
               </p>
-              <p className="text-[16px]" style={aboutBlurbDescriptionStyle}>
+              <p
+                className="text-[#212121] dark:text-neutral-200"
+                style={{ ...aboutBlurbDescriptionStyle, margin: 0 }}
+              >
                 Code4Community was started as a club at Broad Run High School to build software that
                 teachers and organizations at our school could use. After building hundreds of
                 applications and having great success, we decided to expand to helping create services to
