@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function GroupDisplay({ groups, students, constraints, onStudentSwap, onStudentAbsence, onRegenerate }) {
+export default function GroupDisplay({ groups, students, constraints, onStudentSwap, onToggleStudentAbsent, onRegenerate }) {
   const [draggedStudent, setDraggedStudent] = useState(null);
   const [draggedFromGroup, setDraggedFromGroup] = useState(null);
   const [draggedFromIndex, setDraggedFromIndex] = useState(null);
@@ -186,14 +186,19 @@ export default function GroupDisplay({ groups, students, constraints, onStudentS
                       
                       <div className="flex space-x-1 ml-2">
                         <button
-                          onClick={() => onStudentAbsence(student?.id)}
+                          type="button"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleStudentAbsent(student?.id);
+                          }}
                           className={`px-2 py-1 text-xs rounded transition-colors ${
                             student?.absent
-                              ? 'bg-red-500 text-white'
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                               : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                           }`}
                         >
-                          {student?.absent ? 'Absent' : 'Mark Absent'}
+                          {student?.absent ? 'Mark present' : 'Mark absent'}
                         </button>
                       </div>
                     </div>
@@ -212,18 +217,6 @@ export default function GroupDisplay({ groups, students, constraints, onStudentS
             </div>
           );
         })}
-      </div>
-
-      {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">How to Use:</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>Drag and drop students between groups to manually adjust</li>
-          <li>Click "Mark Absent" to handle attendance changes</li>
-          <li>Red borders indicate constraint violations</li>
-          <li>Balance scores show how well groups are distributed</li>
-          <li>Click "Regenerate" to create new groups with current settings</li>
-        </ul>
       </div>
 
       {/* Summary Statistics */}

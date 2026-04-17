@@ -22,13 +22,12 @@ export default function GroupGenerator({ embedded = false }) {
     numberOfGroups: 4,
     studentsPerGroup: 4,
     strategy: "balanced", // "balanced", "homogeneous", "heterogeneous", "random"
-    balanceSkills: true,
-    balancePerformance: true,
-    balanceDiversity: false
   });
   const [activeTab, setActiveTab] = useState("roster");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentClass, setCurrentClass] = useState(null);
+  const currentClassRef = useRef(null);
+  currentClassRef.current = currentClass;
 
   // Load current class and its students on mount
   useEffect(() => {
@@ -46,21 +45,38 @@ export default function GroupGenerator({ embedded = false }) {
     }
   }, []);
 
-  // Save students to localStorage whenever they change (for current class)
+  // Save roster; sync currentClass + schoologyClasses. Side effects must NOT run inside setState updaters.
   useEffect(() => {
-    if (currentClass) {
-      const rosterKey = `classRoster-${currentClass.id}`;
-      localStorage.setItem(rosterKey, JSON.stringify(students));
-      
-      // Update the class's last modified time in localStorage without updating state
-      const updatedClass = {
-        ...currentClass,
-        students: students,
-        lastModified: new Date().toISOString()
-      };
-      localStorage.setItem('currentClass', JSON.stringify(updatedClass));
+    const cc = currentClassRef.current;
+    if (!cc?.id) return;
+
+    const rosterKey = `classRoster-${cc.id}`;
+    localStorage.setItem(rosterKey, JSON.stringify(students));
+    const lastModified = new Date().toISOString();
+    const updated = { ...cc, students, lastModified };
+    localStorage.setItem("currentClass", JSON.stringify(updated));
+
+    try {
+      const raw = localStorage.getItem("schoologyClasses");
+      if (raw) {
+        const list = JSON.parse(raw);
+        const idx = list.findIndex((c) => c.id === cc.id);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], students, lastModified };
+          localStorage.setItem("schoologyClasses", JSON.stringify(list));
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
-  }, [students]);
+
+    setCurrentClass(updated);
+
+    const t = window.setTimeout(() => {
+      window.dispatchEvent(new Event("c4c-schoology-classes-updated"));
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [students, currentClass?.id]);
 
   const handleStudentsUpdate = (newStudents) => {
     setStudents(newStudents);
@@ -103,8 +119,14 @@ export default function GroupGenerator({ embedded = false }) {
     setActiveTab("roster");
   };
 
-  const generateGroups = async () => {
-    if (students.length === 0) {
+  /**
+   * @param {unknown} rosterOverride — when a full roster array; non-arrays ignored (e.g. click events).
+   * @param {{ selectResultsTab?: boolean }} [options] — set `selectResultsTab: false` when regenerating from roster absent toggle so the active tab stays on Student Roster.
+   */
+  const generateGroups = async (rosterOverride, { selectResultsTab = true } = {}) => {
+    // Ignore non-arrays (e.g. React passes the click event when using onClick={generateGroups})
+    const roster = Array.isArray(rosterOverride) ? rosterOverride : students;
+    if (roster.length === 0) {
       alert("Please add students first!");
       return;
     }
@@ -115,13 +137,15 @@ export default function GroupGenerator({ embedded = false }) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newGroups = GroupingAlgorithm.generate(
-        students,
+        roster,
         constraints,
         groupingConfig
       );
       
       setGroups(newGroups);
-      setActiveTab("results");
+      if (selectResultsTab) {
+        setActiveTab("results");
+      }
     } catch (error) {
       console.error("Error generating groups:", error);
       alert("Error generating groups. Please check your constraints and try again.");
@@ -138,15 +162,15 @@ export default function GroupGenerator({ embedded = false }) {
     setGroups(newGroups);
   };
 
-  const handleStudentAbsence = (studentId) => {
-    const newStudents = students.map(s => 
-      s.id === studentId ? { ...s, absent: true } : s
+  const handleStudentAbsentToggle = (studentId, { selectResultsTab = true } = {}) => {
+    if (studentId == null) return;
+    const newStudents = students.map((s) =>
+      s.id === studentId ? { ...s, absent: !s.absent } : s
     );
     setStudents(newStudents);
-    
-    // Regenerate groups if needed
+
     if (groups.length > 0) {
-      generateGroups();
+      void generateGroups(newStudents, { selectResultsTab });
     }
   };
 
@@ -182,7 +206,11 @@ export default function GroupGenerator({ embedded = false }) {
                 <p className="text-sm text-blue-700">{students.length} students in roster</p>
               </div>
               <div className="text-sm text-blue-600">
-                Last modified: {new Date(currentClass.lastModified).toLocaleString()}
+                Last modified:{" "}
+                {new Date(currentClass.lastModified).toLocaleString(undefined, {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
               </div>
             </div>
           </div>
@@ -220,6 +248,9 @@ export default function GroupGenerator({ embedded = false }) {
               <StudentRosterManager
                 students={students}
                 onStudentsUpdate={handleStudentsUpdate}
+                onToggleAbsent={(id) =>
+                  handleStudentAbsentToggle(id, { selectResultsTab: false })
+                }
               />
             )}
 
@@ -295,35 +326,11 @@ export default function GroupGenerator({ embedded = false }) {
                   </select>
                 </div>
 
-                {/* Balance Options */}
-                <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-3">Balance Options</h4>
-                  <div className="space-y-2">
-                    {[
-                      { key: "balanceSkills", label: "Balance Skills/Roles" },
-                      { key: "balancePerformance", label: "Balance Academic Performance" },
-                      { key: "balanceDiversity", label: "Balance Diversity Factors" }
-                    ].map((option) => (
-                      <label key={option.key} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={groupingConfig[option.key]}
-                          onChange={(e) => handleConfigUpdate({
-                            ...groupingConfig,
-                            [option.key]: e.target.checked
-                          })}
-                          className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-700">{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Generate Button */}
                 <div className="pt-4">
                   <button
-                    onClick={generateGroups}
+                    type="button"
+                    onClick={() => void generateGroups()}
                     disabled={isGenerating || students.length === 0}
                     className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
@@ -334,24 +341,24 @@ export default function GroupGenerator({ embedded = false }) {
             )}
 
             {activeTab === "results" && (
-              <GroupDisplay
-                groups={groups}
-                students={students}
-                constraints={constraints}
-                onStudentSwap={handleStudentSwap}
-                onStudentAbsence={handleStudentAbsence}
-                onRegenerate={generateGroups}
-              />
+              <div className="space-y-8">
+                <GroupDisplay
+                  groups={groups}
+                  students={students}
+                  constraints={constraints}
+                  onStudentSwap={handleStudentSwap}
+                  onToggleStudentAbsent={handleStudentAbsentToggle}
+                  onRegenerate={() => void generateGroups()}
+                />
+                {groups.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50/80 p-4 md:p-6">
+                    <ExportTools groups={groups} students={students} />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
-
-        {/* Export Tools */}
-        {groups.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <ExportTools groups={groups} students={students} />
-          </div>
-        )}
       </div>
     </div>
   );

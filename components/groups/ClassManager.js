@@ -7,12 +7,23 @@ export default function ClassManager({ currentClass, onClassSelect, onClassCreat
   const [newClassName, setNewClassName] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Load classes from localStorage on mount
-  useEffect(() => {
-    const savedClasses = localStorage.getItem('schoologyClasses');
+  const loadClassesFromStorage = () => {
+    const savedClasses = localStorage.getItem("schoologyClasses");
     if (savedClasses) {
       setClasses(JSON.parse(savedClasses));
     }
+  };
+
+  // Load classes from localStorage on mount
+  useEffect(() => {
+    loadClassesFromStorage();
+  }, []);
+
+  // Refresh list when roster sync updates schoologyClasses (see GroupGenerator)
+  useEffect(() => {
+    const onSync = () => loadClassesFromStorage();
+    window.addEventListener("c4c-schoology-classes-updated", onSync);
+    return () => window.removeEventListener("c4c-schoology-classes-updated", onSync);
   }, []);
 
   // Save classes to localStorage whenever they change

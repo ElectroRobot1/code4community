@@ -3,57 +3,7 @@
 import { useState } from "react";
 
 export default function ExportTools({ groups, students }) {
-  const [exportFormat, setExportFormat] = useState("cards");
   const [includeDetails, setIncludeDetails] = useState(true);
-
-  const generateCSV = () => {
-    const headers = ["Group", "Student Name", "Performance", "Skills", "Absent"];
-    const rows = [headers];
-    
-    groups.forEach(group => {
-      group.members.forEach(student => {
-        rows.push([
-          group.name,
-          student.name,
-          student.performance,
-          (student.skills || []).join("; "),
-          student.absent ? "Yes" : "No"
-        ]);
-      });
-    });
-
-    const csvContent = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-    downloadFile(csvContent, "groups.csv", "text/csv");
-  };
-
-  const generateJSON = () => {
-    const data = {
-      generated: new Date().toISOString(),
-      groups: groups.map(group => ({
-        id: group.id,
-        name: group.name,
-        size: group.size,
-        members: group.members.map(student => ({
-          id: student.id,
-          name: student.name,
-          performance: student.performance,
-          skills: student.skills || [],
-          absent: student.absent,
-          previousGroups: student.previousGroups || []
-        })),
-        constraints: group.constraints || [],
-        balance: group.balance || {}
-      })),
-      summary: {
-        totalGroups: groups.length,
-        totalStudents: students.length,
-        activeStudents: students.filter(s => !s.absent).length
-      }
-    };
-
-    const jsonContent = JSON.stringify(data, null, 2);
-    downloadFile(jsonContent, "groups.json", "application/json");
-  };
 
   const generatePrintableCards = () => {
     const html = `
@@ -267,6 +217,7 @@ export default function ExportTools({ groups, students }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={generatePrintableCards}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
@@ -284,44 +235,11 @@ export default function ExportTools({ groups, students }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={generateSlideDeck}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Generate Slides
-          </button>
-        </div>
-
-        {/* CSV Export */}
-        <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center mb-3">
-            <div className="text-2xl mr-3">📥</div>
-            <div>
-              <h4 className="font-medium text-gray-900">CSV Export</h4>
-              <p className="text-sm text-gray-600">Data for spreadsheets or analysis</p>
-            </div>
-          </div>
-          <button
-            onClick={generateCSV}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Download CSV
-          </button>
-        </div>
-
-        {/* JSON Export */}
-        <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center mb-3">
-            <div className="text-2xl mr-3">📋</div>
-            <div>
-              <h4 className="font-medium text-gray-900">JSON Export</h4>
-              <p className="text-sm text-gray-600">Complete data for backup or import</p>
-            </div>
-          </div>
-          <button
-            onClick={generateJSON}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Download JSON
           </button>
         </div>
 
@@ -335,27 +253,11 @@ export default function ExportTools({ groups, students }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={generateEmailList}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Generate Email List
-          </button>
-        </div>
-
-        {/* Station Mapping */}
-        <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center mb-3">
-            <div className="text-2xl mr-3">📍</div>
-            <div>
-              <h4 className="font-medium text-gray-900">Station Mapping</h4>
-              <p className="text-sm text-gray-600">Assign groups to classroom locations</p>
-            </div>
-          </div>
-          <button
-            onClick={() => alert("Station mapping feature coming soon!")}
-            className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-          >
-            Map Stations
           </button>
         </div>
       </div>

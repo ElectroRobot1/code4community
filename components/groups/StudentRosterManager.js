@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-export default function StudentRosterManager({ students, onStudentsUpdate }) {
+export default function StudentRosterManager({ students, onStudentsUpdate, onToggleAbsent }) {
   const [isParsing, setIsParsing] = useState(false);
   const [manualStudent, setManualStudent] = useState({ name: "", skills: [], performance: "medium" });
   const fileInputRef = useRef(null);
@@ -44,13 +44,17 @@ export default function StudentRosterManager({ students, onStudentsUpdate }) {
         "DeltaMath", "Newsela", "Access Pearson", "Information", "Grading periods",
         "SY25 MP1", "SY25 MP2", "SY25 MP3", "SY25 MP4", "English", "Change Language",
         "Support", "Privacy Policy", "Terms of Use", "PowerSchool", "Copyright",
-        "DropdownMaterials", "LTI", "SSO", "K-12", "Interactivity", "Tools"
+        "DropdownMaterials", "LTI", "SSO", "K-12", "Interactivity", "Tools",
+        "Click to toggle options",
       ];
       
       // Filter out template text and extract student names
       const studentNames = lines.filter(line => {
         // Skip very short lines
         if (line.length < 3) return false;
+
+        // Schoology UI hints next to roster rows (not names)
+        if (/^click\s+to\s+/i.test(line)) return false;
         
         // Skip lines with numbers
         if (/\d/.test(line)) return false;
@@ -76,8 +80,13 @@ export default function StudentRosterManager({ students, onStudentsUpdate }) {
         return true;
       });
       
-      names = [...new Set([...names, ...studentNames])];
-      
+      names = [...new Set([...names, ...studentNames])].filter(
+        (n) =>
+          n &&
+          !/^click\s+to\s+/i.test(n.trim()) &&
+          !n.toLowerCase().includes("click to toggle options")
+      );
+
       // Create student objects
       const students = names.map((name, index) => ({
         id: `student-${Date.now()}-${index}`,
@@ -270,17 +279,45 @@ export default function StudentRosterManager({ students, onStudentsUpdate }) {
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
               {students.map((student) => (
-                <div key={student.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-gray-900">{student.name}</h5>
+                <div
+                  key={student.id}
+                  className={`border rounded-lg p-4 hover:bg-gray-50 ${
+                    student.absent ? "border-amber-200 bg-amber-50/50" : "border-gray-200"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-medium text-gray-900 flex flex-wrap items-center gap-2">
+                        <span>{student.name}</span>
+                        {student.absent && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 shrink-0">
+                            Absent
+                          </span>
+                        )}
+                      </h5>
                     </div>
-                    <button
-                      onClick={() => removeStudent(student.id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 justify-end">
+                      {onToggleAbsent && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleAbsent(student.id)}
+                          className={`text-sm px-2 py-1 rounded transition-colors ${
+                            student.absent
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          {student.absent ? "Mark present" : "Mark absent"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeStudent(student.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                   
                   {/* Editable Student Attributes */}

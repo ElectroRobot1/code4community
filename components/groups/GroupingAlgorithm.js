@@ -57,6 +57,9 @@ function computeBalance(group) {
 
 export default class GroupingAlgorithm {
   static generate(students, constraints, config) {
+    if (!Array.isArray(students)) {
+      return [];
+    }
     const active = students.filter((s) => !s.absent);
     const n = active.length;
     if (n === 0) return [];
