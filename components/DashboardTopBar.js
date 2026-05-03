@@ -37,29 +37,19 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Account";
 
-  const adminEmail = "shail40926@gmail.com";
-  /** Signed-in (app) navigation vs marketing site */
-  const signedInNavLinks =
-    user && user.emailVerified
-      ? [
-          { label: "Dashboard", path: "/dashboard" },
-          { label: "Studying", path: "/study" },
-        ]
-      : null;
   const publicNavLinks = [
     { label: "HOME", path: "/" },
     { label: "ABOUT US", path: "/about" },
     { label: "SERVICES", path: "/services" },
     { label: "WORK", path: "/work" },
     { label: "CONTACT", path: "/contact" },
-    ...(user?.email === adminEmail ? [{ label: "ADMIN", path: "/admin" }] : []),
   ];
-  const navLinks = signedInNavLinks || publicNavLinks;
+  const navLinks = publicNavLinks;
 
   return (
     <>
       <MobileTopBar title={title} showNavLinks={showNavLinks} />
-      <header className={`hidden md:block bg-background border-b border-border px-6 py-4 relative z-40 ${pathname === '/' || pathname === '/services' || pathname === '/work' || pathname === '/admin' ? 'mb-0' : 'mb-6'}`}>
+      <header className={`hidden md:block bg-background border-b border-border px-6 py-4 relative z-40 ${pathname === '/' || pathname === '/services' || pathname === '/work' ? 'mb-0' : 'mb-6'}`}>
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
             {/* Logo and Title on Left */}
@@ -73,9 +63,10 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
               />
               <div className="flex flex-col">
                 <button
-                  onClick={() => router.push(user && user.emailVerified ? "/dashboard" : "/")}
+                  type="button"
+                  onClick={() => router.push("/")}
                   className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded text-left"
-                  title={user && user.emailVerified ? "Go to Dashboard" : "Go to Home"}
+                  title="Go to Home"
                 >
                   {title}
                 </button>
@@ -137,15 +128,6 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
                           >
                             Settings
                           </Link>
-                          {user?.email === adminEmail && (
-                            <Link
-                              href="/admin"
-                              onClick={() => setDropdownOpen(false)}
-                              className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted focus:outline-none focus:bg-muted"
-                            >
-                              Admin
-                            </Link>
-                          )}
                           <button
                             type="button"
                             onClick={handleSignOut}

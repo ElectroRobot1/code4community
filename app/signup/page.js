@@ -35,7 +35,7 @@ export default function SignupPage() {
   useEffect(() => {
     if (!authLoading && user) {
       if (user.emailVerified) {
-        router.replace("/dashboard");
+        router.replace("/");
       } else {
         router.replace("/verify-email");
       }
@@ -86,7 +86,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch (err) {
       if (err.code === "auth/popup-closed-by-user") {

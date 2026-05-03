@@ -28,7 +28,7 @@ export default function VerifyEmailPage() {
       return;
     }
     if (user.emailVerified) {
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [user, authLoading, router]);
 
@@ -58,7 +58,7 @@ export default function VerifyEmailPage() {
       await user.reload();
       const updated = auth.currentUser;
       if (updated?.emailVerified) {
-        router.replace("/dashboard");
+        router.replace("/");
       } else {
         setNotVerifiedMessage("Our systems do not detect that you have verified your email yet. Please click the link in the verification email and try again.");
       }
@@ -86,7 +86,7 @@ export default function VerifyEmailPage() {
             Waiting for email verification
           </h1>
           <p className="text-muted-foreground text-center text-sm mb-8">
-            You’re signed in. To access your dashboard, verify the email we sent to <strong className="text-foreground">{user.email}</strong>.
+            You’re signed in. Verify the email we sent to <strong className="text-foreground">{user.email}</strong> to unlock all signed-in features.
           </p>
 
           <div className="rounded-xl border border-border bg-muted/30 p-6 mb-6 space-y-4">

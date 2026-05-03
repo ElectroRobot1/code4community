@@ -2,11 +2,8 @@
 import { useLayoutEffect, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { AppPageLayout } from "@/components/common/AppPageLayout";
-import FullPageLoading from "@/components/common/FullPageLoading";
 import WorkProjectTile from "@/components/WorkProjectTile";
-import { useAuth } from "@/utils/AuthContext";
 import { getFeaturedWorkProjects } from "@/lib/workProjects";
 
 // Partner logos: add / replace with your partner images in public/
@@ -52,8 +49,6 @@ const DELETE_MS = 45;
 const HOLD_MS = 2200;
 
 export default function Home() {
-  const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [displayLength, setDisplayLength] = useState(() => heroPhrases[0].length);
   const [phase, setPhase] = useState("holding"); // 'holding' | 'deleting' | 'typing'
@@ -61,17 +56,6 @@ export default function Home() {
   useLayoutEffect(() => {
     document.title = "Code4Community | Home";
   }, []);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (user?.emailVerified) {
-      router.replace("/dashboard");
-      return;
-    }
-    if (user) {
-      router.replace("/verify-email");
-    }
-  }, [authLoading, user, router]);
 
   useEffect(() => {
     let intervalId = null;
@@ -113,13 +97,9 @@ export default function Home() {
 
   const visibleText = heroPhrases[phraseIndex].slice(0, displayLength);
 
-  if (authLoading || user) {
-    return <FullPageLoading />;
-  }
-
   return (
     <AppPageLayout>
-      {/* Split hero + dashboard */}
+      {/* Split hero + featured work */}
       <div className="flex-1 flex flex-col lg:flex-row lg:min-h-[calc(100vh-4rem)]">
         {/* Left: Hero */}
         <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:py-16 lg:pl-12 xl:pl-24 max-w-2xl">

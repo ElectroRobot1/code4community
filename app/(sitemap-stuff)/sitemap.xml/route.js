@@ -48,6 +48,24 @@ export async function GET() {
       priority: 0.85,
     },
     {
+      url: `${baseUrl}/mathlab`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/mathlab/history`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${baseUrl}/mathlab/session-tracking`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.65,
+    },
+    {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -60,7 +78,7 @@ export async function GET() {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/get-started`,
+      url: `${baseUrl}/study`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,

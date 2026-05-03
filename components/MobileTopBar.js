@@ -14,8 +14,6 @@ const BASE_NAV_LINKS = [
   { label: "WORK", path: "/work" },
   { label: "CONTACT", path: "/contact" },
 ];
-const ADMIN_EMAIL = "shail40926@gmail.com";
-
 export default function MobileTopBar({ title = "Code4Community", showNavLinks = true }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -84,7 +82,7 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
           type="button"
           onClick={() => {
             closeMenu();
-            router.push(user?.emailVerified ? "/dashboard" : "/");
+            router.push("/");
           }}
           className="flex items-center gap-2 min-w-0 flex-1"
         >
@@ -134,18 +132,9 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
           {showNavLinks && (
             <nav className="flex-1 overflow-auto py-2">
               {(() => {
-                const adminLink =
-                  user?.email === ADMIN_EMAIL ? [{ label: "ADMIN", path: "/admin" }] : [];
-                const links = user?.emailVerified
-                  ? [
-                      { label: "DASHBOARD", path: "/dashboard" },
-                      { label: "STUDYING", path: "/study" },
-                      { label: "SETTINGS", path: "/settings" },
-                      ...adminLink,
-                    ]
-                  : user
-                    ? [...BASE_NAV_LINKS, { label: "SETTINGS", path: "/settings" }, ...adminLink]
-                    : [...BASE_NAV_LINKS, ...adminLink];
+                const links = user
+                  ? [...BASE_NAV_LINKS, { label: "SETTINGS", path: "/settings" }]
+                  : [...BASE_NAV_LINKS];
                 return links.map((link) => {
                   const isActive =
                     pathname === link.path ||

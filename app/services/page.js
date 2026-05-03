@@ -53,10 +53,17 @@ function Slide1Graphic() {
 /** What we deliver: custom software types with delivered/ready badges */
 function WhatWeDeliverPanel() {
   const items = [
-    { name: "Donor & CRM systems", status: "Delivered", type: "Custom web app", icon: "heart" },
-    { name: "Volunteer portals", status: "Delivered", type: "Custom web app", icon: "users" },
-    { name: "Program dashboards", status: "Delivered", type: "Reporting", icon: "chart" },
-    { name: "Integrations & APIs", status: "Ready", type: "Custom", icon: "plug" },
+    { name: "Donor & CRM systems", status: "Delivered", type: "Custom web app", icon: "heart", href: null },
+    { name: "Volunteer portals", status: "Delivered", type: "Custom web app", icon: "users", href: null },
+    { name: "Program dashboards", status: "Delivered", type: "Reporting", icon: "chart", href: null },
+    { name: "Integrations & APIs", status: "Ready", type: "Custom", icon: "plug", href: null },
+    {
+      name: "Study quiz (adaptive)",
+      status: "Live",
+      type: "Learning tool",
+      icon: "book",
+      href: "/study",
+    },
   ];
   return (
     <div className="w-full max-w-md">
@@ -68,21 +75,32 @@ function WhatWeDeliverPanel() {
         </span>
       </div>
       <div className="divide-y divide-[#e5e7eb]">
-        {items.map((s) => (
-          <div key={s.name} className="py-3 first:pt-0 flex items-center gap-3">
+        {items.map((s) => {
+          const row = (
+            <>
             {s.icon === "heart" && <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>}
             {s.icon === "users" && <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
             {s.icon === "chart" && <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
             {s.icon === "plug" && <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V4a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>}
+            {s.icon === "book" && <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
             <div className="flex-1 min-w-0">
               <p className="font-medium text-black text-base">{s.name}</p>
               <p className="text-sm text-[#6b7280]">{s.type}</p>
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 text-green-800 text-sm font-medium shrink-0">
-              <span aria-hidden>✓</span> {s.status}
+            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium shrink-0 ${s.href ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
+              <span aria-hidden>{s.href ? "→" : "✓"}</span> {s.status}
             </span>
-          </div>
-        ))}
+            </>
+          );
+          const inner = <div className="py-3 first:pt-0 flex items-center gap-3">{row}</div>;
+          return s.href ? (
+            <Link key={s.name} href={s.href} className="block -mx-1 px-1 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300">
+              {inner}
+            </Link>
+          ) : (
+            <div key={s.name}>{inner}</div>
+          );
+        })}
       </div>
     </div>
   );

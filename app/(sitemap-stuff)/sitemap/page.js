@@ -11,8 +11,11 @@ export default function SitemapPage() {
     { path: "/yearbook-formatting", title: "Yearbook Formatting", description: "Format student names for yearbook captions" },
     { path: "/seating-chart", title: "Seating Chart", description: "Classroom seating charts and assignments" },
     { path: "/student-groups", title: "Student Groups", description: "Balanced student groups with roster and export" },
+    { path: "/mathlab", title: "Math Lab", description: "Tutoring requests and live sessions" },
+    { path: "/mathlab/history", title: "Math Lab History", description: "Completed tutoring sessions" },
+    { path: "/mathlab/session-tracking", title: "Math Lab Session Tracking", description: "Admin session overview" },
     { path: "/contact", title: "Contact", description: "Get in touch with us" },
-    { path: "/get-started", title: "Get Started", description: "Request a tool or get started with us" },
+    { path: "/study", title: "Study Quiz", description: "Adaptive study practice (history, science, math)" },
     { path: "/privacy", title: "Privacy Policy", description: "Privacy policy" },
     { path: "/terms", title: "Terms of Service", description: "Terms of service" },
   ];

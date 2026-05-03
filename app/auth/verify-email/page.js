@@ -31,7 +31,7 @@ export default function AuthVerifyEmailPage() {
         await applyActionCode(auth, oobCode);
         if (!cancelled) {
           setStatus("success");
-          setTimeout(() => router.replace("/dashboard"), 2000);
+          setTimeout(() => router.replace("/"), 2000);
         }
       } catch (err) {
         if (!cancelled) {
@@ -44,7 +44,7 @@ export default function AuthVerifyEmailPage() {
               await currentUser.reload();
               if (currentUser.emailVerified) {
                 setStatus("success");
-                setTimeout(() => router.replace("/dashboard"), 2000);
+                setTimeout(() => router.replace("/"), 2000);
                 return;
               }
             }
@@ -73,7 +73,7 @@ export default function AuthVerifyEmailPage() {
             <>
               <h1 className="text-xl font-bold text-foreground mb-2">Email verified</h1>
               <p className="text-muted-foreground text-sm mb-6">
-                Taking you to your dashboard…
+                Taking you home…
               </p>
             </>
           )}

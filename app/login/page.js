@@ -9,6 +9,13 @@ import FullPageLoading from "@/components/common/FullPageLoading";
 import { useAuth } from "@/utils/AuthContext";
 import { auth, provider, signInWithEmailAndPassword, signInWithPopup } from "@/firebase";
 
+function safeRedirectTarget() {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("redirectTo");
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return null;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -24,8 +31,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
+      const next = safeRedirectTarget();
       if (user.emailVerified) {
-        router.replace("/dashboard");
+        router.replace(next || "/");
       } else {
         router.replace("/verify-email");
       }
@@ -38,8 +46,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { user: signedInUser } = await signInWithEmailAndPassword(auth, email, password);
+      const next = safeRedirectTarget();
       if (signedInUser.emailVerified) {
-        router.push("/dashboard");
+        router.push(next || "/");
       } else {
         router.push("/verify-email");
       }
@@ -61,8 +70,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { user: signedInUser } = await signInWithPopup(auth, provider);
+      const next = safeRedirectTarget();
       if (signedInUser.emailVerified) {
-        router.push("/dashboard");
+        router.push(next || "/");
       } else {
         router.push("/verify-email");
       }
