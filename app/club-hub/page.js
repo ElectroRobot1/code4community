@@ -3,58 +3,17 @@
 import { useLayoutEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import LaurelRankSeal from "@/components/club-hub/LaurelRankSeal";
 import ClubHubWeekCalendar from "@/components/club-hub/ClubHubWeekCalendar";
+import { CLUB_ENGAGEMENT_RANKINGS } from "@/lib/clubHubEngagementRankings";
 
 const MAROON = "#5c1417";
 const MAROON_DARK = "#3f0e10";
 
-const RANKINGS = [
-  {
-    title: "Club Engagement Rankings (L1)",
-    rows: [
-      { rank: 1, name: "Baking Club" },
-      { rank: 2, name: "Book Club" },
-      { rank: 3, name: "Robotics B Team" },
-    ],
-  },
-  {
-    title: "Club Engagement Rankings (L2)",
-    rows: [
-      { rank: 1, name: "Red Cross Club" },
-      { rank: 2, name: "Peer Tutoring" },
-      { rank: 3, name: "Asian Culture Club" },
-    ],
-  },
-  {
-    title: "Club Engagement Rankings (L3)",
-    rows: [
-      { rank: 1, name: "Student Senate" },
-      { rank: 2, name: "Prefect Council" },
-      { rank: 3, name: "Spartan Student Life" },
-    ],
-  },
-];
-
-function RankMedal({ rank }) {
-  const ring =
-    rank === 1
-      ? "from-amber-300 via-yellow-400 to-amber-600 text-amber-950 border-amber-700 shadow-[0_0_0_1px_rgba(180,83,9,0.35)]"
-      : rank === 2
-        ? "from-slate-100 via-slate-300 to-slate-400 text-slate-800 border-slate-500"
-        : "from-amber-800 via-amber-900 to-amber-950 text-amber-100 border-amber-950";
-  return (
-    <span
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-gradient-to-br text-sm font-bold shadow-md ${ring}`}
-    >
-      {rank}
-    </span>
-  );
-}
-
-function nameColor(rank) {
-  if (rank === 1) return "text-amber-600";
+function rankNameClass(rank) {
+  if (rank === 1) return "text-[#b45309]";
   if (rank === 2) return "text-slate-500";
-  return "text-amber-900";
+  return "text-[#9a3412]";
 }
 
 export default function ClubHubPage() {
@@ -63,7 +22,7 @@ export default function ClubHubPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-900">
+    <div id="top" className="min-h-screen bg-neutral-100 text-neutral-900">
       <section className="relative min-h-[280px] sm:min-h-[340px]">
         <Image
           src="/Broad_Run_HS_Ashburn_VA_20147_ext2.JPG"
@@ -86,40 +45,48 @@ export default function ClubHubPage() {
         </div>
       </section>
 
-      <nav
-        className="sticky top-0 z-20 border-b border-black/10 shadow-md"
-        style={{ backgroundColor: MAROON }}
-      >
-        <div className="mx-auto flex max-w-4xl items-center justify-center gap-10 px-4 py-3.5 text-sm font-semibold tracking-wide text-white sm:gap-16 sm:text-base">
-          <Link href="#club-directory" className="hover:underline underline-offset-4">
+      <nav className="border-b border-black/10 shadow-md" style={{ backgroundColor: MAROON }}>
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-8 px-4 py-3.5 text-sm font-semibold tracking-wide text-white sm:gap-12 sm:text-base md:gap-16">
+          <Link href="#top" className="hover:underline underline-offset-4">
+            Home
+          </Link>
+          <Link href="/club-hub/directory" className="hover:underline underline-offset-4">
             Club Directory
           </Link>
           <Link href="/login?redirectTo=%2Fclub-hub" className="hover:underline underline-offset-4">
-            Login
+            Log in
           </Link>
         </div>
       </nav>
 
-      <main id="club-directory" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+      <main id="club-directory" className="mx-auto max-w-6xl px-4 pb-0 pt-10 sm:px-6 sm:pt-12">
         <div className="grid gap-6 md:grid-cols-3">
-          {RANKINGS.map((col) => (
+          {CLUB_ENGAGEMENT_RANKINGS.map((col) => (
             <div
               key={col.title}
-              className="overflow-hidden rounded-lg border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+              className="overflow-hidden rounded-xl border border-neutral-200/90 bg-white shadow-[0_8px_28px_rgba(0,0,0,0.07)]"
             >
               <div
-                className="px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-white sm:text-[13px]"
+                className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wide text-white sm:text-[13px]"
                 style={{ backgroundColor: MAROON }}
               >
                 {col.title}
               </div>
-              <ul className="divide-y divide-neutral-200">
+              <ul className="space-y-2.5 bg-gradient-to-b from-neutral-50/90 to-white p-3">
                 {col.rows.map((row) => (
-                  <li key={row.name} className="flex items-center gap-3 px-4 py-4">
-                    <RankMedal rank={row.rank} />
-                    <span className={`text-base font-semibold sm:text-lg ${nameColor(row.rank)}`}>
-                      {row.name}
-                    </span>
+                  <li
+                    key={`${col.title}-${row.name}`}
+                    className="rounded-lg bg-white px-1 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.07)] ring-1 ring-black/[0.04] sm:px-2 sm:py-3"
+                  >
+                    <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                      <LaurelRankSeal rank={row.rank} mirrored />
+                      <span
+                        className={`min-w-0 flex-1 px-1 text-center text-xs font-semibold leading-snug sm:text-sm md:text-base ${rankNameClass(row.rank)}`}
+                      >
+                        {row.name}
+                      </span>
+                      <LaurelRankSeal rank={row.rank} />
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -128,8 +95,10 @@ export default function ClubHubPage() {
         </div>
       </main>
 
+      <div className="bg-white py-6 sm:py-8" aria-hidden />
+
       <section
-        className="relative border-t border-black/10 py-14 sm:py-16"
+        className="relative border-t border-black/10"
         style={{
           backgroundColor: MAROON_DARK,
           backgroundImage:
@@ -139,10 +108,7 @@ export default function ClubHubPage() {
         }}
       >
         <div className="pointer-events-none absolute inset-0 backdrop-blur-[2px]" aria-hidden />
-        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="mb-10 text-center text-3xl font-bold tracking-tight text-white drop-shadow sm:text-4xl">
-            Calendar
-          </h2>
+        <div className="relative z-10 w-full">
           <ClubHubWeekCalendar />
         </div>
       </section>

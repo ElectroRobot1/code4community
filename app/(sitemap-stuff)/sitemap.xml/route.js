@@ -72,6 +72,12 @@ export async function GET() {
       priority: 0.85,
     },
     {
+      url: `${baseUrl}/club-hub/directory`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
       changeFrequency: 'monthly',

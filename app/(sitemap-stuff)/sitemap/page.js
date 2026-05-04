@@ -14,7 +14,12 @@ export default function SitemapPage() {
     { path: "/mathlab", title: "Math Lab", description: "Tutoring requests and live sessions" },
     { path: "/mathlab/history", title: "Math Lab History", description: "Completed tutoring sessions" },
     { path: "/mathlab/session-tracking", title: "Math Lab Session Tracking", description: "Admin session overview" },
-    { path: "/club-hub", title: "Broad Run Club Hub", description: "Club directory, engagement rankings, and calendar" },
+    { path: "/club-hub", title: "Broad Run Club Hub", description: "Engagement rankings and calendar" },
+    {
+      path: "/club-hub/directory",
+      title: "Broad Run Club Directory",
+      description: "Full club list with sponsor contacts",
+    },
     { path: "/contact", title: "Contact", description: "Get in touch with us" },
     { path: "/study", title: "Study Quiz", description: "Adaptive study practice (history, science, math)" },
     { path: "/privacy", title: "Privacy Policy", description: "Privacy policy" },
