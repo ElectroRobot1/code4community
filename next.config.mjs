@@ -8,6 +8,7 @@ const useKeysDevFallback = !fs.existsSync(path.join(__dirname, "keys.dev.js"));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   ...(useKeysDevFallback
     ? {
         webpack(config) {

@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+keys.dev.js
+firebase-debug.log
+*.md
+.cursor
+terminals

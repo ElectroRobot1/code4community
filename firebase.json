@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "site": "code4community26",
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "code4community-app",
+          "region": "us-east4"
+        }
+      }
+    ]
+  }
+}
