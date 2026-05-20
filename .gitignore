@@ -43,6 +43,9 @@ keys.dev.js
 # vercel
 .vercel
 
+# firebase local cache
+.firebase/
+
 # typescript (not used in this project)
 # *.tsbuildinfo
 # next-env.d.ts
