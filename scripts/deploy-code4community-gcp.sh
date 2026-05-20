@@ -38,7 +38,7 @@ gcloud config set project "$PROJECT_ID" >/dev/null
 echo "→ Enabling APIs (idempotent)"
 gcloud services enable run.googleapis.com firebasehosting.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --quiet
 
-echo "→ Deploying Cloud Run service: $SERVICE_ID ($REGION)"
+echo "→ Deploying Cloud Run service: $SERVICE_ID ($REGION) [Node.js buildpack, no Dockerfile]"
 gcloud run deploy "$SERVICE_ID" \
   --source . \
   --region "$REGION" \
