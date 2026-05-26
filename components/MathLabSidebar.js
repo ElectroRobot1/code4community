@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/utils/AuthContext";
-import { isAdminUser, isTutorOrHigher } from "@/utils/authorization";
+import { isAdminUser, isTeacherOrAdmin, isTutorOrHigher } from "@/utils/authorization";
 import { mathlabLoginPath } from "@/utils/mathlabGuest";
 
 function SidebarNavEntry({ item, isCollapsed, isMobile, onRequireAuth }) {
@@ -77,6 +77,43 @@ export default function MathLabSidebar() {
 
   const isAdmin = userData && user && isAdminUser(userData.role, user.email);
   const isTutor = userData && user && isTutorOrHigher(userData.role, userData.mathLabRole);
+  const canManageScheduler =
+    userData &&
+    user &&
+    (isTeacherOrAdmin(userData.role) ||
+      isTutorOrHigher(userData.role, userData.mathLabRole) ||
+      isAdminUser(userData.role, user.email));
+
+  const schedulerIcon = (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+
+  const pushSchedulerNav = (items, { guest = false } = {}) => {
+    items.push({
+      id: "scheduler",
+      label: "Book a slot",
+      icon: schedulerIcon,
+      href: "/mathlab/scheduler",
+      requiresAuth: guest,
+      isActive: pathname === "/mathlab/scheduler",
+    });
+    if (canManageScheduler) {
+      items.push({
+        id: "scheduler-manage",
+        label: "Manage slots",
+        icon: schedulerIcon,
+        href: "/mathlab/scheduler/manage",
+        isActive: pathname === "/mathlab/scheduler/manage",
+      });
+    }
+  };
 
   const navigationItems = [];
 
@@ -92,6 +129,7 @@ export default function MathLabSidebar() {
       </svg>
     );
     navigationItems.push({ id: "mathlab", label: "Math Lab", icon: bulb, href: "/mathlab", requiresAuth: false, isActive: pathname === "/mathlab" });
+    pushSchedulerNav(navigationItems, { guest: true });
     navigationItems.push({ id: "history", label: "Session History", icon: clock, href: "/mathlab/history", requiresAuth: true, isActive: pathname === "/mathlab/history" });
   } else if (isAdmin) {
     // For admins: Math Lab, Tutor Dashboard, Session History, Session Tracking
@@ -151,6 +189,7 @@ export default function MathLabSidebar() {
       href: "/mathlab/admin",
       isActive: pathname === "/mathlab/admin"
     });
+    pushSchedulerNav(navigationItems);
   } else {
     // For non-admins: Math Lab (student view), Tutor Dashboard (if tutor), Session History
     if (isTutor) {
@@ -202,6 +241,7 @@ export default function MathLabSidebar() {
       href: "/mathlab/history",
       isActive: pathname === "/mathlab/history"
     });
+    pushSchedulerNav(navigationItems);
   }
 
   // On mobile, render a bottom navigation bar instead
