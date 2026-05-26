@@ -8,6 +8,17 @@ const useKeysDevFallback = !fs.existsSync(path.join(__dirname, "keys.dev.js"));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // New hash on every deploy so chunk URLs change and immutable browser cache cannot go stale.
+  generateBuildId: async () =>
+    process.env.NEXT_DEPLOYMENT_ID ||
+    process.env.K_REVISION ||
+    `local-${Date.now()}`,
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
+  },
   ...(useKeysDevFallback
     ? {
         webpack(config) {
@@ -60,8 +71,21 @@ const nextConfig = {
 
     return [
       {
-        source: '/(.*)',
+        source: '/_next/static/:path*',
         headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/((?!_next/static|_next/image|favicon.ico|c4c.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?)$).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, no-store, max-age=0, must-revalidate',
+          },
           {
             key: 'Content-Security-Policy',
             value: cspValue,

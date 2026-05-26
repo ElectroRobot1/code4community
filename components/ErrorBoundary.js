@@ -12,6 +12,23 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    const message = String(error?.message || "");
+    const isChunk =
+      error?.name === "ChunkLoadError" ||
+      /Failed to load chunk|Loading chunk \d+ failed/i.test(message);
+
+    if (isChunk && typeof window !== "undefined") {
+      const key = "c4c-chunk-reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        const url = new URL(window.location.href);
+        url.searchParams.set("_cb", String(Date.now()));
+        window.location.replace(url.toString());
+        return;
+      }
+      sessionStorage.removeItem(key);
+    }
+
     console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 

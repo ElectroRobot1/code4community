@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ChunkLoadRecovery from "@/components/ChunkLoadRecovery";
 import { AuthProvider } from "@/utils/AuthContext";
 import { getPublicFirebaseConfig, getRecaptchaSiteKey } from "@/lib/firebaseConfig";
 
@@ -46,6 +47,9 @@ export const viewport = {
   userScalable: false,
 };
 
+// Avoid Firebase CDN caching prerendered HTML for a year while JS chunks rotate each deploy.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }) {
   const firebaseConfig = getPublicFirebaseConfig();
   const recaptchaSiteKey = getRecaptchaSiteKey();
@@ -59,6 +63,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ChunkLoadRecovery />
         <ErrorBoundary>
           <AuthProvider>
             {children}
