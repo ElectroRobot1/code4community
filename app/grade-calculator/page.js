@@ -649,9 +649,9 @@ export default function GradeCalculator() {
     setCourseName(parsed.courseName);
     setCurrentGrade(calculatedGrade.letter);
     setCurrentPercent(calculatedGrade.percent);
-    setAssignments(parsed.assignments);
+    setAssignments(parsed.assignments.map(a => ({ ...a, isHypothetical: false })));
     // Store original assignments for comparison
-    setOriginalAssignments(parsed.assignments.map(a => ({ ...a })));
+    setOriginalAssignments(parsed.assignments.map(a => ({ ...a, isHypothetical: false })));
     
     // Update category weights
     if (parsed.weights && Object.keys(parsed.weights).length > 0) {
@@ -678,7 +678,7 @@ export default function GradeCalculator() {
       
       if (assignments.length > 0) {
         const recalculatedGrade = calculateGradeFromAssignments(
-          assignments,
+          assignments.filter(a => !a.isHypothetical),
           plan.weights,
           true
         );
@@ -715,7 +715,7 @@ export default function GradeCalculator() {
     
     if (assignments.length > 0) {
       const recalculatedGrade = calculateGradeFromAssignments(
-        assignments,
+        assignments.filter(a => !a.isHypothetical),
         customWeights,
         true
       );
@@ -730,15 +730,18 @@ export default function GradeCalculator() {
     );
     setAssignments(newAssignments);
     
-    // Recalculate current grade when category changes
+    // Recalculate current grade when category changes (only for non-hypothetical assignments)
     if (field === 'category') {
-      const recalculatedGrade = calculateGradeFromAssignments(
-        newAssignments,
-        categoryWeights,
-        useWeightedGrading
-      );
-      setCurrentGrade(recalculatedGrade.letter);
-      setCurrentPercent(recalculatedGrade.percent);
+      const assignment = assignments.find(a => a.id === id);
+      if (assignment && !assignment.isHypothetical) {
+        const recalculatedGrade = calculateGradeFromAssignments(
+          newAssignments.filter(a => !a.isHypothetical),
+          categoryWeights,
+          useWeightedGrading
+        );
+        setCurrentGrade(recalculatedGrade.letter);
+        setCurrentPercent(recalculatedGrade.percent);
+      }
     }
   };
 
@@ -836,7 +839,8 @@ export default function GradeCalculator() {
       earned: 0,
       possible: 100,
       originalEarned: 0,
-      originalPossible: 100
+      originalPossible: 100,
+      isHypothetical: true
     };
     setAssignments([newAssignment, ...assignments]);
   };
