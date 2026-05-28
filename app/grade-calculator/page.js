@@ -45,17 +45,17 @@ export default function GradeCalculator() {
       description: "Most common weighting scheme: Major assessments 50%, Minor assessments 40%, Formatives 10%"
     },
     "65/30/5": {
-      name: "Major-Heavy (65/30/5)",
+      name: "65/30/5",
       weights: { "Major Summative": 65, "Minor Summative": 30, "Graded Formative": 5 },
       description: "Emphasizes major assessments: 65% Major, 30% Minor, 5% Formative"
     },
     "60/30/10": {
-      name: "Balanced (60/30/10)",
+      name: "60/30/10",
       weights: { "Major Summative": 60, "Minor Summative": 30, "Graded Formative": 10 },
       description: "Balanced approach: 60% Major, 30% Minor, 10% Formative"
     },
     "75/24/1": {
-      name: "Major-Dominant (75/24/1)",
+      name: "75/24/1",
       weights: { "Major Summative": 75, "Minor Summative": 24, "Graded Formative": 1 },
       description: "Heavily weighted toward major assessments: 75% Major, 24% Minor, 1% Formative"
     }
@@ -679,7 +679,7 @@ export default function GradeCalculator() {
       if (assignments.length > 0) {
         const recalculatedGrade = calculateGradeFromAssignments(
           assignments,
-          { ...categoryWeights, ...plan.weights },
+          plan.weights,
           true
         );
         setCurrentGrade(recalculatedGrade.letter);
@@ -716,7 +716,7 @@ export default function GradeCalculator() {
     if (assignments.length > 0) {
       const recalculatedGrade = calculateGradeFromAssignments(
         assignments,
-        { ...categoryWeights, ...customWeights },
+        customWeights,
         true
       );
       setCurrentGrade(recalculatedGrade.letter);
@@ -1179,6 +1179,30 @@ export default function GradeCalculator() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </section>
+          )}
+          
+          {assignments.length > 0 && (
+            <section className="mt-6 rounded-2xl border border-border bg-background p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current Weight Plan</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {selectedWeightPlan === "Other" ? "Custom" : WEIGHT_PLANS[selectedWeightPlan]?.name || selectedWeightPlan}
+                  </p>
+                  {selectedWeightPlan === "Other" && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Major: {categoryWeights["Major Summative"]}%, Minor: {categoryWeights["Minor Summative"]}%, Formative: {categoryWeights["Graded Formative"]}%
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowWeightPlanModal(true)}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/90"
+                >
+                  Change Plan
+                </button>
               </div>
             </section>
           )}
