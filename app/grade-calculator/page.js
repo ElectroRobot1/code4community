@@ -15,8 +15,8 @@ export default function GradeCalculator() {
   const [currentPercent, setCurrentPercent] = useState(0);
   const [categoryWeights, setCategoryWeights] = useState({
     "Major Summative": 50,
-    "Minor Summative": 30,
-    "Graded Formative": 20,
+    "Minor Summative": 40,
+    "Graded Formative": 10,
     "Extra Credit": 0,
     "Other": 0
   });
@@ -29,6 +29,37 @@ export default function GradeCalculator() {
     "Other": true
   });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showWeightPlanModal, setShowWeightPlanModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [selectedWeightPlan, setSelectedWeightPlan] = useState("50/40/10");
+  const [customWeights, setCustomWeights] = useState({
+    "Major Summative": 50,
+    "Minor Summative": 40,
+    "Graded Formative": 10
+  });
+
+  const WEIGHT_PLANS = {
+    "50/40/10": {
+      name: "Standard (50/40/10)",
+      weights: { "Major Summative": 50, "Minor Summative": 40, "Graded Formative": 10 },
+      description: "Most common weighting scheme: Major assessments 50%, Minor assessments 40%, Formatives 10%"
+    },
+    "65/30/5": {
+      name: "65/30/5",
+      weights: { "Major Summative": 65, "Minor Summative": 30, "Graded Formative": 5 },
+      description: "Emphasizes major assessments: 65% Major, 30% Minor, 5% Formative"
+    },
+    "60/30/10": {
+      name: "60/30/10",
+      weights: { "Major Summative": 60, "Minor Summative": 30, "Graded Formative": 10 },
+      description: "Balanced approach: 60% Major, 30% Minor, 10% Formative"
+    },
+    "75/24/1": {
+      name: "75/24/1",
+      weights: { "Major Summative": 75, "Minor Summative": 24, "Graded Formative": 1 },
+      description: "Heavily weighted toward major assessments: 75% Major, 24% Minor, 1% Formative"
+    }
+  };
 
   // Close filter menu when clicking outside
   useEffect(() => {
@@ -43,6 +74,12 @@ export default function GradeCalculator() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showFilterMenu]);
+
+  // Show weight plan modal on mount (client-side only to avoid hydration mismatch)
+  useEffect(() => {
+    setIsMounted(true);
+    setShowWeightPlanModal(true);
+  }, []);
 
 
   const parseGradebook = (text) => {
@@ -606,15 +643,15 @@ export default function GradeCalculator() {
     const calculatedGrade = calculateGradeFromAssignments(
       parsed.assignments,
       finalWeights,
-      parsed.weights && Object.keys(parsed.weights).length > 0
+      useWeightedGrading
     );
     
     setCourseName(parsed.courseName);
     setCurrentGrade(calculatedGrade.letter);
     setCurrentPercent(calculatedGrade.percent);
-    setAssignments(parsed.assignments);
+    setAssignments(parsed.assignments.map(a => ({ ...a, isHypothetical: false })));
     // Store original assignments for comparison
-    setOriginalAssignments(parsed.assignments.map(a => ({ ...a })));
+    setOriginalAssignments(parsed.assignments.map(a => ({ ...a, isHypothetical: false })));
     
     // Update category weights
     if (parsed.weights && Object.keys(parsed.weights).length > 0) {
@@ -626,12 +663,86 @@ export default function GradeCalculator() {
     }
   };
 
+  const handleWeightPlanSelect = (planKey) => {
+    if (planKey === "Other") {
+      setSelectedWeightPlan("Other");
+    } else {
+      const plan = WEIGHT_PLANS[planKey];
+      setCategoryWeights(prev => ({
+        ...prev,
+        ...plan.weights
+      }));
+      setUseWeightedGrading(true);
+      setSelectedWeightPlan(planKey);
+      setShowWeightPlanModal(false);
+      
+      if (assignments.length > 0) {
+        const recalculatedGrade = calculateGradeFromAssignments(
+          assignments.filter(a => !a.isHypothetical),
+          plan.weights,
+          true
+        );
+        setCurrentGrade(recalculatedGrade.letter);
+        setCurrentPercent(recalculatedGrade.percent);
+      }
+    }
+  };
+
+  const handleCustomWeightChange = (category, value) => {
+    const numValue = parseFloat(value) || 0;
+    setCustomWeights(prev => ({
+      ...prev,
+      [category]: numValue
+    }));
+  };
+
+  const handleCustomWeightsApply = () => {
+    const total = customWeights["Major Summative"] + 
+                  customWeights["Minor Summative"] + 
+                  customWeights["Graded Formative"];
+    
+    if (Math.abs(total - 100) > 0.01) {
+      alert("Weights must sum to 100%");
+      return;
+    }
+    
+    setCategoryWeights(prev => ({
+      ...prev,
+      ...customWeights
+    }));
+    setUseWeightedGrading(true);
+    setShowWeightPlanModal(false);
+    
+    if (assignments.length > 0) {
+      const recalculatedGrade = calculateGradeFromAssignments(
+        assignments.filter(a => !a.isHypothetical),
+        customWeights,
+        true
+      );
+      setCurrentGrade(recalculatedGrade.letter);
+      setCurrentPercent(recalculatedGrade.percent);
+    }
+  };
+
   const updateAssignment = (id, field, value) => {
-    setAssignments(assignments.map(a => 
-      a.id === id 
-        ? { ...a, [field]: value }
-        : a
-    ));
+    const newAssignments = assignments.map(a => 
+      a.id === id ? { ...a, [field]: value } : a
+    );
+    setAssignments(newAssignments);
+    
+    // Recalculate current grade when category changes (only for non-hypothetical assignments)
+    if (field === 'category') {
+      const assignment = assignments.find(a => a.id === id);
+      if (assignment && !assignment.isHypothetical) {
+        const recalculatedGrade = calculateGradeFromAssignments(
+          newAssignments.filter(a => !a.isHypothetical),
+          categoryWeights,
+          useWeightedGrading
+        );
+        setCurrentGrade(recalculatedGrade.letter);
+        setCurrentPercent(recalculatedGrade.percent);
+      }
+    }
   };
 
   const updateAssignmentScore = (id, newEarned, newPossible) => {
@@ -728,7 +839,8 @@ export default function GradeCalculator() {
       earned: 100,
       possible: 100,
       originalEarned: 100,
-      originalPossible: 100
+      originalPossible: 100,
+      isHypothetical: true,
     };
     setAssignments([newAssignment, ...assignments]);
   };
@@ -1074,8 +1186,121 @@ export default function GradeCalculator() {
               </div>
             </section>
           )}
+          
+          {assignments.length > 0 && (
+            <section className="mt-6 rounded-2xl border border-border bg-background p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current Weight Plan</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {selectedWeightPlan === "Other" ? "Custom" : WEIGHT_PLANS[selectedWeightPlan]?.name || selectedWeightPlan}
+                  </p>
+                  {selectedWeightPlan === "Other" && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Major: {categoryWeights["Major Summative"]}%, Minor: {categoryWeights["Minor Summative"]}%, Formative: {categoryWeights["Graded Formative"]}%
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowWeightPlanModal(true)}
+                  className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/90"
+                >
+                  Change Plan
+                </button>
+              </div>
+            </section>
+          )}
         </div>
       </div>
+
+      {isMounted && showWeightPlanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 max-w-2xl rounded-2xl border border-border bg-background p-6 shadow-lg">
+            <h2 className="mb-2 text-2xl font-bold text-foreground">Select Weight Plan</h2>
+            <p className="mb-6 text-sm text-muted-foreground">Choose the grading scheme your teacher uses for this course.</p>
+            
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {Object.entries(WEIGHT_PLANS).map(([key, plan]) => (
+                <button
+                  key={key}
+                  onClick={() => handleWeightPlanSelect(key)}
+                  className="group relative rounded-xl border border-border bg-background p-4 text-left transition hover:border-primary hover:bg-primary/5"
+                  title={plan.description}
+                >
+                  <div className="font-semibold text-foreground">{plan.name}</div>
+                  <div className="mt-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                    {plan.description}
+                  </div>
+                </button>
+              ))}
+              <button
+                onClick={() => handleWeightPlanSelect("Other")}
+                className="rounded-xl border border-border bg-background p-4 text-left transition hover:border-primary hover:bg-primary/5"
+              >
+                <div className="font-semibold text-foreground">Other (Custom)</div>
+                <div className="mt-1 text-xs text-muted-foreground">Enter your own weight percentages</div>
+              </button>
+            </div>
+
+            {selectedWeightPlan === "Other" && (
+              <div className="mb-6 rounded-xl border border-border bg-muted/30 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Custom Weights</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Major Summative %</label>
+                    <input
+                      type="number"
+                      value={customWeights["Major Summative"]}
+                      onChange={(e) => handleCustomWeightChange("Major Summative", e.target.value)}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Minor Summative %</label>
+                    <input
+                      type="number"
+                      value={customWeights["Minor Summative"]}
+                      onChange={(e) => handleCustomWeightChange("Minor Summative", e.target.value)}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Graded Formative %</label>
+                    <input
+                      type="number"
+                      value={customWeights["Graded Formative"]}
+                      onChange={(e) => handleCustomWeightChange("Graded Formative", e.target.value)}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">
+                  Total: {customWeights["Major Summative"] + customWeights["Minor Summative"] + customWeights["Graded Formative"]}%
+                  {Math.abs((customWeights["Major Summative"] + customWeights["Minor Summative"] + customWeights["Graded Formative"]) - 100) > 0.01 && (
+                    <span className="ml-2 text-red-600">(Must equal 100%)</span>
+                  )}
+                </div>
+                <button
+                  onClick={handleCustomWeightsApply}
+                  disabled={Math.abs((customWeights["Major Summative"] + customWeights["Minor Summative"] + customWeights["Graded Formative"]) - 100) > 0.01}
+                  className="mt-3 w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply Custom Weights
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </AppPageLayout>
   );
 }
