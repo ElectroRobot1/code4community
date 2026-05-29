@@ -236,45 +236,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How the Process Works */}
-      <section className="border-t border-border bg-muted/20 py-16 md:py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">
-            How the Process Works
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="relative">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">1</span>
-              <h3 className="font-semibold text-foreground mb-2">Submit a Request</h3>
-              <p className="text-sm text-muted-foreground">
-                Tell us about the problem you&apos;re trying to solve and what kind of tool you might need.
-              </p>
-            </div>
-            <div className="relative">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">2</span>
-              <h3 className="font-semibold text-foreground mb-2">We Plan the Tool</h3>
-              <p className="text-sm text-muted-foreground">
-                Our team reviews your request and works with you to define the features and requirements.
-              </p>
-            </div>
-            <div className="relative">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">3</span>
-              <h3 className="font-semibold text-foreground mb-2">Students Build the Tool</h3>
-              <p className="text-sm text-muted-foreground">
-                Our developers design and build the software while keeping you updated throughout the process.
-              </p>
-            </div>
-            <div className="relative">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background font-bold text-lg mb-4">4</span>
-              <h3 className="font-semibold text-foreground mb-2">Launch and Feedback</h3>
-              <p className="text-sm text-muted-foreground">
-                We deliver the finished tool and gather feedback to improve it.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Some of Our Work */}
       <section className="border-t border-border bg-background py-16 md:py-20 px-6">
         <div className="max-w-4xl mx-auto">

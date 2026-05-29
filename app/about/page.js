@@ -39,16 +39,12 @@ const leadership = [
 ];
 
 const members = [
-  { name: "Anish Kothuru", role: "Developer", image: "/anish.jpg", bio: STUDENT_BIO },
   { name: "Armaan Yadav", role: "Developer", image: "/armaan.jpg", bio: STUDENT_BIO },
-  { name: "Gabriel Sholin", role: "Beta Tester", image: "/gabriel.jpg", bio: STUDENT_BIO },
   { name: "Graisen Edwards", role: "Developer", image: "/graisen.jpg", bio: STUDENT_BIO },
   { name: "Joseph Ferrigno", role: "Developer", image: "/joseph.jpg", bio: STUDENT_BIO },
   { name: "Luke Swanson", role: "Developer", image: "/luke.jpg", bio: STUDENT_BIO },
   { name: "Aneesh Lavu", role: "Developer", image: "/aneesh.jpg", bio: STUDENT_BIO },
   { name: "Ishir Aggarwal", role: "Developer", image: "/ishir.jpg", bio: STUDENT_BIO },
-  { name: "Khanh Nguyen", role: "Developer", image: "/khanh.jpg", bio: STUDENT_BIO },
-  { name: "Prathik Harikrishnan", role: "Developer", image: "/prathik.jpg", bio: STUDENT_BIO },
 ];
 
 const merriweatherStyle = { fontFamily: "'Merriweather', Georgia, serif" };

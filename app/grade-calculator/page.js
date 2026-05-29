@@ -725,9 +725,9 @@ export default function GradeCalculator() {
       date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
       name: "New Assignment",
       category: "Minor Summative",
-      earned: 0,
+      earned: 100,
       possible: 100,
-      originalEarned: 0,
+      originalEarned: 100,
       originalPossible: 100
     };
     setAssignments([newAssignment, ...assignments]);
