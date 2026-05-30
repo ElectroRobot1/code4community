@@ -3,7 +3,6 @@ import "./globals.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ChunkLoadRecovery from "@/components/ChunkLoadRecovery";
 import { AuthProvider } from "@/utils/AuthContext";
-import { getPublicFirebaseConfig, getRecaptchaSiteKey } from "@/lib/firebaseConfig";
 
 // Security headers are configured in next.config.mjs
 
@@ -51,15 +50,8 @@ export const viewport = {
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }) {
-  const firebaseConfig = getPublicFirebaseConfig();
-  const recaptchaSiteKey = getRecaptchaSiteKey();
-  const runtimeFirebaseScript = `window.__FIREBASE_CONFIG__=${JSON.stringify(firebaseConfig)};window.__RECAPTCHA_SITE_KEY__=${JSON.stringify(recaptchaSiteKey)};`;
-
   return (
     <html lang="en">
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: runtimeFirebaseScript }} />
-      </head>
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >

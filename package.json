@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
+    "dev:clean": "rm -rf .next && next dev --turbo",
     "dev:prod": "NODE_ENV=production next dev",
     "preview": "next build && next start",
     "build": "next build",
