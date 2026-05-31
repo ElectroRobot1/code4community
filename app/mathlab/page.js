@@ -689,13 +689,7 @@ function MathLabPageContent() {
       return;
     }
 
-    // Check authorization
-    if (!userData || !canModify(userData.role, "mathlab", userData.mathLabRole)) {
-      console.error('Unauthorized: User cannot create math lab requests');
-      alert("You don't have permission to create requests.");
-      return;
-    }
-
+    // Remove authorization check - allow all users to create requests
     setIsMatching(true);
     
     try {
@@ -1060,20 +1054,7 @@ function MathLabPageContent() {
     );
   }
 
-  // Show access denied if not authorized
-  if (!isGuest && user && userData && !isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background">
-        <DashboardTopBar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-destructive mb-4">Access Denied</h1>
-            <p className="text-muted-foreground">You don&apos;t have permission to access the Math Lab.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Remove access denied check - allow all users to access
 
   // Show session over screen if session just ended (for both tutors and students)
   if (sessionStatus === 'ended' && sessionEndData) {

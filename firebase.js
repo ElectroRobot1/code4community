@@ -18,6 +18,7 @@ import {
   applyActionCode,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 import { firebaseConfig as devFirebaseConfig, recaptchaSiteKey as devRecaptchaSiteKey } from "./keys.dev.js";
@@ -88,12 +89,14 @@ if (typeof window !== "undefined") {
 let app;
 let auth;
 let firestore;
+let storage;
 let provider;
 
 try {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   firestore = getFirestore(app);
+  storage = getStorage(app);
   provider = new GoogleAuthProvider();
   if (typeof window !== "undefined") {
     console.info("[Firebase] initialized OK");
@@ -106,6 +109,7 @@ try {
   app = null;
   auth = null;
   firestore = null;
+  storage = null;
   provider = null;
 }
 
@@ -142,6 +146,7 @@ export {
   auth,
   provider,
   firestore,
+  storage,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   fetchSignInMethodsForEmail,

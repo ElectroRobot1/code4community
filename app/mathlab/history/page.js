@@ -253,20 +253,7 @@ function MathLabHistoryPageContent() {
     );
   }
 
-  // Show access denied if not authorized
-  if (user && userData && !isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background " style={{ overscrollBehavior: 'none' }}>
-        <DashboardTopBar title="Math Lab History" showNavLinks={false} />
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-destructive mb-4">Access Denied</h1>
-            <p className="text-muted-foreground">You don&apos;t have permission to access the Math Lab.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Remove access denied check - allow all users to access
 
   return (
     <div className="min-h-screen bg-background " style={{ overscrollBehavior: 'none' }}>
