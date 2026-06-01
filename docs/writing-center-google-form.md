@@ -71,16 +71,25 @@ Form owner links responses to a Sheet and gives you **Editor** on the spreadshee
 
 Links must use the **Forms API** `responseId` (starts with `ACY…`), not `FormResponse.getId()`.
 
-1. Paste the latest `writing-center-form-sync.gs` and **Save**.
-2. **Extensions** → **Apps Script** → **Services** (+) → add **Google Forms API** (v1).
-3. In [Google Cloud Console](https://console.cloud.google.com/apis/library/forms.googleapis.com) for the script’s GCP project → enable **Google Forms API**.
-4. Re-run the trigger → **Authorize** (needs `forms.responses.readonly`).
-5. Optional script property `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` if the script cannot detect the form.
+#### Fix `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`
 
-After a test submit, **Executions** should not log “no Forms API responseId”. Firestore sessions should have `googleFormApiResponseId` (ACY…). The site builds  
-`https://docs.google.com/forms/d/FORM_ID/edit#response=ACY…`.
+The trigger was authorized **before** the Forms scopes were added. Update the manifest, then **re-authorize**:
 
-**Older sessions** synced without `googleFormApiResponseId` will not get a deep link until the student submits again.
+1. In Apps Script: **Project settings** (gear) → enable **Show "appsscript.json" manifest file in editor**.
+2. Open **appsscript.json** and ensure `oauthScopes` includes (copy from `google-apps-script/appsscript.json` in the repo):
+   - `https://www.googleapis.com/auth/forms`
+   - `https://www.googleapis.com/auth/forms.responses.readonly`
+3. **Save** the project.
+4. In the editor, select **`authorizeFormsApiAccess`** → **Run** → **Review permissions** → allow all scopes.
+5. If there is no permission prompt: [Google Account → Third-party access](https://myaccount.google.com/permissions) → remove access for this script → run **`authorizeFormsApiAccess`** again.
+6. **Executions** should log `Forms API OK` (not 403).
+7. **Services** (+) → **Google Forms API** v1, and enable the API in [Cloud Console](https://console.cloud.google.com/apis/library/forms.googleapis.com) for the script’s GCP project.
+
+Then submit a test form response. Executions should not show Forms API 403.
+
+Optional script property `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` if the script cannot detect the form.
+
+**Older sessions** without `googleFormApiResponseId` need a new form submit to get a working deep link.
 
 ## Local testing
 

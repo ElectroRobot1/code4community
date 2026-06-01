@@ -237,6 +237,22 @@ function findFormResponseForSheetRow_(e, fields) {
   return responses.length ? responses[responses.length - 1] : null;
 }
 
+/**
+ * Run once from the editor (not the trigger) after updating appsscript.json scopes.
+ * Forces a new authorization dialog including Forms API access.
+ */
+function authorizeFormsApiAccess() {
+  var form = FormApp.getActiveForm() || getLinkedForm_();
+  if (!form) {
+    throw new Error("Open this project from the form or linked response spreadsheet, then run again.");
+  }
+  var data = listFormResponses_(form.getId());
+  if (!data) {
+    throw new Error("Forms API call failed — check Executions log and docs/writing-center-google-form.md");
+  }
+  Logger.log("Forms API OK. Response count: " + (data.responses ? data.responses.length : 0));
+}
+
 function pickEmailFromFields_(fields) {
   var keys = ["email", "email address", "lcps email", "your email", "student email", "school email"];
   for (var i = 0; i < keys.length; i++) {
