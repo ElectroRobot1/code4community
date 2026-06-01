@@ -69,12 +69,18 @@ Form owner links responses to a Sheet and gives you **Editor** on the spreadshee
 
 ### Form response links (Apps Script)
 
-1. Paste the latest `writing-center-form-sync.gs` and **Save**.
-2. **Project Settings** → enable **Google Forms API** (or Cloud Console API for the script’s GCP project).
-3. Optional `appsscript.json` scopes in `google-apps-script/appsscript.json` — re-run the trigger and **Authorize** when asked for Forms response access.
-4. Optional script property `WC_FORM_EDIT_URL` = `https://docs.google.com/forms/d/YOUR_FORM_ID/edit` (fallback if API lookup fails).
+Links must use the **Forms API** `responseId` (starts with `ACY…`), not `FormResponse.getId()`.
 
-Site fallback for older sessions: `NEXT_PUBLIC_WC_FORM_EDIT_URL` (form **edit** URL, from Form → ⋮ in edit mode).
+1. Paste the latest `writing-center-form-sync.gs` and **Save**.
+2. **Extensions** → **Apps Script** → **Services** (+) → add **Google Forms API** (v1).
+3. In [Google Cloud Console](https://console.cloud.google.com/apis/library/forms.googleapis.com) for the script’s GCP project → enable **Google Forms API**.
+4. Re-run the trigger → **Authorize** (needs `forms.responses.readonly`).
+5. Optional script property `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` if the script cannot detect the form.
+
+After a test submit, **Executions** should not log “no Forms API responseId”. Firestore sessions should have `googleFormApiResponseId` (ACY…). The site builds  
+`https://docs.google.com/forms/d/FORM_ID/edit#response=ACY…`.
+
+**Older sessions** synced without `googleFormApiResponseId` will not get a deep link until the student submits again.
 
 ## Local testing
 

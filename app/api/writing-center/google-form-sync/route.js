@@ -31,6 +31,8 @@ export async function POST(request) {
     responseId: body.responseId,
     submittedAt: body.submittedAt,
     fields: body.fields,
+    googleFormId: body.googleFormId,
+    googleFormApiResponseId: body.googleFormApiResponseId,
     googleFormResponseUrl: body.googleFormResponseUrl,
   });
 

@@ -2,7 +2,7 @@
  * Writing Center — sync Google Form submissions to Code4Community.
  *
  * Setup: docs/writing-center-google-form.md
- * Re-authorize after updates (Forms API scope for response links).
+ * Requires Google Forms API enabled + forms.responses.readonly scope (re-authorize after changes).
  */
 
 function onFormSubmit(e) {
@@ -23,7 +23,6 @@ function onFormSubmit(e) {
   var fields = {};
   var responseId;
   var submittedAt;
-  var googleFormResponseUrl = "";
   var formResponse = null;
 
   if (e.response) {
@@ -49,20 +48,19 @@ function onFormSubmit(e) {
       submittedAt = formResponse.getTimestamp().toISOString();
     }
   } else {
-    console.error(
-      "Unexpected trigger event. Recreate trigger: onFormSubmit → On form submit → " +
-        "From form or From spreadsheet."
-    );
+    console.error("Unexpected trigger event.");
     return;
   }
 
-  googleFormResponseUrl = buildFormResponseViewUrl_(formResponse, submittedAt, fields, props);
+  var link = resolveFormResponseLink_(submittedAt, fields, props);
 
   var payload = {
     responseId: responseId,
     submittedAt: submittedAt,
     fields: fields,
-    googleFormResponseUrl: googleFormResponseUrl,
+    googleFormId: link.formId,
+    googleFormApiResponseId: link.apiResponseId,
+    googleFormResponseUrl: link.url,
   };
 
   var res = UrlFetchApp.fetch(syncUrl, {
@@ -76,42 +74,110 @@ function onFormSubmit(e) {
   var code = res.getResponseCode();
   if (code < 200 || code >= 300) {
     console.error("Sync failed (" + code + "): " + res.getContentText());
+  } else if (!link.apiResponseId) {
+    console.error(
+      "Synced session but no Forms API responseId — enable Google Forms API for this script's " +
+        "GCP project and re-authorize. Link will not open a specific response."
+    );
   }
 }
 
-/** Opens this submission in Google Forms → Responses (not the spreadsheet). */
-function buildFormResponseViewUrl_(formResponse, submittedAtIso, fields, props) {
-  var form = FormApp.getActiveForm();
-  if (!form) {
-    form = getLinkedForm_();
-  }
-  if (!form) {
-    return props.getProperty("WC_FORM_EDIT_URL") || "";
+function resolveFormResponseLink_(submittedAtIso, fields, props) {
+  var form = FormApp.getActiveForm() || getLinkedForm_();
+  var formId =
+    (form && form.getId()) || props.getProperty("WC_FORM_ID") || "";
+  if (!formId) {
+    console.error("Could not determine form ID. Set WC_FORM_ID in Script properties.");
+    return { formId: "", apiResponseId: "", url: "" };
   }
 
-  var formId = form.getId();
   var submittedAt = submittedAtIso ? new Date(submittedAtIso) : new Date();
   var email = pickEmailFromFields_(fields);
-
-  var apiResponseId = null;
-  if (formResponse) {
-    apiResponseId = lookupFormsApiResponseId_(formId, submittedAt, email, formResponse.getId());
-  } else {
-    apiResponseId = lookupFormsApiResponseId_(formId, submittedAt, email, null);
-  }
+  var apiResponseId = lookupFormsApiResponseIdWithRetry_(formId, submittedAt, email);
 
   if (apiResponseId) {
-    return "https://docs.google.com/forms/d/" + formId + "/edit#response=" + apiResponseId;
+    return {
+      formId: formId,
+      apiResponseId: apiResponseId,
+      url:
+        "https://docs.google.com/forms/d/" +
+        formId +
+        "/edit#response=" +
+        apiResponseId,
+    };
   }
 
-  return props.getProperty("WC_FORM_EDIT_URL") || form.getEditUrl();
+  return { formId: formId, apiResponseId: "", url: "" };
 }
 
-/**
- * Forms API responseId matches the ID in .../edit#response= (unlike FormResponse.getId()).
- * Requires scope: https://www.googleapis.com/auth/forms.responses.readonly
- */
-function lookupFormsApiResponseId_(formId, submittedAt, email, appsScriptResponseId) {
+/** Retries — Forms API may lag a few seconds after submit. */
+function lookupFormsApiResponseIdWithRetry_(formId, submittedAt, email) {
+  var attempts = 5;
+  for (var i = 0; i < attempts; i++) {
+    if (i > 0) Utilities.sleep(2000);
+    var id = lookupFormsApiResponseIdOnce_(formId, submittedAt, email);
+    if (id) return id;
+  }
+  return null;
+}
+
+function lookupFormsApiResponseIdOnce_(formId, submittedAt, email) {
+  var data = listFormResponses_(formId);
+  if (!data || !data.responses || !data.responses.length) return null;
+
+  var responses = data.responses.slice().sort(function (a, b) {
+    return (
+      new Date(b.lastSubmittedTime).getTime() - new Date(a.lastSubmittedTime).getTime()
+    );
+  });
+
+  var targetMs = submittedAt.getTime();
+
+  if (email) {
+    for (var i = 0; i < responses.length; i++) {
+      var r = responses[i];
+      if (
+        r.respondentEmail &&
+        String(r.respondentEmail).toLowerCase() === email
+      ) {
+        var emailDelta = Math.abs(new Date(r.lastSubmittedTime).getTime() - targetMs);
+        if (emailDelta < 600000) return r.responseId;
+      }
+    }
+  }
+
+  var bestId = null;
+  var bestDelta = Infinity;
+  for (var j = 0; j < responses.length; j++) {
+    var resp = responses[j];
+    var delta = Math.abs(new Date(resp.lastSubmittedTime).getTime() - targetMs);
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      bestId = resp.responseId;
+    }
+  }
+  if (bestDelta < 300000) return bestId;
+
+  var newest = responses[0];
+  if (
+    newest &&
+    Math.abs(new Date(newest.lastSubmittedTime).getTime() - Date.now()) < 180000
+  ) {
+    return newest.responseId;
+  }
+
+  return null;
+}
+
+function listFormResponses_(formId) {
+  if (typeof Forms !== "undefined" && Forms.Forms && Forms.Forms.Responses) {
+    try {
+      return Forms.Forms.Responses.list(formId);
+    } catch (err) {
+      console.error("Forms advanced service: " + err);
+    }
+  }
+
   var url =
     "https://forms.googleapis.com/v1/forms/" +
     encodeURIComponent(formId) +
@@ -122,29 +188,17 @@ function lookupFormsApiResponseId_(formId, submittedAt, email, appsScriptRespons
   });
 
   if (res.getResponseCode() !== 200) {
-    console.error("Forms API list responses (" + res.getResponseCode() + "): " + res.getContentText());
+    console.error(
+      "Forms API (" +
+        res.getResponseCode() +
+        "): " +
+        res.getContentText() +
+        " — enable Google Forms API on this script's GCP project."
+    );
     return null;
   }
 
-  var data = JSON.parse(res.getContentText());
-  if (!data.responses || !data.responses.length) return null;
-
-  var targetMs = submittedAt.getTime();
-  var bestId = null;
-  var bestDelta = Infinity;
-
-  for (var i = 0; i < data.responses.length; i++) {
-    var r = data.responses[i];
-    var t = new Date(r.lastSubmittedTime).getTime();
-    var delta = Math.abs(t - targetMs);
-    if (delta < bestDelta) {
-      bestDelta = delta;
-      bestId = r.responseId;
-    }
-    if (delta < 120000) break;
-  }
-
-  return bestId;
+  return JSON.parse(res.getContentText());
 }
 
 function getLinkedForm_() {
