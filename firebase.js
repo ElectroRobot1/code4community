@@ -29,14 +29,17 @@ import {
 } from "@/lib/firebaseConfig";
 
 const isDev = process.env.NODE_ENV === "development";
+/** `npm run preview:local` — production build against c4cdev (keys.dev.js), not code4community26. */
+const useDevFirebase =
+  isDev || process.env.NEXT_PUBLIC_USE_DEV_FIREBASE === "1";
 
 const isBuildTime =
   typeof window === "undefined" &&
-  !isDev &&
+  !useDevFirebase &&
   !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 function resolveConfig() {
-  if (isDev) {
+  if (useDevFirebase) {
     return { config: devFirebaseConfig, recaptcha: devRecaptchaSiteKey, source: "keys.dev.js" };
   }
 
@@ -82,7 +85,7 @@ if (typeof window !== "undefined") {
     projectId: firebaseConfig?.projectId,
     authDomain: firebaseConfig?.authDomain,
     apiKey: maskSecret(firebaseConfig?.apiKey),
-    appCheck: recaptchaSiteKey ? "enabled" : "off",
+    appCheck: recaptchaSiteKey && !useDevFirebase ? "enabled" : "off",
   });
 }
 
@@ -116,7 +119,7 @@ try {
 if (
   !isBuildTime &&
   typeof window !== "undefined" &&
-  !isDev &&
+  !useDevFirebase &&
   recaptchaSiteKey &&
   app
 ) {

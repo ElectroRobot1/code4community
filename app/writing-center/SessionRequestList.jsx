@@ -1,0 +1,208 @@
+"use client";
+
+import { formatSessionDate } from "@/lib/firestoreDates";
+import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
+
+function getStatusColor(status) {
+  switch (status) {
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-800";
+    case "ACCEPTED":
+      return "bg-blue-100 text-blue-800";
+    case "IN_PROGRESS":
+      return "bg-purple-100 text-purple-800";
+    case "COMPLETED":
+      return "bg-green-100 text-green-800";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+}
+
+const headerClass =
+  "text-xs font-semibold text-gray-500 uppercase tracking-wide";
+
+function buildGridTemplate({ showStudent, showTutor, showActionsCol }) {
+  const cols = [];
+  if (showStudent) cols.push("minmax(0, 1.15fr)");
+  if (showTutor) cols.push("minmax(0, 0.95fr)");
+  cols.push("5.75rem", "5.25rem", "minmax(7rem, auto)");
+  if (showActionsCol) cols.push("minmax(5.5rem, auto)");
+  return cols.join(" ");
+}
+
+/**
+ * Manual horizontal nudge per column (Tailwind negative margin-left).
+ * Tweak `cell` (row values) and `header` separately until they line up.
+ * Use "" for no nudge, or e.g. "-ml-[30px]".
+ */
+const COLUMN_NUDGE = {
+  student: { cell: "", header: "" },
+  tutor: { cell: "-ml-[150px]", header: "-ml-[160px]" },
+  status: { cell: "-ml-[300px]", header: "-ml-[330px]" },
+  type: { cell: "ml-[-180px]", header: "ml-[-200px]" },
+  dateTime: { cell: "", header: "" },
+  actions: { cell: "", header: "" },
+};
+
+function cellNudge(column) {
+  return COLUMN_NUDGE[column]?.cell ?? "";
+}
+
+function headerNudge(column) {
+  return COLUMN_NUDGE[column]?.header ?? "";
+}
+
+export function SessionRequestList({
+  sessions,
+  emptyMessage = "No sessions found",
+  showStudent = true,
+  showTutor = true,
+  renderActions,
+  expandedSessionId,
+  onToggleExpand,
+  renderExpanded,
+}) {
+  const hasActions = Boolean(renderActions);
+  const canExpand = Boolean(onToggleExpand && renderExpanded);
+  const showActionsCol = hasActions || canExpand;
+
+  if (sessions.length === 0) {
+    return <div className="p-8 text-center text-gray-500">{emptyMessage}</div>;
+  }
+
+  const gridStyle = {
+    gridTemplateColumns: buildGridTemplate({ showStudent, showTutor, showActionsCol }),
+  };
+
+  return (
+    <>
+      <div
+        className="grid w-full items-center gap-x-4 px-3 py-2 bg-gray-50 border-b border-gray-200"
+        style={gridStyle}
+      >
+        {showStudent && (
+          <span className={`${headerClass} ${headerNudge("student")}`}>Student</span>
+        )}
+        {showTutor && (
+          <span className={`${headerClass} ${headerNudge("tutor")}`}>Tutor</span>
+        )}
+        <span className={`${headerClass} ${headerNudge("status")}`}>Status</span>
+        <span className={`${headerClass} ${headerNudge("type")}`}>Type</span>
+        <span className={`${headerClass} ${headerNudge("dateTime")}`}>Date/time</span>
+        {showActionsCol && (
+          <span
+            className={`${headerClass} text-right justify-self-end ${headerNudge("actions")}`}
+          >
+            {hasActions ? "Actions" : ""}
+          </span>
+        )}
+      </div>
+      <ul className="divide-y divide-gray-200">
+        {sessions.map((session) => {
+          const formResponseUrl = getGoogleFormResponseUrl(session);
+          const isExpanded = expandedSessionId === session.id;
+
+          const rowGrid = (
+            <div className="grid w-full items-center gap-x-4" style={gridStyle}>
+              {showStudent && (
+                <div className={`min-w-0 ${cellNudge("student")}`}>
+                  {formResponseUrl && isAsyncFormSession(session) ? (
+                    <a
+                      href={formResponseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline truncate block"
+                      title="Open Google Form response"
+                    >
+                      {session.studentName || "—"}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-900 truncate block">
+                      {session.studentName || "—"}
+                    </span>
+                  )}
+                </div>
+              )}
+              {showTutor && (
+                <div className={`min-w-0 ${cellNudge("tutor")}`}>
+                  <span className="text-sm text-gray-600 truncate block">
+                    {session.tutorName || "Unassigned"}
+                  </span>
+                </div>
+              )}
+              <div className={cellNudge("status")}>
+                <span
+                  className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(session.status)}`}
+                >
+                  {session.status}
+                </span>
+              </div>
+              <div className={cellNudge("type")}>
+                <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap bg-purple-100 text-purple-800">
+                  {session.sessionType}
+                </span>
+              </div>
+              <div className={`min-w-0 ${cellNudge("dateTime")}`}>
+                <span className="text-sm text-gray-500 truncate block tabular-nums">
+                  {formatSessionDate(session.createdAt)}
+                </span>
+              </div>
+              {showActionsCol && (
+                <div
+                  className={`flex items-center justify-end gap-2 ${cellNudge("actions")}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {renderActions?.(session)}
+                  {canExpand && (
+                    <svg
+                      className={`w-5 h-5 shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+
+          return (
+            <li key={session.id} className="w-full">
+              {canExpand ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleExpand(isExpanded ? null : session.id)}
+                  className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                >
+                  {rowGrid}
+                </button>
+              ) : (
+                <div className="w-full px-3 py-2 hover:bg-gray-50/50">{rowGrid}</div>
+              )}
+              {isExpanded && renderExpanded && (
+                <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 w-full">
+                  <div className="space-y-2 text-sm text-gray-600">
+                    {renderExpanded(session, formResponseUrl)}
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+export { getStatusColor };

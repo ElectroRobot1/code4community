@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
 import { collection, query, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-import { formatSessionDate } from "@/lib/firestoreDates";
-import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
+import { SessionRequestList } from "./SessionRequestList";
 
 export default function TutorDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -179,17 +178,6 @@ export default function TutorDashboard() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'ACCEPTED': return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const availableSessions = sessions.filter(s => s.status === 'PENDING' || s.status === 'ACCEPTED');
   const mySessions = sessions.filter(s => s.tutorId === user?.uid && (s.status === 'ACCEPTED' || s.status === 'COMPLETED' || s.status === 'IN_PROGRESS'));
 
@@ -200,91 +188,51 @@ export default function TutorDashboard() {
         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
-  const renderSessionRow = (session, actions) => {
-    const formResponseUrl = getGoogleFormResponseUrl(session);
-    return (
-      <li key={session.id} className="w-full px-5 py-4 hover:bg-gray-50/50">
-        <div className="flex w-full items-center gap-6 min-h-[3rem]">
-          <div className="flex flex-1 min-w-0 items-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap">
-            <div className="min-w-0 lg:flex-[2]">
-              {formResponseUrl && isAsyncFormSession(session) ? (
-                <a
-                  href={formResponseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-base font-semibold text-indigo-600 hover:text-indigo-800 underline"
-                >
-                  {session.subject}
-                </a>
-              ) : (
-                <span className="text-base font-semibold text-indigo-600">{session.subject}</span>
-              )}
-            </div>
-            <span
-              className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(session.status)}`}
-            >
-              {session.status}
-            </span>
-            <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-              {session.sessionType}
-            </span>
-            <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
-              <span className="text-gray-500">Student:</span> {session.studentName}
-            </span>
-            <span className="text-sm text-gray-500 shrink-0 lg:ml-auto">
-              {formatSessionDate(session.createdAt)}
-            </span>
-          </div>
-          {actions ? <div className="shrink-0 flex items-center gap-2">{actions}</div> : null}
-        </div>
-        {(session.notes ||
-          (isAsyncFormSession(session) && formResponseUrl) ||
-          (session.sessionType === "ASYNC" && session.asyncFileUrl) ||
-          (session.status === "COMPLETED" && session.proofFileUrl)) && (
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm border-t border-gray-100 pt-3">
-            {session.notes && (
-              <p className="text-gray-600 w-full">
-                <span className="font-medium text-gray-700">Notes:</span> {session.notes}
-              </p>
-            )}
-            {isAsyncFormSession(session) && formResponseUrl && (
-              <a
-                href={formResponseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                View in Google Forms
-              </a>
-            )}
-            {session.sessionType === "ASYNC" && session.asyncFileUrl && (
-              <a
-                href={session.asyncFileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                Open student document
-              </a>
-            )}
-            {session.status === "COMPLETED" && session.proofFileUrl && (
-              <a
-                href={session.proofFileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                Proof file
-              </a>
-            )}
-          </div>
-        )}
-      </li>
-    );
+  const renderActions = (session) => {
+    if (activeTab === "available") {
+      if (session.status === "PENDING") {
+        return (
+          <button
+            type="button"
+            onClick={() => handleAccept(session.id)}
+            className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-700"
+          >
+            Accept
+          </button>
+        );
+      }
+      if (session.status === "ACCEPTED" && session.tutorId === user?.uid) {
+        return (
+          <button
+            type="button"
+            onClick={() => handleStartSession(session)}
+            className="bg-green-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-green-700"
+          >
+            Start Session
+          </button>
+        );
+      }
+      return null;
+    }
+    if (session.status === "ACCEPTED") {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedSession(session);
+            setShowCompleteModal(true);
+          }}
+          className="bg-green-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-green-700"
+        >
+          Mark Complete
+        </button>
+      );
+    }
+    return null;
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-4">
       <header className="w-full mb-6 border-b border-gray-200 pb-4">
         <h1 className="text-2xl font-bold text-gray-900">Writing Center - Tutor Dashboard</h1>
         <nav className="mt-3 flex flex-wrap gap-1" aria-label="Tutor sections">
@@ -319,63 +267,24 @@ export default function TutorDashboard() {
             </div>
           )}
           <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
-            {availableSessions.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                No available requests at the moment.
-              </div>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {availableSessions.map((session) =>
-                  renderSessionRow(
-                    session,
-                    session.status === "PENDING" ? (
-                      <button
-                        type="button"
-                        onClick={() => handleAccept(session.id)}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
-                      >
-                        Accept
-                      </button>
-                    ) : session.status === "ACCEPTED" && session.tutorId === user?.uid ? (
-                      <button
-                        type="button"
-                        onClick={() => handleStartSession(session)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700"
-                      >
-                        Start Session
-                      </button>
-                    ) : null
-                  )
-                )}
-              </ul>
-            )}
+            <SessionRequestList
+              sessions={availableSessions}
+              emptyMessage="No available requests at the moment."
+              showTutor
+              showActions
+              renderActions={renderActions}
+            />
           </div>
         </div>
       ) : (
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
-          {mySessions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No sessions yet.</div>
-          ) : (
-            <ul className="divide-y divide-gray-200">
-              {mySessions.map((session) =>
-                renderSessionRow(
-                  session,
-                  session.status === "ACCEPTED" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedSession(session);
-                        setShowCompleteModal(true);
-                      }}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700"
-                    >
-                      Mark Complete
-                    </button>
-                  ) : null
-                )
-              )}
-            </ul>
-          )}
+          <SessionRequestList
+            sessions={mySessions}
+            emptyMessage="No sessions yet."
+            showTutor
+            showActions
+            renderActions={renderActions}
+          />
         </div>
       )}
 

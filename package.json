@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --turbo",
     "dev:clean": "rm -rf .next && next dev --turbo",
+    "dev:stable": "rm -rf .next && next dev",
     "dev:prod": "NODE_ENV=production next dev",
     "preview": "next build && next start",
+    "preview:local": "NEXT_PUBLIC_USE_DEV_FIREBASE=1 next build && NEXT_PUBLIC_USE_DEV_FIREBASE=1 next start",
     "build": "next build",
     "build:dev": "NODE_ENV=development next build",
     "start": "next start",

@@ -36,12 +36,14 @@ function readApiKeyFromKeysDevSource() {
   }
 }
 
-async function getFirebaseWebApiKey() {
-  const fromEnv = getFirebaseWebApiKeyFromEnv();
-  if (fromEnv) return fromEnv;
+function useDevFirebaseKeys() {
+  return (
+    process.env.NODE_ENV === "development" ||
+    process.env.NEXT_PUBLIC_USE_DEV_FIREBASE === "1"
+  );
+}
 
-  if (process.env.NODE_ENV !== "development") return undefined;
-
+async function getFirebaseWebApiKeyFromKeysDev() {
   if (!existsSync(KEYS_DEV_PATH)) return undefined;
 
   try {
@@ -53,6 +55,20 @@ async function getFirebaseWebApiKey() {
   }
 
   return readApiKeyFromKeysDevSource();
+}
+
+async function getFirebaseWebApiKey() {
+  if (useDevFirebaseKeys()) {
+    const fromKeys = await getFirebaseWebApiKeyFromKeysDev();
+    if (fromKeys) return fromKeys;
+  }
+
+  const fromEnv = getFirebaseWebApiKeyFromEnv();
+  if (fromEnv) return fromEnv;
+
+  if (!useDevFirebaseKeys()) return undefined;
+
+  return getFirebaseWebApiKeyFromKeysDev();
 }
 
 /**

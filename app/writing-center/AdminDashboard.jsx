@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
 import { collection, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-import { formatSessionDate } from "@/lib/firestoreDates";
-import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
+import { isAsyncFormSession } from "@/lib/writingCenterForm";
+import { SessionRequestList } from "./SessionRequestList";
 
 function getUserDisplayName(user) {
   return (
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
     }`;
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-4">
       <header className="w-full flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 border-b border-gray-200 pb-4">
         <div className="min-w-0 shrink-0">
           <h1 className="text-2xl font-bold text-gray-900">Writing Center - Admin Dashboard</h1>
@@ -214,130 +214,64 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
-            {filteredSessions.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No sessions found</div>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {filteredSessions.map((session) => {
-                  const formResponseUrl = getGoogleFormResponseUrl(session);
-                  const isExpanded = expandedSession === session.id;
-                  return (
-                  <li key={session.id} className="w-full">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedSession(isExpanded ? null : session.id)}
-                      className="w-full px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+            <SessionRequestList
+              sessions={filteredSessions}
+              emptyMessage="No sessions found"
+              showActions
+              expandedSessionId={expandedSession}
+              onToggleExpand={(id) => setExpandedSession(id)}
+              renderExpanded={(session, formResponseUrl) => (
+                <>
+                  {session.subject && (
+                    <p>
+                      <span className="font-medium text-gray-700">Subject:</span> {session.subject}
+                    </p>
+                  )}
+                  {session.notes && (
+                    <p>
+                      <span className="font-medium text-gray-700">Notes:</span> {session.notes}
+                    </p>
+                  )}
+                  {isAsyncFormSession(session) && formResponseUrl && (
+                    <a
+                      href={formResponseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-900"
                     >
-                      <div className="flex w-full items-center gap-6 min-h-[3rem]">
-                        <div className="flex flex-1 min-w-0 items-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap">
-                          <div className="flex items-center gap-2 min-w-0 lg:flex-[2]">
-                            {formResponseUrl && isAsyncFormSession(session) ? (
-                              <a
-                                href={formResponseUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-base font-semibold text-indigo-600 hover:text-indigo-800 underline"
-                              >
-                                {session.subject}
-                              </a>
-                            ) : (
-                              <span className="text-base font-semibold text-indigo-600">
-                                {session.subject}
-                              </span>
-                            )}
-                          </div>
-                          <span
-                            className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(session.status)}`}
-                          >
-                            {session.status}
-                          </span>
-                          <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                            {session.sessionType}
-                          </span>
-                          <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
-                            <span className="text-gray-500">Student:</span> {session.studentName}
-                          </span>
-                          <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
-                            <span className="text-gray-500">Tutor:</span> {session.tutorName || "Unassigned"}
-                          </span>
-                          <span className="text-sm text-gray-500 shrink-0 lg:ml-auto">
-                            {formatSessionDate(session.createdAt)}
-                          </span>
-                        </div>
-                        <svg
-                          className={`w-5 h-5 shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </button>
-                    {isExpanded && (
-                      <div className="px-5 py-4 bg-gray-50 border-t border-gray-200 w-full">
-                        <div className="space-y-2">
-                          {session.notes && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Notes:</p>
-                              <p className="text-sm text-gray-600">{session.notes}</p>
-                            </div>
-                          )}
-                          {isAsyncFormSession(session) && formResponseUrl && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Google Forms:</p>
-                              <a
-                                href={formResponseUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                View in Google Forms
-                              </a>
-                            </div>
-                          )}
-                          {session.asyncFileUrl && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Student&apos;s document:</p>
-                              <a
-                                href={session.asyncFileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                {session.asyncFileName || "Open submitted file"}
-                              </a>
-                            </div>
-                          )}
-                          {session.proofFileUrl && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Proof File:</p>
-                              <a
-                                href={session.proofFileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                {session.proofFileName}
-                              </a>
-                            </div>
-                          )}
-                          {session.duration && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Session Duration:</p>
-                              <p className="text-sm text-gray-600">{Math.floor(session.duration / 60)}:{(session.duration % 60).toString().padStart(2, '0')}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                );
-                })}
-              </ul>
-            )}
+                      View in Google Forms
+                    </a>
+                  )}
+                  {session.asyncFileUrl && (
+                    <a
+                      href={session.asyncFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      {session.asyncFileName || "Open submitted file"}
+                    </a>
+                  )}
+                  {session.proofFileUrl && (
+                    <a
+                      href={session.proofFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      {session.proofFileName || "Proof file"}
+                    </a>
+                  )}
+                  {session.duration != null && (
+                    <p>
+                      <span className="font-medium text-gray-700">Duration:</span>{" "}
+                      {Math.floor(session.duration / 60)}:
+                      {(session.duration % 60).toString().padStart(2, "0")}
+                    </p>
+                  )}
+                </>
+              )}
+            />
           </div>
         </div>
       ) : activeTab === 'tutor-assignments' ? (

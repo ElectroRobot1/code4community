@@ -7,6 +7,8 @@ Code4Community — a Next.js 16 (App Router) platform for a student-led engineer
 
 ### Commands
 - **Dev server**: `npm run dev` (uses Turbopack, starts on port 3000)
+- **Dev (stale UI / HMR issues)**: `npm run dev:clean` or `npm run dev:stable` (no Turbopack, clears `.next`)
+- **Local prod-like UI + c4cdev login**: `npm run preview:local`
 - **Build**: `npm run build`
 - **Lint**: `npm run lint` (see known issue below)
 
