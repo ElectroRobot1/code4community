@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
-import { collection, onSnapshot, updateDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('sessions');
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
         tutorName: tutorUser?.displayName || tutorUser?.email,
         tutorEmail: tutorUser?.email,
         status: 'ACCEPTED',
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
       setShowAssignModal(false);
       setSelectedSession(null);

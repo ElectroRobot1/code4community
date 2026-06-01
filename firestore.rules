@@ -1,4 +1,5 @@
-  rules_version = '2';
+
+ rules_version = '2';
 
   service cloud.firestore {
     match /databases/{database}/documents {
@@ -402,6 +403,69 @@
         return s in ['open', 'full', 'closed', 'cancelled'];
       }
 
+      function isWritingCenterTimestamp(value) {
+        return value is timestamp ||
+          (value is string && value.size() > 0 && value.size() <= 40);
+      }
+
+      function isValidWritingCenterSessionType(t) {
+        return t in ['IN_PERSON', 'ASYNC'];
+      }
+
+      function isValidWritingCenterStatus(s) {
+        return s in ['PENDING', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+      }
+
+      function isWritingCenterTutor() {
+        return isAuthenticated() &&
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['tutor', 'teacher', 'admin'];
+      }
+
+      // Writing Center sessions
+      match /sessions/{sessionId} {
+        allow read: if isAuthenticated() && (
+                        resource.data.studentId == request.auth.uid ||
+                        resource.data.tutorId == request.auth.uid ||
+                        resource.data.status == 'PENDING' ||
+                        isWritingCenterTutor() ||
+                        isAnyAdmin()
+                      );
+
+        allow create: if isAuthenticated() &&
+                        request.resource.data.keys().hasAll([
+                          'studentId', 'studentName', 'studentEmail', 'subject', 'notes',
+                          'sessionType', 'status', 'createdAt', 'updatedAt'
+                        ]) &&
+                        request.resource.data.studentId == request.auth.uid &&
+                        request.resource.data.studentName is string &&
+                        request.resource.data.studentName.size() > 0 &&
+                        request.resource.data.studentEmail is string &&
+                        request.resource.data.subject is string &&
+                        request.resource.data.subject.size() > 0 &&
+                        request.resource.data.notes is string &&
+                        isValidWritingCenterSessionType(request.resource.data.sessionType) &&
+                        request.resource.data.status == 'PENDING' &&
+                        isWritingCenterTimestamp(request.resource.data.createdAt) &&
+                        isWritingCenterTimestamp(request.resource.data.updatedAt);
+
+        allow update: if isAuthenticated() && (
+                          (resource.data.studentId == request.auth.uid &&
+                            request.resource.data.studentId == resource.data.studentId) ||
+                          (resource.data.tutorId == request.auth.uid &&
+                            request.resource.data.tutorId == resource.data.tutorId) ||
+                          (isWritingCenterTutor() &&
+                            resource.data.status == 'PENDING' &&
+                            request.resource.data.tutorId == request.auth.uid) ||
+                          isAnyAdmin()
+                        );
+
+        allow delete: if isAuthenticated() && (
+                          resource.data.studentId == request.auth.uid ||
+                          isAnyAdmin()
+                        );
+      }
+
       // Math Lab availability slots (tutoring, retakes, office hours, etc.)
       match /mathLabSlots/{slotId} {
         allow read: if isAuthenticated();
@@ -480,7 +544,6 @@
                         request.resource.data.status == 'cancelled';
       }
 
-      // Deny all other collections and documents
       match /{document=**} {
         allow read, write: if false;
       }

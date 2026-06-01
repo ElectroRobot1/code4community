@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
-import { collection, query, where, onSnapshot, updateDoc, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function TutorDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -63,7 +63,7 @@ export default function TutorDashboard() {
         tutorName: user.displayName || user.email,
         tutorEmail: user.email,
         status: 'ACCEPTED',
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
     } catch (err) {
       setError(err.message || 'Failed to accept session');
@@ -78,7 +78,7 @@ export default function TutorDashboard() {
       await updateDoc(doc(firestore, 'sessions', session.id), {
         status: 'IN_PROGRESS',
         sessionStartTime: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
     } catch (err) {
       console.error('Failed to start session:', err);
@@ -161,7 +161,7 @@ export default function TutorDashboard() {
         status: 'COMPLETED',
         sessionEndTime: new Date().toISOString(),
         duration: elapsedTime,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
 
       setShowCompleteModal(false);

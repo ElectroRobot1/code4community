@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
-import { collection, addDoc, query, where, onSnapshot, updateDoc, doc } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function StudentDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -100,8 +100,8 @@ export default function StudentDashboard() {
         notes: formData.notes,
         sessionType: formData.sessionType,
         status: 'PENDING',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
 
       setShowModal(false);
@@ -119,7 +119,7 @@ export default function StudentDashboard() {
     try {
       await updateDoc(doc(firestore, 'sessions', sessionId), {
         status: 'CANCELLED',
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
     } catch (err) {
       console.error('Failed to cancel session:', err);
