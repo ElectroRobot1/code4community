@@ -69,23 +69,29 @@ Form owner links responses to a Sheet and gives you **Editor** on the spreadshee
 
 ### Form response links (Apps Script)
 
-Links must use the **Forms API** `responseId` (starts with `ACY…`), not `FormResponse.getId()`.
+Per [Google’s Forms API + Apps Script guide](https://developers.google.com/workspace/forms/api/guides/apps-script-setup):
+
+| What | Correct approach |
+|------|------------------|
+| List responses | `GET https://forms.googleapis.com/v1/forms/{formId}/responses` via **UrlFetchApp** + `ScriptApp.getOAuthToken()` |
+| OAuth scope | `https://www.googleapis.com/auth/forms.responses.readonly` (required for `forms.responses.list`) |
+| Tutor view URL | `https://docs.google.com/forms/d/{formId}/edit#response={responseId}` where `responseId` comes from the **REST API** (often starts with `ACY…`) |
+| Wrong ID | `FormResponse.getId()` in Apps Script ≠ editor `#response=` id — do not build URLs from it |
+| Student edit link | `getEditResponseUrl()` — different purpose; lets the **respondent** edit their submission |
+
+There is no separate Apps Script “Advanced Service” for the Forms REST API; use UrlFetch as in our `writing-center-form-sync.gs`.
 
 #### Fix `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`
 
-The trigger was authorized **before** the Forms scopes were added. Update the manifest, then **re-authorize**:
+Triggers keep the **old** OAuth token until you re-authorize ([Google docs](https://developers.google.com/apps-script/guides/services/authorization)):
 
-1. In Apps Script: **Project settings** (gear) → enable **Show "appsscript.json" manifest file in editor**.
-2. Open **appsscript.json** and ensure `oauthScopes` includes (copy from `google-apps-script/appsscript.json` in the repo):
-   - `https://www.googleapis.com/auth/forms`
-   - `https://www.googleapis.com/auth/forms.responses.readonly`
-3. **Save** the project.
-4. In the editor, select **`authorizeFormsApiAccess`** → **Run** → **Review permissions** → allow all scopes.
-5. If there is no permission prompt: [Google Account → Third-party access](https://myaccount.google.com/permissions) → remove access for this script → run **`authorizeFormsApiAccess`** again.
-6. **Executions** should log `Forms API OK` (not 403).
-7. **Services** (+) → **Google Forms API** v1, and enable the API in [Cloud Console](https://console.cloud.google.com/apis/library/forms.googleapis.com) for the script’s GCP project.
-
-Then submit a test form response. Executions should not show Forms API 403.
+1. **Project settings** → **Show "appsscript.json" manifest file in editor**.
+2. Copy `oauthScopes` from `google-apps-script/appsscript.json` in this repo (must include `forms.responses.readonly` + `script.external_request`).
+3. **Save**.
+4. Run **`authorizeFormsApiAccess`** once → **Review permissions** → allow all.
+5. No prompt? [Revoke the script](https://myaccount.google.com/permissions) → run **`authorizeFormsApiAccess`** again.
+6. Enable [Google Forms API](https://console.cloud.google.com/apis/library/forms.googleapis.com) on the script’s GCP project (see **Project settings** → GCP project).
+7. Submit a test response — Executions should **not** show Forms API 403.
 
 Optional script property `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` if the script cannot detect the form.
 

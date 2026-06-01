@@ -122,7 +122,7 @@ function lookupFormsApiResponseIdWithRetry_(formId, submittedAt, email) {
 }
 
 function lookupFormsApiResponseIdOnce_(formId, submittedAt, email) {
-  var data = listFormResponses_(formId);
+  var data = listFormResponses_(formId, submittedAt);
   if (!data || !data.responses || !data.responses.length) return null;
 
   var responses = data.responses.slice().sort(function (a, b) {
@@ -169,32 +169,40 @@ function lookupFormsApiResponseIdOnce_(formId, submittedAt, email) {
   return null;
 }
 
-function listFormResponses_(formId) {
-  if (typeof Forms !== "undefined" && Forms.Forms && Forms.Forms.Responses) {
-    try {
-      return Forms.Forms.Responses.list(formId);
-    } catch (err) {
-      console.error("Forms advanced service: " + err);
-    }
-  }
-
+/**
+ * List responses via Forms REST API + UrlFetchApp (official Google pattern).
+ * @see https://developers.google.com/workspace/forms/api/guides/apps-script-setup
+ * @see https://developers.google.com/workspace/forms/api/reference/rest/v1/forms.responses/list
+ */
+function listFormResponses_(formId, submittedAt) {
   var url =
     "https://forms.googleapis.com/v1/forms/" +
     encodeURIComponent(formId) +
-    "/responses?pageSize=100";
+    "/responses?pageSize=25";
+
+  if (submittedAt) {
+    var from = new Date(submittedAt.getTime() - 120000);
+    var iso = from.toISOString().replace(/\.\d{3}Z$/, "Z");
+    url += "&filter=" + encodeURIComponent("timestamp >= " + iso);
+  }
+
   var res = UrlFetchApp.fetch(url, {
-    headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+    method: "get",
+    headers: {
+      Authorization: "Bearer " + ScriptApp.getOAuthToken(),
+      Accept: "application/json",
+    },
     muteHttpExceptions: true,
   });
 
   if (res.getResponseCode() !== 200) {
-    console.error(
-      "Forms API (" +
-        res.getResponseCode() +
-        "): " +
-        res.getContentText() +
-        " — enable Google Forms API on this script's GCP project."
-    );
+    var body = res.getContentText();
+    console.error("Forms API (" + res.getResponseCode() + "): " + body);
+    if (body.indexOf("ACCESS_TOKEN_SCOPE_INSUFFICIENT") !== -1) {
+      console.error(
+        "Missing forms.responses.readonly — update appsscript.json, run authorizeFormsApiAccess(), re-authorize."
+      );
+    }
     return null;
   }
 
@@ -246,9 +254,11 @@ function authorizeFormsApiAccess() {
   if (!form) {
     throw new Error("Open this project from the form or linked response spreadsheet, then run again.");
   }
-  var data = listFormResponses_(form.getId());
+  var data = listFormResponses_(form.getId(), new Date());
   if (!data) {
-    throw new Error("Forms API call failed — check Executions log and docs/writing-center-google-form.md");
+    throw new Error(
+      "Forms API call failed (403 = re-authorize after adding forms.responses.readonly to appsscript.json)."
+    );
   }
   Logger.log("Forms API OK. Response count: " + (data.responses ? data.responses.length : 0));
 }

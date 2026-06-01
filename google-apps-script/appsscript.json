@@ -2,21 +2,10 @@
   "timeZone": "America/New_York",
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "dependencies": {
-    "enabledAdvancedServices": [
-      {
-        "userSymbol": "Forms",
-        "serviceId": "forms",
-        "version": "v1"
-      }
-    ]
-  },
   "oauthScopes": [
-    "https://www.googleapis.com/auth/forms",
+    "https://www.googleapis.com/auth/script.external_request",
     "https://www.googleapis.com/auth/forms.responses.readonly",
     "https://www.googleapis.com/auth/forms.body.readonly",
-    "https://www.googleapis.com/auth/spreadsheets.currentonly",
-    "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/script.scriptapp"
+    "https://www.googleapis.com/auth/spreadsheets.currentonly"
   ]
 }
