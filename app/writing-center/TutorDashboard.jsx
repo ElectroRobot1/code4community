@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function TutorDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -31,10 +31,8 @@ export default function TutorDashboard() {
 
   useEffect(() => {
     if (user && firestore) {
-      const q = query(
-        collection(firestore, 'sessions'),
-        where('status', 'in', ['PENDING', 'ACCEPTED', 'IN_PROGRESS'])
-      );
+      // Load all sessions and filter client-side (avoids composite index on status).
+      const q = query(collection(firestore, 'sessions'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const sessionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setSessions(sessionsData);
