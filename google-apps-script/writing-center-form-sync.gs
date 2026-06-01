@@ -83,11 +83,11 @@ function onFormSubmit(e) {
 }
 
 function resolveFormResponseLink_(submittedAtIso, fields, props) {
-  var form = FormApp.getActiveForm() || getLinkedForm_();
-  var formId =
-    (form && form.getId()) || props.getProperty("WC_FORM_ID") || "";
+  var formId = getFormId_(props);
   if (!formId) {
-    console.error("Could not determine form ID. Set WC_FORM_ID in Script properties.");
+    console.error(
+      "Set Script property WC_FORM_ID (e.g. 1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE)."
+    );
     return { formId: "", apiResponseId: "", url: "" };
   }
 
@@ -209,20 +209,41 @@ function listFormResponses_(formId, submittedAt) {
   return JSON.parse(res.getContentText());
 }
 
-function getLinkedForm_() {
+/** Form editor ID — avoids FormApp.openByUrl (needs full forms scope on spreadsheets). */
+function getFormId_(props) {
+  var id = (props.getProperty("WC_FORM_ID") || "").trim();
+  if (id) return id;
+
+  try {
+    var form = FormApp.getActiveForm();
+    if (form) return form.getId();
+  } catch (err) {
+    // Expected when script is bound to spreadsheet only
+  }
+
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var formUrl = ss.getFormUrl();
-    if (formUrl) return FormApp.openByUrl(formUrl);
-  } catch (err) {
-    console.error("getLinkedForm_: " + err);
-  }
-  return null;
+    id = parseFormIdFromUrl_(ss.getFormUrl());
+    if (id) return id;
+  } catch (err2) {}
+
+  return "";
+}
+
+function parseFormIdFromUrl_(url) {
+  if (!url) return "";
+  var match = String(url).match(/\/forms\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : "";
 }
 
 function findFormResponseForSheetRow_(e, fields) {
-  var form = getLinkedForm_();
-  if (!form || !e.range) return null;
+  var form = null;
+  try {
+    var active = FormApp.getActiveForm();
+    if (active) form = active;
+  } catch (err) {}
+  if (!form) return null;
+  if (!e.range) return null;
 
   var responses = form.getResponses();
   var rowIndex = e.range.getRow() - 2;
@@ -250,11 +271,15 @@ function findFormResponseForSheetRow_(e, fields) {
  * Forces a new authorization dialog including Forms API access.
  */
 function authorizeFormsApiAccess() {
-  var form = FormApp.getActiveForm() || getLinkedForm_();
-  if (!form) {
-    throw new Error("Open this project from the form or linked response spreadsheet, then run again.");
+  var props = PropertiesService.getScriptProperties();
+  var formId = getFormId_(props);
+  if (!formId) {
+    throw new Error(
+      "Add Script property WC_FORM_ID = 1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE " +
+        "(Project settings → Script properties), Save, then run this again."
+    );
   }
-  var data = listFormResponses_(form.getId(), new Date());
+  var data = listFormResponses_(formId, new Date());
   if (!data) {
     throw new Error(
       "Forms API call failed (403 = re-authorize after adding forms.responses.readonly to appsscript.json)."

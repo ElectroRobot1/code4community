@@ -193,39 +193,114 @@ export default function TutorDashboard() {
   const availableSessions = sessions.filter(s => s.status === 'PENDING' || s.status === 'ACCEPTED');
   const mySessions = sessions.filter(s => s.tutorId === user?.uid && (s.status === 'ACCEPTED' || s.status === 'COMPLETED' || s.status === 'IN_PROGRESS'));
 
-  return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-6">Writing Center - Tutor Dashboard</h1>
+  const tabClass = (tab) =>
+    `whitespace-nowrap py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+      activeTab === tab
+        ? "bg-indigo-100 text-indigo-700"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    }`;
 
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('available')}
-            className={`${
-              activeTab === 'available'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
+  const renderSessionRow = (session, actions) => {
+    const formResponseUrl = getGoogleFormResponseUrl(session);
+    return (
+      <li key={session.id} className="w-full px-5 py-4 hover:bg-gray-50/50">
+        <div className="flex w-full items-center gap-6 min-h-[3rem]">
+          <div className="flex flex-1 min-w-0 items-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap">
+            <div className="min-w-0 lg:flex-[2]">
+              {formResponseUrl && isAsyncFormSession(session) ? (
+                <a
+                  href={formResponseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base font-semibold text-indigo-600 hover:text-indigo-800 underline"
+                >
+                  {session.subject}
+                </a>
+              ) : (
+                <span className="text-base font-semibold text-indigo-600">{session.subject}</span>
+              )}
+            </div>
+            <span
+              className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(session.status)}`}
+            >
+              {session.status}
+            </span>
+            <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+              {session.sessionType}
+            </span>
+            <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
+              <span className="text-gray-500">Student:</span> {session.studentName}
+            </span>
+            <span className="text-sm text-gray-500 shrink-0 lg:ml-auto">
+              {formatSessionDate(session.createdAt)}
+            </span>
+          </div>
+          {actions ? <div className="shrink-0 flex items-center gap-2">{actions}</div> : null}
+        </div>
+        {(session.notes ||
+          (isAsyncFormSession(session) && formResponseUrl) ||
+          (session.sessionType === "ASYNC" && session.asyncFileUrl) ||
+          (session.status === "COMPLETED" && session.proofFileUrl)) && (
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm border-t border-gray-100 pt-3">
+            {session.notes && (
+              <p className="text-gray-600 w-full">
+                <span className="font-medium text-gray-700">Notes:</span> {session.notes}
+              </p>
+            )}
+            {isAsyncFormSession(session) && formResponseUrl && (
+              <a
+                href={formResponseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-900"
+              >
+                View in Google Forms
+              </a>
+            )}
+            {session.sessionType === "ASYNC" && session.asyncFileUrl && (
+              <a
+                href={session.asyncFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-900"
+              >
+                Open student document
+              </a>
+            )}
+            {session.status === "COMPLETED" && session.proofFileUrl && (
+              <a
+                href={session.proofFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-900"
+              >
+                Proof file
+              </a>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  };
+
+  return (
+    <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+      <header className="w-full mb-6 border-b border-gray-200 pb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Writing Center - Tutor Dashboard</h1>
+        <nav className="mt-3 flex flex-wrap gap-1" aria-label="Tutor sections">
+          <button type="button" onClick={() => setActiveTab("available")} className={tabClass("available")}>
             Available Requests ({availableSessions.length})
           </button>
-          <button
-            onClick={() => setActiveTab('my-sessions')}
-            className={`${
-              activeTab === 'my-sessions'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
+          <button type="button" onClick={() => setActiveTab("my-sessions")} className={tabClass("my-sessions")}>
             My Sessions ({mySessions.length})
           </button>
         </nav>
-      </div>
+      </header>
 
       {activeTab === 'available' ? (
-        <div>
+        <div className="w-full">
           {activeSession && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6 w-full">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-purple-900">Active Session</h3>
@@ -243,171 +318,62 @@ export default function TutorDashboard() {
               </div>
             </div>
           )}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
             {availableSessions.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500">
                 No available requests at the moment.
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {availableSessions.map((session) => {
-                  const formResponseUrl = getGoogleFormResponseUrl(session);
-                  return (
-                  <li key={session.id} className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          {formResponseUrl && isAsyncFormSession(session) ? (
-                            <a
-                              href={formResponseUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
-                            >
-                              {session.subject}
-                            </a>
-                          ) : (
-                            <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
-                          )}
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
-                            {session.status}
-                          </span>
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                            {session.sessionType}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-500">Student: {session.studentName}</p>
-                        <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
-                        {session.notes && (
-                          <p className="mt-1 text-sm text-gray-600">{session.notes}</p>
-                        )}
-                        {isAsyncFormSession(session) && formResponseUrl && (
-                          <a
-                            href={formResponseUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
-                          >
-                            View in Google Forms
-                          </a>
-                        )}
-                        {session.sessionType === 'ASYNC' && session.asyncFileUrl && (
-                          <a
-                            href={session.asyncFileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
-                          >
-                            Open student document
-                          </a>
-                        )}
-                      </div>
-                      {session.status === 'PENDING' ? (
-                        <button
-                          onClick={() => handleAccept(session.id)}
-                          className="ml-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                        >
-                          Accept
-                        </button>
-                      ) : session.status === 'ACCEPTED' && session.tutorId === user?.uid ? (
-                        <button
-                          onClick={() => handleStartSession(session)}
-                          className="ml-4 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                        >
-                          Start Session
-                        </button>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-                })}
+                {availableSessions.map((session) =>
+                  renderSessionRow(
+                    session,
+                    session.status === "PENDING" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAccept(session.id)}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+                      >
+                        Accept
+                      </button>
+                    ) : session.status === "ACCEPTED" && session.tutorId === user?.uid ? (
+                      <button
+                        type="button"
+                        onClick={() => handleStartSession(session)}
+                        className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700"
+                      >
+                        Start Session
+                      </button>
+                    ) : null
+                  )
+                )}
               </ul>
             )}
           </div>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
           {mySessions.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">No sessions yet.</div>
+            <div className="p-8 text-center text-gray-500">No sessions yet.</div>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {mySessions.map((session) => {
-                const formResponseUrl = getGoogleFormResponseUrl(session);
-                return (
-                <li key={session.id} className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        {formResponseUrl && isAsyncFormSession(session) ? (
-                          <a
-                            href={formResponseUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
-                          >
-                            {session.subject}
-                          </a>
-                        ) : (
-                          <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
-                        )}
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                          {session.sessionType}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm text-gray-500">Student: {session.studentName}</p>
-                      <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
-                      {session.notes && (
-                        <p className="mt-1 text-sm text-gray-600">{session.notes}</p>
-                      )}
-                      {isAsyncFormSession(session) && formResponseUrl && (
-                        <a
-                          href={formResponseUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
-                        >
-                          View in Google Forms
-                        </a>
-                      )}
-                      {session.sessionType === 'ASYNC' && session.asyncFileUrl && (
-                        <a
-                          href={session.asyncFileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
-                        >
-                          Open student document
-                        </a>
-                      )}
-                      {session.status === 'COMPLETED' && session.proofFileUrl && (
-                        <a
-                          href={session.proofFileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 ml-2 inline-block text-indigo-600 hover:text-indigo-900"
-                        >
-                          Proof File
-                        </a>
-                      )}
-                    </div>
-                    {session.status === 'ACCEPTED' && (
-                      <button
-                        onClick={() => {
-                          setSelectedSession(session);
-                          setShowCompleteModal(true);
-                        }}
-                        className="ml-4 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                      >
-                        Mark Complete
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-              })}
+              {mySessions.map((session) =>
+                renderSessionRow(
+                  session,
+                  session.status === "ACCEPTED" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSession(session);
+                        setShowCompleteModal(true);
+                      }}
+                      className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700"
+                    >
+                      Mark Complete
+                    </button>
+                  ) : null
+                )
+              )}
             </ul>
           )}
         </div>

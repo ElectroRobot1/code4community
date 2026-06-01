@@ -133,48 +133,66 @@ export default function AdminDashboard() {
     ? sessions 
     : sessions.filter(s => s.tutorId === selectedTutorFilter);
 
+  const tabClass = (tab) =>
+    `whitespace-nowrap py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+      activeTab === tab
+        ? "bg-indigo-100 text-indigo-700"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    }`;
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-6">Writing Center - Admin Dashboard</h1>
+    <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+      <header className="w-full flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 border-b border-gray-200 pb-4">
+        <div className="min-w-0 shrink-0">
+          <h1 className="text-2xl font-bold text-gray-900">Writing Center - Admin Dashboard</h1>
+          <nav className="mt-3 flex flex-wrap gap-1" aria-label="Admin sections">
+            <button type="button" onClick={() => setActiveTab("sessions")} className={tabClass("sessions")}>
+              Sessions
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("tutor-assignments")}
+              className={tabClass("tutor-assignments")}
+            >
+              Tutor Assignments
+            </button>
+            <button type="button" onClick={() => setActiveTab("users")} className={tabClass("users")}>
+              User Management
+            </button>
+          </nav>
+        </div>
 
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('sessions')}
-            className={`${
-              activeTab === 'sessions'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Sessions
-          </button>
-          <button
-            onClick={() => setActiveTab('tutor-assignments')}
-            className={`${
-              activeTab === 'tutor-assignments'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Tutor Assignments
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`${
-              activeTab === 'users'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            User Management
-          </button>
-        </nav>
-      </div>
+        {activeTab === "sessions" && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white shadow-sm"
+              aria-label="Filter by status"
+            >
+              <option value="ALL">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="ACCEPTED">Accepted</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white shadow-sm"
+              aria-label="Filter by type"
+            >
+              <option value="ALL">All Types</option>
+              <option value="IN_PERSON">In-Person</option>
+              <option value="ASYNC">Async</option>
+            </select>
+          </div>
+        )}
+      </header>
 
-      {activeTab === 'sessions' ? (
-        <div>
-          <div className="bg-white shadow rounded-lg mb-6 overflow-hidden">
+      {activeTab === "sessions" ? (
+        <div className="w-full">
+          <div className="bg-white shadow rounded-lg mb-6 overflow-hidden w-full">
             <div className="flex flex-col sm:flex-row sm:divide-x divide-gray-200">
               <div className="flex-1 flex items-center justify-between gap-4 px-5 py-4 border-b sm:border-b-0 border-gray-200">
                 <p className="text-sm font-medium text-gray-500">Total Sessions</p>
@@ -195,79 +213,71 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="mb-4 flex space-x-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="ACCEPTED">Accepted</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="ALL">All Types</option>
-              <option value="IN_PERSON">In-Person</option>
-              <option value="ASYNC">Async</option>
-            </select>
-          </div>
-
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
             {filteredSessions.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No sessions found</div>
+              <div className="p-8 text-center text-gray-500">No sessions found</div>
             ) : (
               <ul className="divide-y divide-gray-200">
                 {filteredSessions.map((session) => {
                   const formResponseUrl = getGoogleFormResponseUrl(session);
+                  const isExpanded = expandedSession === session.id;
                   return (
-                  <li key={session.id}>
+                  <li key={session.id} className="w-full">
                     <button
-                      onClick={() => setExpandedSession(expandedSession === session.id ? null : session.id)}
-                      className="w-full px-4 py-4 sm:px-6 text-left hover:bg-gray-50"
+                      type="button"
+                      onClick={() => setExpandedSession(isExpanded ? null : session.id)}
+                      className="w-full px-5 py-4 text-left hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
+                      <div className="flex w-full items-center gap-6 min-h-[3rem]">
+                        <div className="flex flex-1 min-w-0 items-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap">
+                          <div className="flex items-center gap-2 min-w-0 lg:flex-[2]">
                             {formResponseUrl && isAsyncFormSession(session) ? (
                               <a
                                 href={formResponseUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+                                className="text-base font-semibold text-indigo-600 hover:text-indigo-800 underline"
                               >
                                 {session.subject}
                               </a>
                             ) : (
-                              <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                              <span className="text-base font-semibold text-indigo-600">
+                                {session.subject}
+                              </span>
                             )}
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
-                              {session.status}
-                            </span>
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                              {session.sessionType}
-                            </span>
                           </div>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Student: {session.studentName} | Tutor: {session.tutorName || 'Unassigned'}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-500">
+                          <span
+                            className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(session.status)}`}
+                          >
+                            {session.status}
+                          </span>
+                          <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                            {session.sessionType}
+                          </span>
+                          <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
+                            <span className="text-gray-500">Student:</span> {session.studentName}
+                          </span>
+                          <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
+                            <span className="text-gray-500">Tutor:</span> {session.tutorName || "Unassigned"}
+                          </span>
+                          <span className="text-sm text-gray-500 shrink-0 lg:ml-auto">
                             {formatSessionDate(session.createdAt)}
-                          </p>
+                          </span>
                         </div>
-                        <svg className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedSession === session.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg
+                          className={`w-5 h-5 shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </button>
-                    {expandedSession === session.id && (
-                      <div className="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200">
+                    {isExpanded && (
+                      <div className="px-5 py-4 bg-gray-50 border-t border-gray-200 w-full">
                         <div className="space-y-2">
                           {session.notes && (
                             <div>
@@ -331,7 +341,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       ) : activeTab === 'tutor-assignments' ? (
-        <div>
+        <div className="w-full">
           <div className="mb-6 flex items-center space-x-4">
             <label className="text-sm font-medium text-gray-700">Filter by Tutor:</label>
             <select
@@ -348,8 +358,8 @@ export default function AdminDashboard() {
             </select>
           </div>
 
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="bg-white shadow overflow-hidden sm:rounded-md w-full">
+            <table className="w-full min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
@@ -389,7 +399,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       ) : (
-        <div>
+        <div className="w-full">
           <div className="mb-4">
             <label htmlFor="user-search" className="sr-only">
               Search users
@@ -408,8 +418,8 @@ export default function AdminDashboard() {
               </p>
             )}
           </div>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="bg-white shadow overflow-hidden sm:rounded-md w-full">
+            <table className="w-full min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>

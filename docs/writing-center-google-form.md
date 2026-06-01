@@ -81,19 +81,32 @@ Per [Google’s Forms API + Apps Script guide](https://developers.google.com/wor
 
 There is no separate Apps Script “Advanced Service” for the Forms REST API; use UrlFetch as in our `writing-center-form-sync.gs`.
 
+#### Same Google account as GCP (your setup)
+
+Run once from the repo (enables Forms API on `code4community26`):
+
+```bash
+bash scripts/setup-writing-center-forms-api.sh
+```
+
+Then in **Apps Script** (spreadsheet → Extensions → Apps Script):
+
+1. **Project settings** → **Google Cloud Platform project** → **Change project** → number **`698474286096`** (or pick `code4community26`). This links the script to the project where the API is already enabled.
+2. **Show appsscript.json** → paste from `google-apps-script/appsscript.json` → **Save**.
+3. **Script properties**: `WC_SYNC_URL`, `WC_SYNC_SECRET`, `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE`.
+4. Paste `writing-center-form-sync.gs` → **Save**.
+5. Run **`authorizeFormsApiAccess`** → **Allow** all scopes (one-time).
+6. Submit a test form — Executions should show **Forms API OK** and sessions get `#response=ACY…` links.
+
 #### Fix `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`
 
-Triggers keep the **old** OAuth token until you re-authorize ([Google docs](https://developers.google.com/apps-script/guides/services/authorization)):
+Re-authorize after step 2 above. No prompt? [Revoke the script](https://myaccount.google.com/permissions) → run **`authorizeFormsApiAccess`** again.
 
-1. **Project settings** → **Show "appsscript.json" manifest file in editor**.
-2. Copy `oauthScopes` from `google-apps-script/appsscript.json` in this repo (must include `forms.responses.readonly` + `script.external_request`).
-3. **Save**.
-4. Run **`authorizeFormsApiAccess`** once → **Review permissions** → allow all.
-5. No prompt? [Revoke the script](https://myaccount.google.com/permissions) → run **`authorizeFormsApiAccess`** again.
-6. Enable [Google Forms API](https://console.cloud.google.com/apis/library/forms.googleapis.com) on the script’s GCP project (see **Project settings** → GCP project).
-7. Submit a test response — Executions should **not** show Forms API 403.
+**Required** for spreadsheet-bound scripts (avoids `FormApp.openByUrl`, which needs full `forms` scope):
 
-Optional script property `WC_FORM_ID` = `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` if the script cannot detect the form.
+| Property | Value |
+|----------|--------|
+| `WC_FORM_ID` | `1nRtpON5vn7gNOgWaMjcK7v9Fh1EXPkZXsXuUUL1sZDE` (from your form edit URL `…/forms/d/THIS_PART/edit`) |
 
 **Older sessions** without `googleFormApiResponseId` need a new form submit to get a working deep link.
 

@@ -125,20 +125,28 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Writing Center - Student Dashboard</h1>
+    <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+      <header className="w-full flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 mb-6 border-b border-gray-200 pb-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900">Writing Center - Student Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {sessions.length === 0
+              ? "No requests yet"
+              : `${sessions.length} request${sessions.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
         <button
+          type="button"
           onClick={() => setShowModal(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+          className="shrink-0 bg-indigo-600 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-indigo-700 shadow-sm sm:ml-auto"
         >
           Request Help
         </button>
-      </div>
+      </header>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden w-full">
         {sessions.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-8 text-center text-gray-500">
             No sessions yet. Click &quot;Request Help&quot; to get started.
           </div>
         ) : (
@@ -146,36 +154,59 @@ export default function StudentDashboard() {
             {sessions.map((session) => {
               const formResponseUrl = getGoogleFormResponseUrl(session);
               return (
-              <li key={session.id} className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}
-                      >
-                        {session.status}
+              <li key={session.id} className="w-full px-5 py-4 hover:bg-gray-50/50">
+                <div className="flex w-full items-center gap-6 min-h-[3rem]">
+                  <div className="flex flex-1 min-w-0 items-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap">
+                    <span className="text-base font-semibold text-indigo-600 lg:flex-[2] min-w-0">
+                      {session.subject}
+                    </span>
+                    <span
+                      className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(session.status)}`}
+                    >
+                      {session.status}
+                    </span>
+                    <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                      {session.sessionType}
+                    </span>
+                    {session.source === "google_form" && (
+                      <span className="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                        Google Form
                       </span>
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                        {session.sessionType}
-                      </span>
-                      {session.source === "google_form" && (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700">
-                          Google Form
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {session.tutorName ? `Tutor: ${session.tutorName}` : "No tutor assigned yet"}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
-                    {session.notes && <p className="mt-1 text-sm text-gray-600">{session.notes}</p>}
+                    )}
+                    <span className="text-sm text-gray-600 lg:flex-1 min-w-[10rem]">
+                      <span className="text-gray-500">Tutor:</span>{" "}
+                      {session.tutorName || "Not assigned yet"}
+                    </span>
+                    <span className="text-sm text-gray-500 shrink-0 lg:ml-auto">
+                      {formatSessionDate(session.createdAt)}
+                    </span>
+                  </div>
+                  {session.status === "PENDING" && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancel(session.id)}
+                      className="shrink-0 text-sm font-medium text-red-600 hover:text-red-800"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+                {(session.notes ||
+                  (isAsyncFormSession(session) && formResponseUrl) ||
+                  (session.sessionType === "ASYNC" && session.asyncFileUrl) ||
+                  (session.status === "COMPLETED" && session.proofFileUrl)) && (
+                  <div className="mt-3 pl-0 flex flex-wrap gap-x-6 gap-y-2 text-sm border-t border-gray-100 pt-3">
+                    {session.notes && (
+                      <p className="text-gray-600 w-full">
+                        <span className="font-medium text-gray-700">Notes:</span> {session.notes}
+                      </p>
+                    )}
                     {isAsyncFormSession(session) && formResponseUrl && (
                       <a
                         href={formResponseUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
                         View in Google Forms
                       </a>
@@ -185,7 +216,7 @@ export default function StudentDashboard() {
                         href={session.asyncFileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
                         View submitted document
                       </a>
@@ -195,21 +226,13 @@ export default function StudentDashboard() {
                         href={session.proofFileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
                         View tutor feedback
                       </a>
                     )}
                   </div>
-                  {session.status === "PENDING" && (
-                    <button
-                      onClick={() => handleCancel(session.id)}
-                      className="ml-4 text-red-600 hover:text-red-900"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+                )}
               </li>
             );
             })}
