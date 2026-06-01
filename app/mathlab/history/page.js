@@ -257,7 +257,7 @@ function MathLabHistoryPageContent() {
 
   return (
     <div className="min-h-screen bg-background " style={{ overscrollBehavior: 'none' }}>
-      <DashboardTopBar title="Math Lab History" showNavLinks={false} />
+      <DashboardTopBar title="Math Lab History" />
       <Suspense fallback={null}>
         <MathLabSidebar />
       </Suspense>

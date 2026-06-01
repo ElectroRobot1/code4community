@@ -15,7 +15,7 @@ export default function MathLabLoginPrompt({
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardTopBar title="BRHS Math Lab" showNavLinks={false} />
+      <DashboardTopBar title="BRHS Math Lab" />
       <Suspense fallback={null}>
         <MathLabSidebar />
       </Suspense>

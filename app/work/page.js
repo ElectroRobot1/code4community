@@ -1,26 +1,20 @@
-"use client";
-
-import { useLayoutEffect, useEffect } from "react";
 import Link from "next/link";
 import { AppPageLayout } from "@/components/common/AppPageLayout";
 import WorkProjectTile from "@/components/WorkProjectTile";
+import WorkHashScroll from "@/components/work/WorkHashScroll";
 import { WORK_PROJECTS } from "@/lib/workProjects";
 
+export const metadata = {
+  title: "Code4Community | Our Work",
+};
+
+export const dynamic = "force-static";
+
 export default function WorkPage() {
-  useLayoutEffect(() => {
-    document.title = "Code4Community | Our Work";
-  }, []);
-
-  useEffect(() => {
-    const raw = window.location.hash.replace(/^#/, "");
-    if (!raw) return;
-    const el = document.getElementById(raw);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   return (
-    <AppPageLayout>
-      <main className="flex-1 border-t border-border px-6 py-12 md:py-16">
+    <AppPageLayout title="Code4Community | Our Work">
+      <WorkHashScroll />
+      <div className="flex-1 border-t border-border px-6 py-12 md:py-16">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2">Our Work</h1>
           <p className="text-center text-muted-foreground text-sm md:text-base max-w-2xl mx-auto mb-10 md:mb-12">
@@ -49,7 +43,7 @@ export default function WorkPage() {
             .
           </p>
         </div>
-      </main>
+      </div>
     </AppPageLayout>
   );
 }

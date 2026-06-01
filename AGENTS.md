@@ -15,8 +15,18 @@ Code4Community — a Next.js 16 (App Router) platform for a student-led engineer
 
 ### Firebase configuration
 The app requires Firebase credentials for authentication features. Without `keys.dev.js`, the app falls back to `tempkeys.dev.js` (empty config) via Turbopack/webpack aliases in `next.config.mjs`. Pages load and render correctly without credentials, but authentication flows (login, signup) will fail with "invalid-api-key" errors. To configure:
-1. Copy `tempkeys.dev.js` to `keys.dev.js` and fill in Firebase Console credentials.
+1. Copy `tempkeys.dev.js` to `keys.dev.js` and fill in Firebase Console credentials (local dev uses project `c4cdev-6f9f4`).
 2. Optionally set `GEMINI_API_KEY` in `.env.local` for the AI study quiz feature.
+
+**Firestore rules and indexes** (same `firestore.rules` + `firestore.indexes.json` for both projects):
+- Dev (`c4cdev-6f9f4`): `npm run firebase:deploy:firestore:dev`
+- Prod (`code4community26`): `npm run firebase:deploy:firestore`
+- Both: `npm run firebase:deploy:firestore:all`
+
+Firebase CLI aliases in `.firebaserc`: `dev`, `prod` (default).
+
+### Writing Center async (Google Form)
+Async requests use an external Google Form; Apps Script posts to `/api/writing-center/google-form-sync`. Setup: `docs/writing-center-google-form.md`, script in `google-apps-script/writing-center-form-sync.gs`.
 
 ### No test framework
 This repository has no automated test framework (no Jest, Vitest, Playwright, etc.). Validation is limited to build checks and manual testing.

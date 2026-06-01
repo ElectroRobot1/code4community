@@ -1,19 +1,14 @@
-"use client";
-import { useLayoutEffect } from "react";
-import DashboardTopBar from "@/components/DashboardTopBar";
+import { AppPageLayout } from "@/components/common/AppPageLayout";
+
+export const metadata = {
+  title: "Code4Community | Privacy Policy",
+};
+
+export const dynamic = "force-static";
 
 export default function PrivacyPolicy() {
-  useLayoutEffect(() => {
-    document.title = "Code4Community | Privacy Policy";
-  }, []);
-  
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardTopBar
-        title="Code4Community"
-        showNavLinks={true}
-      />
-      
+    <AppPageLayout>
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="prose prose-gray max-w-none">
           <h1 className="text-4xl font-bold text-foreground mb-8">Privacy Policy</h1>
@@ -166,6 +161,6 @@ export default function PrivacyPolicy() {
           </div>
         </div>
       </div>
-    </div>
+    </AppPageLayout>
   );
 }

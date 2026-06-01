@@ -1,9 +1,13 @@
 "use client";
 import Link from "next/link";
 
-export default function Footer() {
+export default function Footer({ className = "" }) {
   return (
-    <footer className="border-t border-border bg-background/50 backdrop-blur-sm">
+    <footer
+      className={["border-t border-border bg-background/50 backdrop-blur-sm shrink-0", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
           <Link 

@@ -6,8 +6,20 @@ import DashboardTopBar from "@/components/DashboardTopBar";
 import MathLabSidebar from "@/components/MathLabSidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AppCardSkeleton, RequestCardSkeleton } from "@/components/SkeletonLoader";
-import { doc, updateDoc, collection, query, where, getDocs, addDoc, onSnapshot, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { firestore } from "@/firebase";
+import { firestoreToDate, formatRequestTime, formatRequestDateTime } from "@/lib/firestoreDates";
 import { MathLabCache, UserCache, CachePerformance } from "@/utils/cache";
 import { invalidateOnDataChange } from "@/utils/cacheInvalidation";
 import { canAccess, canModify, isTutorOrHigher, isAdminUser, ROLES } from "@/utils/authorization";
@@ -250,7 +262,10 @@ function MathLabPageContent() {
   
   // Helper function to check if user is a tutor (including admins who can also tutor)
   const isTutor = useMemo(() => {
-    return displayUser?.mathLabRole === 'tutor' || isAdminUser(displayUser?.role, user?.email);
+    return (
+      isTutorOrHigher(displayUser?.role, displayUser?.mathLabRole) ||
+      isAdminUser(displayUser?.role, user?.email)
+    );
   }, [displayUser?.mathLabRole, displayUser?.role, user?.email]);
 
   const isStudentViewRoute = searchParams?.get("view") === "student";
@@ -292,19 +307,31 @@ function MathLabPageContent() {
         where("status", "==", "pending")
       );
       
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const requests = [];
-        snapshot.forEach((doc) => {
-          requests.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Cache the requests
-        MathLabCache.setRequests(requests);
-        setPendingRequests(requests);
-        setIsLoadingRequests(false);
-        
-        CachePerformance.endTiming(timing);
-      });
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const requests = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              ...data,
+              createdAt: firestoreToDate(data.createdAt),
+              acceptedAt: firestoreToDate(data.acceptedAt),
+            };
+          });
+
+          MathLabCache.setRequests(requests);
+          setPendingRequests(requests);
+          setIsLoadingRequests(false);
+
+          CachePerformance.endTiming(timing);
+        },
+        (err) => {
+          console.error("Error fetching pending requests:", err);
+          setIsLoadingRequests(false);
+          CachePerformance.endTiming(timing);
+        }
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -506,19 +533,20 @@ function MathLabPageContent() {
                   id: match.id,
                   course: match.course,
                   status: match.status,
-                  createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
+                  createdAt: firestoreToDate(match.createdAt) || new Date(),
                 });
                 setPreviousStudentRequest(null); // Clear previous when new request found
               } else if (match && match.status === 'accepted') {
               // Student has been matched with a tutor
-              const sessionStartedAt = match.sessionStartedAt?.toDate ? match.sessionStartedAt.toDate() : (match.sessionStartedAt ? new Date(match.sessionStartedAt) : null);
+              const sessionStartedAt = firestoreToDate(match.sessionStartedAt);
               
               setStudentRequest({
                 id: match.id,
                 course: match.course,
                 status: match.status,
+                createdAt: firestoreToDate(match.createdAt),
                 tutorName: match.tutorName,
-                acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date(),
+                acceptedAt: firestoreToDate(match.acceptedAt) || new Date(),
                 sessionStartedAt: sessionStartedAt
               });
               setPreviousStudentRequest(null); // Clear previous when new request found
@@ -601,18 +629,19 @@ function MathLabPageContent() {
               id: match.id,
               course: match.course,
               status: match.status,
-              createdAt: match.createdAt?.toDate ? match.createdAt.toDate() : new Date()
+              createdAt: firestoreToDate(match.createdAt) || new Date(),
             });
             setPreviousStudentRequest(null);
           } else if (match && match.status === 'accepted') {
-            const sessionStartedAt = match.sessionStartedAt?.toDate ? match.sessionStartedAt.toDate() : (match.sessionStartedAt ? new Date(match.sessionStartedAt) : null);
+            const sessionStartedAt = firestoreToDate(match.sessionStartedAt);
             
             setStudentRequest({
               id: match.id,
               course: match.course,
               status: match.status,
+              createdAt: firestoreToDate(match.createdAt),
               tutorName: match.tutorName,
-              acceptedAt: match.acceptedAt?.toDate ? match.acceptedAt.toDate() : new Date(),
+              acceptedAt: firestoreToDate(match.acceptedAt) || new Date(),
               sessionStartedAt: sessionStartedAt
             });
             setPreviousStudentRequest(null);
@@ -704,8 +733,8 @@ function MathLabPageContent() {
         course: selectedCourse,
         description: `Help needed with ${selectedCourse}`,
         status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(collection(firestore, "tutoringRequests"), requestData);
@@ -715,7 +744,7 @@ function MathLabPageContent() {
         id: docRef.id,
         course: selectedCourse,
         status: 'pending',
-        createdAt: new Date()
+        createdAt: new Date(),
       });
       
       setIsMatching(false);
@@ -763,7 +792,7 @@ function MathLabPageContent() {
       // Filter by createdAt on the client side to avoid composite index
       snapshot.forEach((doc) => {
         const data = doc.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+        const createdAt = firestoreToDate(data.createdAt) || new Date(0);
         
         if (createdAt < oneDayAgo) {
           batch.push(deleteDoc(doc.ref));
@@ -921,8 +950,8 @@ function MathLabPageContent() {
           || user?.email
           || 'Anonymous Tutor',
         tutorEmail: user?.email || cachedUser?.email,
-        acceptedAt: new Date(),
-        updatedAt: new Date()
+        acceptedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
       // Set active session for tutor (but not started yet)
@@ -955,7 +984,7 @@ function MathLabPageContent() {
       // Update the request document to indicate session has started
       await updateDoc(doc(firestore, "tutoringRequests", activeSession.requestId), {
         sessionStartedAt: startTime,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error("Error starting session:", error);
@@ -1068,7 +1097,6 @@ function MathLabPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <DashboardTopBar 
           title="BRHS Math Lab" 
-          showNavLinks={false}
         />
         <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1172,7 +1200,7 @@ function MathLabPageContent() {
   if (tutorDashboardBlocked) {
     return (
       <div className="min-h-screen bg-background">
-        <DashboardTopBar title="BRHS Math Lab" showNavLinks={false} />
+        <DashboardTopBar title="BRHS Math Lab" />
         <Suspense fallback={null}>
           <MathLabSidebar />
         </Suspense>
@@ -1231,7 +1259,6 @@ function MathLabPageContent() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
           <DashboardTopBar 
             title="BRHS Math Lab" 
-            showNavLinks={false}
           />
           <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1313,7 +1340,6 @@ function MathLabPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <DashboardTopBar 
           title="BRHS Math Lab" 
-          showNavLinks={false}
         />
         <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1432,11 +1458,11 @@ function MathLabPageContent() {
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="text-center">
                   <p className="text-sm text-gray-500">
-                    Request submitted at {studentRequest.createdAt?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || 'Unknown time'}
+                    Request submitted at {formatRequestTime(studentRequest.createdAt)}
                   </p>
                   {studentRequest.status === 'accepted' && (
                     <p className="text-sm text-gray-500 mt-1">
-                      Accepted at {studentRequest.acceptedAt?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || 'Unknown time'}
+                      Accepted at {formatRequestTime(studentRequest.acceptedAt)}
                     </p>
                   )}
                 </div>
@@ -1486,7 +1512,6 @@ function MathLabPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <DashboardTopBar 
           title="BRHS Math Lab" 
-          showNavLinks={false}
         />
         <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1594,7 +1619,6 @@ function MathLabPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <DashboardTopBar 
           title="BRHS Math Lab" 
-          showNavLinks={false}
         />
         <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1725,10 +1749,7 @@ function MathLabPageContent() {
   return (
     <div className="min-h-screen bg-background" style={{ overscrollBehavior: "none" }}>
       {/* Use the reusable DashboardTopBar component */}
-      <DashboardTopBar 
-        title="BRHS Math Lab" 
-        showNavLinks={false} // Don't show navigation links on math lab page
-      />
+      <DashboardTopBar title="BRHS Math Lab" />
       <Suspense fallback={null}>
         <Suspense fallback={null}>
           <MathLabSidebar />
@@ -1832,7 +1853,7 @@ function MathLabPageContent() {
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Requested {request.createdAt?.toDate ? request.createdAt.toDate().toLocaleString([], {hour: '2-digit', minute:'2-digit', month: 'short', day: 'numeric'}) : 'Recently'}</span>
+                        <span>Requested {formatRequestDateTime(request.createdAt)}</span>
                       </div>
 
                       {/* Action Button */}

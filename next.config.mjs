@@ -42,6 +42,20 @@ const nextConfig = {
         },
       }
     : {}),
+  async redirects() {
+    return [
+      {
+        source: "/mathlab/scheduler",
+        destination: "/office-hours/scheduler",
+        permanent: true,
+      },
+      {
+        source: "/mathlab/scheduler/manage",
+        destination: "/office-hours/scheduler/manage",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

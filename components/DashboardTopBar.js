@@ -12,7 +12,12 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    setAuthReady(true);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -110,8 +115,8 @@ export default function DashboardTopBar({ title = "Code4Community", onNavigation
                     </button>
                   );
                 })}
-                <div className="flex items-center ml-2 pl-4 border-l border-border">
-                  {!loading && user ? (
+                <div className="flex items-center ml-2 pl-4 border-l border-border" suppressHydrationWarning>
+                  {authReady && !loading && user ? (
                     <div className="relative" ref={dropdownRef}>
                       <button
                         type="button"

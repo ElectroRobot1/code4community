@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "code4community26"
+    "default": "code4community26",
+    "prod": "code4community26",
+    "dev": "c4cdev-6f9f4"
   }
 }

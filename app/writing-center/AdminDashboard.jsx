@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
 import { collection, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+
+function getUserDisplayName(user) {
+  return (
+    user.displayName ||
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    user.email?.split("@")[0] ||
+    ""
+  );
+}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('sessions');
@@ -17,6 +26,24 @@ export default function AdminDashboard() {
   const [selectedTutor, setSelectedTutor] = useState('');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedTutorFilter, setSelectedTutorFilter] = useState('ALL');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearchQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((user) => {
+      const name = getUserDisplayName(user).toLowerCase();
+      const email = (user.email || '').toLowerCase();
+      const first = (user.firstName || '').toLowerCase();
+      const last = (user.lastName || '').toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        first.includes(q) ||
+        last.includes(q)
+      );
+    });
+  }, [users, userSearchQuery]);
 
   useEffect(() => {
     if (!firestore) return;
@@ -145,22 +172,24 @@ export default function AdminDashboard() {
 
       {activeTab === 'sessions' ? (
         <div>
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-white shadow rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-500">Total Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-500">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-500">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-500">Async Pending</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.asyncPending}</p>
+          <div className="bg-white shadow rounded-lg mb-6 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:divide-x divide-gray-200">
+              <div className="flex-1 flex items-center justify-between gap-4 px-5 py-4 border-b sm:border-b-0 border-gray-200">
+                <p className="text-sm font-medium text-gray-500">Total Sessions</p>
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total}</p>
+              </div>
+              <div className="flex-1 flex items-center justify-between gap-4 px-5 py-4 border-b sm:border-b-0 border-gray-200">
+                <p className="text-sm font-medium text-gray-500">Completed</p>
+                <p className="text-2xl font-bold text-green-600 tabular-nums">{stats.completed}</p>
+              </div>
+              <div className="flex-1 flex items-center justify-between gap-4 px-5 py-4 border-b sm:border-b-0 border-gray-200">
+                <p className="text-sm font-medium text-gray-500">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600 tabular-nums">{stats.pending}</p>
+              </div>
+              <div className="flex-1 flex items-center justify-between gap-4 px-5 py-4">
+                <p className="text-sm font-medium text-gray-500">Async Pending</p>
+                <p className="text-2xl font-bold text-purple-600 tabular-nums">{stats.asyncPending}</p>
+              </div>
             </div>
           </div>
 
@@ -331,6 +360,24 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div>
+          <div className="mb-4">
+            <label htmlFor="user-search" className="sr-only">
+              Search users
+            </label>
+            <input
+              id="user-search"
+              type="search"
+              value={userSearchQuery}
+              onChange={(e) => setUserSearchQuery(e.target.value)}
+              placeholder="Search by name or email…"
+              className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {userSearchQuery.trim() && (
+              <p className="mt-2 text-sm text-gray-500">
+                {filteredUsers.length} of {users.length} users
+              </p>
+            )}
+          </div>
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -341,9 +388,16 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
+                      {userSearchQuery.trim() ? 'No users match your search.' : 'No users found.'}
+                    </td>
+                  </tr>
+                ) : (
+                filteredUsers.map((user) => (
                   <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.displayName || user.email?.split('@')[0]}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{getUserDisplayName(user)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <select
@@ -357,7 +411,8 @@ export default function AdminDashboard() {
                       </select>
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>

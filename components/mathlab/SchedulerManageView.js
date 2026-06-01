@@ -3,13 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { spotsLeft } from "@/lib/mathlabScheduler";
-import {
-  closeSlot,
-  createSlot,
-  deleteSlot,
-  fetchBookingsForSlot,
-  subscribeHostSlots,
-} from "@/lib/mathlabSchedulerFirestore";
+import { OFFICE_HOURS_SCHEDULER } from "@/lib/schedulerConfig";
+import { officeHoursScheduler } from "@/lib/schedulerFirestore";
 import {
   addMinutes,
   availableYmdsFromSlots,
@@ -30,7 +25,17 @@ const defaultSettings = {
   signupCloseMinutes: "60",
 };
 
-export default function SchedulerManageView() {
+export default function SchedulerManageView({
+  scheduler = officeHoursScheduler,
+  config = OFFICE_HOURS_SCHEDULER,
+}) {
+  const {
+    closeSlot,
+    createSlot,
+    deleteSlot,
+    fetchBookingsForSlot,
+    subscribeHostSlots,
+  } = scheduler;
   const { user, userData } = useAuth();
   const [slots, setSlots] = useState([]);
   const [settings, setSettings] = useState(defaultSettings);
@@ -105,6 +110,7 @@ export default function SchedulerManageView() {
       await createSlot({
         hostId: user.uid,
         hostName,
+        slotType: config.defaultSlotType,
         startAt: start,
         endAt: end,
         maxCapacity: Number(settings.maxCapacity),
@@ -224,6 +230,7 @@ export default function SchedulerManageView() {
           await createSlot({
             hostId: user.uid,
             hostName,
+            slotType: config.defaultSlotType,
             startAt: start,
             endAt: end,
             maxCapacity: Number(settings.maxCapacity),

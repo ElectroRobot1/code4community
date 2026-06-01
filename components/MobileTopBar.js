@@ -18,6 +18,11 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    setAuthReady(true);
+  }, []);
 
   useEffect(() => {
     if (menuOpen) document.body.style.overflow = "hidden";
@@ -89,9 +94,9 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
           <span className={titleClasses}>{title}</span>
         </button>
       </div>
-      {showNavLinks && !loading && (
-        <div className={rightSectionClasses}>
-          {user ? (
+      {showNavLinks && (
+        <div className={rightSectionClasses} suppressHydrationWarning>
+          {authReady && !loading && user ? (
             <span className="text-sm text-gray-600 truncate max-w-[100px]">{displayName}</span>
           ) : (
             <>
@@ -137,7 +142,7 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
           {showNavLinks && (
             <nav className="flex-1 overflow-auto py-2">
               {(() => {
-                const links = user
+                const links = authReady && user
                   ? [...BASE_NAV_LINKS, { label: "SETTINGS", path: "/settings" }]
                   : [...BASE_NAV_LINKS];
                 return links.map((link) => {
@@ -159,7 +164,7 @@ export default function MobileTopBar({ title = "Code4Community", showNavLinks = 
                   );
                 });
               })()}
-              {user && (
+              {authReady && user && (
                 <div className="border-b border-gray-100">
                   <button
                     type="button"

@@ -1,12 +1,12 @@
-"use client";
-import { useLayoutEffect } from "react";
 import { AppPageLayout } from "@/components/common/AppPageLayout";
 
+export const metadata = {
+  title: "Code4Community | Terms of Service",
+};
+
+export const dynamic = "force-static";
+
 export default function TermsOfService() {
-  useLayoutEffect(() => {
-    document.title = "Code4Community | Terms of Service";
-  }, []);
-  
   return (
     <AppPageLayout showFooter={false} className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-6 py-8">
