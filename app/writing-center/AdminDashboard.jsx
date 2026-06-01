@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
 import { collection, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { formatSessionDate } from "@/lib/firestoreDates";
+import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
 
 function getUserDisplayName(user) {
   return (
@@ -221,7 +223,9 @@ export default function AdminDashboard() {
               <div className="p-6 text-center text-gray-500">No sessions found</div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {filteredSessions.map((session) => (
+                {filteredSessions.map((session) => {
+                  const formResponseUrl = getGoogleFormResponseUrl(session);
+                  return (
                   <li key={session.id}>
                     <button
                       onClick={() => setExpandedSession(expandedSession === session.id ? null : session.id)}
@@ -230,7 +234,19 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                            {formResponseUrl && isAsyncFormSession(session) ? (
+                              <a
+                                href={formResponseUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+                              >
+                                {session.subject}
+                              </a>
+                            ) : (
+                              <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                            )}
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
                               {session.status}
                             </span>
@@ -242,7 +258,7 @@ export default function AdminDashboard() {
                             Student: {session.studentName} | Tutor: {session.tutorName || 'Unassigned'}
                           </p>
                           <p className="mt-1 text-sm text-gray-500">
-                            {new Date(session.createdAt).toLocaleDateString()}
+                            {formatSessionDate(session.createdAt)}
                           </p>
                         </div>
                         <svg className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedSession === session.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,16 +275,29 @@ export default function AdminDashboard() {
                               <p className="text-sm text-gray-600">{session.notes}</p>
                             </div>
                           )}
+                          {isAsyncFormSession(session) && formResponseUrl && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Google Forms:</p>
+                              <a
+                                href={formResponseUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-900"
+                              >
+                                View in Google Forms
+                              </a>
+                            </div>
+                          )}
                           {session.asyncFileUrl && (
                             <div>
-                              <p className="text-sm font-medium text-gray-700">Student's File:</p>
+                              <p className="text-sm font-medium text-gray-700">Student&apos;s document:</p>
                               <a
                                 href={session.asyncFileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-indigo-600 hover:text-indigo-900"
                               >
-                                {session.asyncFileName}
+                                {session.asyncFileName || "Open submitted file"}
                               </a>
                             </div>
                           )}
@@ -295,7 +324,8 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </li>
-                ))}
+                );
+                })}
               </ul>
             )}
           </div>

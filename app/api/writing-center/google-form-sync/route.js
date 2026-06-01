@@ -31,6 +31,7 @@ export async function POST(request) {
     responseId: body.responseId,
     submittedAt: body.submittedAt,
     fields: body.fields,
+    googleFormResponseUrl: body.googleFormResponseUrl,
   });
 
   if (!result.ok) {

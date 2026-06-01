@@ -23,7 +23,7 @@ const inter = Inter({
 export const metadata = {
   title: "Code4Community",
   description: "At Code4Community, we build donor management systems, volunteer platforms, program dashboards, and custom software for nonprofits and organizations.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://code4community.net'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://code4community26.web.app'),
   alternates: {
     canonical: '/',
   },

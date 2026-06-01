@@ -14,7 +14,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { buildAsyncFormUrl } from "@/lib/writingCenterForm";
-import { firestoreToDate } from "@/lib/firestoreDates";
+import { formatSessionDate } from "@/lib/firestoreDates";
+import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
 
 export default function StudentDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -123,11 +124,6 @@ export default function StudentDashboard() {
     }
   };
 
-  const formatCreatedAt = (value) => {
-    const d = firestoreToDate(value);
-    return d ? d.toLocaleDateString() : "—";
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -147,7 +143,9 @@ export default function StudentDashboard() {
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
-            {sessions.map((session) => (
+            {sessions.map((session) => {
+              const formResponseUrl = getGoogleFormResponseUrl(session);
+              return (
               <li key={session.id} className="px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -170,8 +168,18 @@ export default function StudentDashboard() {
                     <p className="mt-1 text-sm text-gray-500">
                       {session.tutorName ? `Tutor: ${session.tutorName}` : "No tutor assigned yet"}
                     </p>
-                    <p className="mt-1 text-sm text-gray-500">{formatCreatedAt(session.createdAt)}</p>
+                    <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
                     {session.notes && <p className="mt-1 text-sm text-gray-600">{session.notes}</p>}
+                    {isAsyncFormSession(session) && formResponseUrl && (
+                      <a
+                        href={formResponseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
+                      >
+                        View in Google Forms
+                      </a>
+                    )}
                     {session.sessionType === "ASYNC" && session.asyncFileUrl && (
                       <a
                         href={session.asyncFileUrl}
@@ -203,7 +211,8 @@ export default function StudentDashboard() {
                   )}
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
         )}
       </div>

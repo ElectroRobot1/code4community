@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import { firestore } from "@/firebase";
 import { collection, query, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { formatSessionDate } from "@/lib/firestoreDates";
+import { getGoogleFormResponseUrl, isAsyncFormSession } from "@/lib/writingCenterForm";
 
 export default function TutorDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -248,12 +250,25 @@ export default function TutorDashboard() {
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {availableSessions.map((session) => (
+                {availableSessions.map((session) => {
+                  const formResponseUrl = getGoogleFormResponseUrl(session);
+                  return (
                   <li key={session.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                          {formResponseUrl && isAsyncFormSession(session) ? (
+                            <a
+                              href={formResponseUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+                            >
+                              {session.subject}
+                            </a>
+                          ) : (
+                            <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                          )}
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
                             {session.status}
                           </span>
@@ -262,9 +277,19 @@ export default function TutorDashboard() {
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-gray-500">Student: {session.studentName}</p>
-                        <p className="mt-1 text-sm text-gray-500">{new Date(session.createdAt).toLocaleDateString()}</p>
+                        <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
                         {session.notes && (
                           <p className="mt-1 text-sm text-gray-600">{session.notes}</p>
+                        )}
+                        {isAsyncFormSession(session) && formResponseUrl && (
+                          <a
+                            href={formResponseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
+                          >
+                            View in Google Forms
+                          </a>
                         )}
                         {session.sessionType === 'ASYNC' && session.asyncFileUrl && (
                           <a
@@ -273,7 +298,7 @@ export default function TutorDashboard() {
                             rel="noopener noreferrer"
                             className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
                           >
-                            Download Student's Writing
+                            Open student document
                           </a>
                         )}
                       </div>
@@ -294,7 +319,8 @@ export default function TutorDashboard() {
                       ) : null}
                     </div>
                   </li>
-                ))}
+                );
+                })}
               </ul>
             )}
           </div>
@@ -305,12 +331,25 @@ export default function TutorDashboard() {
             <div className="p-6 text-center text-gray-500">No sessions yet.</div>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {mySessions.map((session) => (
+              {mySessions.map((session) => {
+                const formResponseUrl = getGoogleFormResponseUrl(session);
+                return (
                 <li key={session.id} className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                        {formResponseUrl && isAsyncFormSession(session) ? (
+                          <a
+                            href={formResponseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+                          >
+                            {session.subject}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium text-indigo-600">{session.subject}</p>
+                        )}
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(session.status)}`}>
                           {session.status}
                         </span>
@@ -319,9 +358,19 @@ export default function TutorDashboard() {
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">Student: {session.studentName}</p>
-                      <p className="mt-1 text-sm text-gray-500">{new Date(session.createdAt).toLocaleDateString()}</p>
+                      <p className="mt-1 text-sm text-gray-500">{formatSessionDate(session.createdAt)}</p>
                       {session.notes && (
                         <p className="mt-1 text-sm text-gray-600">{session.notes}</p>
+                      )}
+                      {isAsyncFormSession(session) && formResponseUrl && (
+                        <a
+                          href={formResponseUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 mr-4 inline-block text-indigo-600 hover:text-indigo-900"
+                        >
+                          View in Google Forms
+                        </a>
                       )}
                       {session.sessionType === 'ASYNC' && session.asyncFileUrl && (
                         <a
@@ -330,7 +379,7 @@ export default function TutorDashboard() {
                           rel="noopener noreferrer"
                           className="mt-2 inline-block text-indigo-600 hover:text-indigo-900"
                         >
-                          Download Student's Writing
+                          Open student document
                         </a>
                       )}
                       {session.status === 'COMPLETED' && session.proofFileUrl && (
@@ -357,7 +406,8 @@ export default function TutorDashboard() {
                     )}
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           )}
         </div>

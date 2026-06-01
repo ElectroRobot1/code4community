@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://code4community.net';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://code4community26.web.app';
 
   const routes = [
     // Public pages
