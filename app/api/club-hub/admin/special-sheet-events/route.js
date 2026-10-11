@@ -65,7 +65,6 @@ export async function POST(request) {
   try {
     const created = await createSpecialSheetEvent(auth.db, {
       title: body.title || "",
-      meetingSlot: body.meetingSlot === "maroon" ? "maroon" : "gold",
       studentListPaste: body.studentListPaste || "",
       createdByEmail: auth.email,
       createdByUid: auth.uid,

@@ -121,9 +121,17 @@ export default function ClubHubPage() {
             </section>
           ))}
         </div>
+
       </main>
 
-      <div className="bg-white py-4 sm:py-5" aria-hidden />
+      <div className="border-t border-neutral-200/80 bg-white py-2.5 text-center sm:py-3">
+        <Link
+          href="/club-hub/resources"
+          className={`text-sm font-semibold text-[#5c1417] hover:underline sm:text-[15px] ${clubHubButtonFocusClass}`}
+        >
+          Opportunities &amp; Resources →
+        </Link>
+      </div>
 
       <section
         className="relative border-t border-black/10"

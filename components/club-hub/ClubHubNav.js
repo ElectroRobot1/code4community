@@ -104,7 +104,7 @@ export default function ClubHubNav({ active = null, loginRedirect = "/club-hub" 
         {navItem("Home", active === "home", "/club-hub")}
         {navItem("Club Directory", active === "directory", "/club-hub/directory")}
         {user
-          ? navItem("Meeting days", active === "meeting-days", "/club-hub/meeting-days")
+          ? navItem("Seminar Clubs", active === "meeting-days", "/club-hub/meeting-days")
           : null}
         {showSponsorLink ? navItem("My clubs", active === "sponsor", "/club-hub/sponsor") : null}
         {showAdminLink ? navItem(adminNavLabel, active === "admin", "/club-hub/admin") : null}

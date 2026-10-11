@@ -35,7 +35,7 @@ describe("special sheet column layout", () => {
   });
 
   it("labels gold vs maroon in column title", () => {
-    expect(buildSpecialSheetColumnLabel("Finance day", "gold")).toBe("Finance day (Gold)");
-    expect(buildSpecialSheetColumnLabel("Finance day", "maroon")).toBe("Finance day (Maroon)");
+    expect(buildSpecialSheetColumnLabel("Finance day", "gold")).toBe("Finance day");
+    expect(buildSpecialSheetColumnLabel("Finance day", "maroon")).toBe("Finance day");
   });
 });

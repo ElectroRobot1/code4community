@@ -1300,6 +1300,11 @@
         allow delete: if isClubHubAdmin();
       }
 
+      match /clubHubOpportunityEvents/{eventId} {
+        allow read: if resource.data.published != false;
+        allow write: if false;
+      }
+
       // Seating chart — one chart document per user (doc id = uid)
       match /seatingCharts/{userId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;

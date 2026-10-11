@@ -15,8 +15,9 @@ import {
 } from "@/lib/club-hub/clubMeetingChoices";
 import { notifyMeetingChoicesSheetSync } from "@/lib/club-hub/notifyMeetingChoicesSheetSync";
 import { fetchMembershipsForUser } from "@/lib/club-hub/clubMemberships";
+import ClubHubSelectField from "@/components/club-hub/ClubHubSelectField";
 import { clubHubButtonFocusClass } from "@/lib/club-hub/a11y";
-import { CLUB_HUB_CARD, CLUB_HUB_MAROON } from "@/lib/club-hub/theme";
+import { CLUB_HUB_MAROON } from "@/lib/club-hub/theme";
 
 export default function ClubMeetingDaysPanel() {
   const { user } = useAuth();
@@ -56,6 +57,24 @@ export default function ClubMeetingDaysPanel() {
   const maroonOptions = useMemo(
     () => memberships.filter((m) => canPickClubForMaroonMeetingDay(m)),
     [memberships],
+  );
+
+  const goldSelectOptions = useMemo(
+    () =>
+      goldOptions.map((m) => ({
+        value: m.clubSlug,
+        label: m.clubName || m.clubSlug,
+      })),
+    [goldOptions],
+  );
+
+  const maroonSelectOptions = useMemo(
+    () =>
+      maroonOptions.map((m) => ({
+        value: m.clubSlug,
+        label: m.clubName || m.clubSlug,
+      })),
+    [maroonOptions],
   );
 
   useEffect(() => {
@@ -138,7 +157,7 @@ export default function ClubMeetingDaysPanel() {
         <Link href="/login?redirectTo=%2Fclub-hub%2Fmeeting-days" className="text-[#5c1417] underline">
           Log in
         </Link>{" "}
-        to choose your Gold and Maroon day clubs.
+        to choose your Gold and Maroon Club Selections.
       </p>
     );
   }
@@ -148,99 +167,67 @@ export default function ClubMeetingDaysPanel() {
   }
 
   return (
-    <div className={CLUB_HUB_CARD}>
-      <h2 className="text-lg font-bold text-neutral-900">Gold &amp; Maroon meeting clubs</h2>
-      <p className="mt-2 text-sm text-neutral-700">
-        Choose one club you attend on Gold days and one on Maroon days, from clubs you
-        have joined on the site.
-      </p>
-
+    <div className="space-y-5">
       <ClubHubLiveMessage message={switchCooldownError} variant="alert" />
       <ClubHubLiveMessage message={error} variant="alert" />
       <ClubHubLiveMessage message={message} />
 
       {memberships.length === 0 ? (
-        <p className="mt-4 text-sm text-neutral-700">
+        <p className="rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-sm text-neutral-800">
           You have not joined any clubs yet.{" "}
           <Link href="/club-hub/directory" className="font-semibold text-[#5c1417] hover:underline">
             Browse the directory
           </Link>{" "}
           and use Join club on a club page.
         </p>
-      ) : (
-        <form onSubmit={handleSave} className="mt-6 space-y-5">
-          <div>
+      ) : null}
+
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
+          <div className="min-w-0">
             <label htmlFor="gold-club" className="block text-sm font-semibold text-neutral-900">
               Gold day club
             </label>
-            {goldOptions.length === 0 ? (
+            <ClubHubSelectField
+              id="gold-club"
+              value={goldClubSlug}
+              onChange={setGoldClubSlug}
+              options={goldSelectOptions}
+            />
+            {memberships.length > 0 && goldOptions.length === 0 ? (
               <p className="mt-1 text-sm text-neutral-700">
-                None of your joined clubs meet on Gold days. Join a Gold day club from the{" "}
-                <Link href="/club-hub/directory" className="text-[#5c1417] underline">
-                  directory
-                </Link>
-                .
+                None of your joined clubs meet on Gold days.
               </p>
-            ) : (
-              <select
-                id="gold-club"
-                value={goldClubSlug}
-                onChange={(e) => setGoldClubSlug(e.target.value)}
-                className="mt-1 w-full max-w-md rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-              >
-                <option value="">— Select a club —</option>
-                {goldOptions.map((m) => (
-                  <option key={m.clubSlug} value={m.clubSlug}>
-                    {m.clubName || m.clubSlug}
-                  </option>
-                ))}
-              </select>
-            )}
+            ) : null}
           </div>
 
-          <div>
+          <div className="min-w-0">
             <label htmlFor="maroon-club" className="block text-sm font-semibold text-neutral-900">
               Maroon day club
             </label>
-            {maroonOptions.length === 0 ? (
+            <ClubHubSelectField
+              id="maroon-club"
+              value={maroonClubSlug}
+              onChange={setMaroonClubSlug}
+              options={maroonSelectOptions}
+            />
+            {memberships.length > 0 && maroonOptions.length === 0 ? (
               <p className="mt-1 text-sm text-neutral-700">
-                None of your joined clubs meet on Maroon days. Join a Maroon day club from the{" "}
-                <Link href="/club-hub/directory" className="text-[#5c1417] underline">
-                  directory
-                </Link>
-                .
+                None of your joined clubs meet on Maroon days.
               </p>
-            ) : (
-              <select
-                id="maroon-club"
-                value={maroonClubSlug}
-                onChange={(e) => setMaroonClubSlug(e.target.value)}
-                className="mt-1 w-full max-w-md rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-              >
-                <option value="">— Select a club —</option>
-                {maroonOptions.map((m) => (
-                  <option key={m.clubSlug} value={m.clubSlug}>
-                    {m.clubName || m.clubSlug}
-                  </option>
-                ))}
-              </select>
-            )}
+            ) : null}
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={
-              saving ||
-              Boolean(switchCooldownError) ||
-              (goldOptions.length === 0 && maroonOptions.length === 0)
-            }
-            className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${clubHubButtonFocusClass}`}
-            style={{ backgroundColor: CLUB_HUB_MAROON }}
-          >
-            {saving ? "Saving…" : "Save choices"}
-          </button>
-        </form>
-      )}
+        <button
+          type="submit"
+          disabled={saving || Boolean(switchCooldownError)}
+          className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto ${clubHubButtonFocusClass}`}
+          style={{ backgroundColor: CLUB_HUB_MAROON }}
+        >
+          {saving ? "Saving…" : "Save choices"}
+        </button>
+      </form>
     </div>
   );
 }

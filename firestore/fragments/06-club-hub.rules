@@ -347,3 +347,8 @@
                         );
         allow delete: if isClubHubAdmin();
       }
+
+      match /clubHubOpportunityEvents/{eventId} {
+        allow read: if resource.data.published != false;
+        allow write: if false;
+      }

@@ -6,6 +6,7 @@ import ClubHubLiveMessage from "@/components/club-hub/ClubHubLiveMessage";
 import { clubHubButtonFocusClass } from "@/lib/club-hub/a11y";
 import ClubHubAdminStudentsPanel from "@/components/club-hub/ClubHubAdminStudentsPanel";
 import ClubHubRostersPanel from "@/components/club-hub/ClubHubRostersPanel";
+import ClubHubOpportunityEventsPanel from "@/components/club-hub/ClubHubOpportunityEventsPanel";
 import ClubHubSpecialSheetEventsPanel from "@/components/club-hub/ClubHubSpecialSheetEventsPanel";
 import { getSortedClubOptions } from "@/lib/club-hub/broadRunClubDirectory";
 import {
@@ -163,13 +164,24 @@ export default function ClubHubAdminDashboard() {
           <button
             type="button"
             role="tab"
-            id="club-hub-tab-special-events"
-            aria-selected={tab === "special-events"}
-            aria-controls="club-hub-panel-special-events"
-            onClick={() => setTab("special-events")}
-            className={tabBtn(tab === "special-events")}
+            id="club-hub-tab-events"
+            aria-selected={tab === "events"}
+            aria-controls="club-hub-panel-events"
+            onClick={() => setTab("events")}
+            className={tabBtn(tab === "events")}
           >
-            Special events
+            Events
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="club-hub-tab-seminar-events"
+            aria-selected={tab === "seminar-events"}
+            aria-controls="club-hub-panel-seminar-events"
+            onClick={() => setTab("seminar-events")}
+            className={tabBtn(tab === "seminar-events")}
+          >
+            Seminar events
           </button>
         </div>
       </div>
@@ -177,11 +189,22 @@ export default function ClubHubAdminDashboard() {
       <ClubHubLiveMessage message={message} />
       <ClubHubLiveMessage message={error} variant="alert" />
 
-      {tab === "special-events" ? (
+      {tab === "events" ? (
         <div
-          id="club-hub-panel-special-events"
+          id="club-hub-panel-events"
           role="tabpanel"
-          aria-labelledby="club-hub-tab-special-events"
+          aria-labelledby="club-hub-tab-events"
+          tabIndex={0}
+        >
+          <ClubHubOpportunityEventsPanel />
+        </div>
+      ) : null}
+
+      {tab === "seminar-events" ? (
+        <div
+          id="club-hub-panel-seminar-events"
+          role="tabpanel"
+          aria-labelledby="club-hub-tab-seminar-events"
           tabIndex={0}
         >
           <ClubHubSpecialSheetEventsPanel />

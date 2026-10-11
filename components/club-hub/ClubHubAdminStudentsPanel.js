@@ -299,9 +299,9 @@ export default function ClubHubAdminStudentsPanel() {
           </section>
 
           <section className="rounded-[14px] bg-white p-5 shadow-sm ring-1 ring-black/5">
-            <h3 className="font-bold text-neutral-900">Special seminars</h3>
+            <h3 className="font-bold text-neutral-900">Seminar signups</h3>
             <p className="mt-1 text-sm text-neutral-700">
-              One-off events from the Special events tab (columns on the student meeting sheet).
+              One-off seminars from the Seminar events tab (columns on the student meeting sheet).
             </p>
             {(profile.specialEvents || []).length === 0 ? (
               <p className="mt-2 text-sm text-neutral-700">No special events configured.</p>

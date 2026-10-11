@@ -18,7 +18,6 @@ export default function ClubHubSpecialSheetEventsPanel() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
-  const [meetingSlot, setMeetingSlot] = useState("gold");
   const [studentListPaste, setStudentListPaste] = useState("");
 
   const load = useCallback(async () => {
@@ -56,7 +55,6 @@ export default function ClubHubSpecialSheetEventsPanel() {
     try {
       const result = await createSpecialSheetEventClient(user, {
         title,
-        meetingSlot: meetingSlot === "maroon" ? "maroon" : "gold",
         studentListPaste,
       });
       const unmatched = result.unmatchedEmails || [];
@@ -78,13 +76,12 @@ export default function ClubHubSpecialSheetEventsPanel() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-neutral-900">Special seminar events</h2>
+        <h2 className="text-lg font-bold text-neutral-900">Seminar events</h2>
         <p className="mt-1 text-sm text-neutral-700">
           One-off seminars (not a club and not recurring on Club Hub). Each event adds a new column on
           the{" "}
           <strong className="font-semibold text-neutral-900">Student meeting clubs</strong> Google
-          Sheet. Listed students get the event name in that column; choose Gold or Maroon to label
-          which club day it aligns with.
+          Sheet. Listed students get the event name in that column.
         </p>
       </div>
 
@@ -109,34 +106,6 @@ export default function ClubHubSpecialSheetEventsPanel() {
               disabled={busy}
             />
           </div>
-
-          <fieldset>
-            <legend className="text-xs font-semibold text-neutral-700">Club day</legend>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm">
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="special-event-slot"
-                  value="gold"
-                  checked={meetingSlot === "gold"}
-                  onChange={() => setMeetingSlot("gold")}
-                  disabled={busy}
-                />
-                Gold club time
-              </label>
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="special-event-slot"
-                  value="maroon"
-                  checked={meetingSlot === "maroon"}
-                  onChange={() => setMeetingSlot("maroon")}
-                  disabled={busy}
-                />
-                Maroon club time
-              </label>
-            </div>
-          </fieldset>
 
           <div>
             <label

@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import Link from "next/link";
 import BroadRunClubDirectory from "@/components/club-hub/BroadRunClubDirectory";
 import ClubHubNav from "@/components/club-hub/ClubHubNav";
 import ClubHubSkipLink from "@/components/club-hub/ClubHubSkipLink";
@@ -24,18 +23,6 @@ export default function ClubHubDirectoryPage() {
         <h1 className="sr-only">Broad Run Club Directory</h1>
         <BroadRunClubDirectory />
       </main>
-
-      <footer className="border-t border-neutral-200 bg-white py-6 text-center text-xs text-neutral-700">
-        <Link href="/club-hub" className="text-[#5c1417] hover:underline">
-          ← Broad Run Club Hub
-        </Link>
-        <span className="mx-2 text-neutral-500" aria-hidden>
-          ·
-        </span>
-        <Link href="/" className="hover:underline">
-          Code4Community home
-        </Link>
-      </footer>
     </div>
   );
 }
