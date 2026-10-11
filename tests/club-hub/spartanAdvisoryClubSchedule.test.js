@@ -15,13 +15,13 @@ describe("spartanAdvisoryClubSchedule2026", () => {
     expect(merged["2026-10-28"]?.some((e) => e.title === "T.H.I.N.K Before You Speak")).toBe(true);
   });
 
-  it("labels club meetings as Gold/Maroon, not LCPS A/B days", () => {
+  it("does not show A/B day labels on Spartan schedule cards", () => {
     const merged = mergeSpartanScheduleIntoEventsByDate({}, "2026-10-01", "2026-10-31");
     const gold = merged["2026-10-14"]?.find((e) => e.title === "Gold club meeting");
     const maroon = merged["2026-10-21"]?.find((e) => e.title === "Maroon club meeting");
     const planned = merged["2026-10-28"]?.find((e) => e.title === "T.H.I.N.K Before You Speak");
-    expect(gold?.time).toBe("Gold club day");
-    expect(maroon?.time).toBe("Maroon club day");
-    expect(planned?.time).toBe("LCPS A day");
+    expect(gold?.time).toBe("");
+    expect(maroon?.time).toBe("");
+    expect(planned?.time).toBe("");
   });
 });

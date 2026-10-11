@@ -363,10 +363,12 @@ function EventBlock({ ev, isSelectedCol }) {
       ? schedule.note
       : "mt-1 text-[9px] leading-snug text-rose-950";
 
+  const showTime = Boolean(ev.time?.trim());
+
   return (
     <div className={box}>
-      <p className={timeCls}>{ev.time}</p>
-      <p className={titleCls}>{ev.title}</p>
+      {showTime ? <p className={timeCls}>{ev.time}</p> : null}
+      <p className={showTime ? titleCls : titleCls.replace(/^mt-0\.5 /, "")}>{ev.title}</p>
       <p className={locCls}>{ev.location}</p>
       {ev.note ? <p className={noteCls}>{ev.note}</p> : null}
     </div>
